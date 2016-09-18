@@ -144,5 +144,18 @@ namespace Raven.Client.Documents
         {
             throw new NotImplementedException();
         }
+
+        public bool SaveChanges()
+        {
+            var saveChangesOeration = new BatchOperation(this);
+
+            var command = saveChangesOeration.CreateRequest();
+            if (command != null)
+            {
+                RequestExecuter.Execute(command, Context);
+                saveChangesOeration.SetResult(command.Result);
+            }
+            return true;
+        }
     }
 }
