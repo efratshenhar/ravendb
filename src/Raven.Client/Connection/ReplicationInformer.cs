@@ -37,6 +37,11 @@ namespace Raven.Client.Connection
         {
         }
 
+        public ReplicationInformer(Documents.DocumentConvention conventions, HttpJsonRequestFactory jsonRequestFactory)
+            : base(conventions, jsonRequestFactory)
+        {
+        }
+
         /// <summary>
         /// Failover servers set manually in config file or when document store was initialized
         /// </summary>

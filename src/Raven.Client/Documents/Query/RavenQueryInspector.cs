@@ -34,8 +34,6 @@ namespace Raven.Client.Documents
         private RavenQueryStatistics queryStats;
         private RavenQueryHighlightings highlightings;
         private string indexName;
-        private IDatabaseCommands databaseCommands;
-        private IAsyncDatabaseCommands asyncDatabaseCommands;
         private InMemoryDocumentSessionOperations session;
         private bool isMapReduce;
 
@@ -49,9 +47,7 @@ namespace Raven.Client.Documents
             RavenQueryHighlightings highlightings,
             string indexName,
             Expression expression,
-            InMemoryDocumentSessionOperations session
-            , IDatabaseCommands databaseCommands
-            , IAsyncDatabaseCommands asyncDatabaseCommands,
+            InMemoryDocumentSessionOperations session,
             bool isMapReduce
             )
         {
@@ -64,8 +60,6 @@ namespace Raven.Client.Documents
             this.highlightings = highlightings;
             this.indexName = indexName;
             this.session = session;
-            this.databaseCommands = databaseCommands;
-            this.asyncDatabaseCommands = asyncDatabaseCommands;
             this.isMapReduce = isMapReduce;
             this.provider.AfterQueryExecuted(this.AfterQueryExecuted);
             this.expression = expression ?? Expression.Constant(this);
@@ -191,16 +185,17 @@ namespace Raven.Client.Documents
         {
             RavenQueryProviderProcessor<T> ravenQueryProvider = GetRavenQueryProvider();
             string query;
-            if (asyncDatabaseCommands != null)
+            //TODO -EFrat - remove asyncDatabaseCommands
+            /*if (asyncDatabaseCommands != null)
             {
                 var asyncDocumentQuery = ravenQueryProvider.GetAsyncDocumentQueryFor(expression);
                 query = asyncDocumentQuery.GetIndexQuery(true).ToString();
             }
             else
-            {
-                var documentQuery = ravenQueryProvider.GetDocumentQueryFor(expression);
+            {*/
+            var documentQuery = ravenQueryProvider.GetDocumentQueryFor(expression);
                 query = documentQuery.ToString();
-            }
+            //}
 
             string fields = "";
             if (ravenQueryProvider.FieldsToFetch.Count > 0)
@@ -292,32 +287,6 @@ namespace Raven.Client.Documents
                     provider.ResultTransformer, provider.TransformerParameters, OriginalQueryType);
                 var documentQuery = ravenQueryProvider.GetAsyncDocumentQueryFor(expression);
                 return ((IRavenQueryInspector)documentQuery).IndexQueried;
-            }
-        }
-
-        /// <summary>
-        /// Grant access to the database commands
-        /// </summary>
-        public IDatabaseCommands DatabaseCommands
-        {
-            get
-            {
-                if(databaseCommands == null)
-                    throw new NotSupportedException("You cannot get database commands for this query");
-                return databaseCommands;
-            }
-        }
-
-        /// <summary>
-        /// Grant access to the async database commands
-        /// </summary>
-        public IAsyncDatabaseCommands AsyncDatabaseCommands
-        {
-            get
-            {
-                if (asyncDatabaseCommands == null)
-                    throw new NotSupportedException("You cannot get database commands for this query");
-                return asyncDatabaseCommands;
             }
         }
 

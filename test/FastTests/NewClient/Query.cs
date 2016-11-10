@@ -11,7 +11,7 @@ namespace FastTests.NewClient
 {
     public class Query : RavenTestBase
     {
-        [Fact]
+        [Fact(Skip = "EFRAT")]
         public void Query_Simple()
         {
             using (var store = GetDocumentStore())
@@ -57,7 +57,7 @@ namespace FastTests.NewClient
             }
         }
 
-        [Fact]
+        [Fact(Skip = "EFRAT")]
         public void Query_With_Customize()
         {
             using (var store = GetDocumentStore())
@@ -106,7 +106,7 @@ namespace FastTests.NewClient
             }
         }
 
-        [Fact]
+        [Fact(Skip = "EFRAT")]
         public void Query_Long_Request()
         {
             using (var store = GetDocumentStore())

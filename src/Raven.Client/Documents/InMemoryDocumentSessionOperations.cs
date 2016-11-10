@@ -129,7 +129,7 @@ namespace Raven.Client.Documents
         /// This instance is shared among all sessions, changes to the <see cref="DocumentConvention"/> should be done
         /// via the <see cref="IDocumentStore"/> instance, not on a single session.
         /// </remarks>
-        public DocumentConvention Conventions => DocumentStore.Conventions;
+        public DocumentConvention Conventions => DocumentStore.NewConventions;
 
         /// <summary>
         /// Gets or sets the max number of requests per session.
@@ -172,7 +172,7 @@ namespace Raven.Client.Documents
             _releaseOperationContext = requestExecuter.ContextPool.AllocateOperationContext(out Context);
             UseOptimisticConcurrency = documentStore.Conventions.DefaultUseOptimisticConcurrency;
             MaxNumberOfRequestsPerSession = documentStore.Conventions.MaxNumberOfRequestsPerSession;
-            GenerateEntityIdOnTheClient = new GenerateEntityIdOnTheClient(documentStore.Conventions, GenerateKey);
+            GenerateEntityIdOnTheClient = new GenerateEntityIdOnTheClient(documentStore.NewConventions, GenerateKey);
             EntityToBlittable = new EntityToBlittable(this);
             _blittableOperation = new BlittableOperation();
         }
@@ -644,7 +644,7 @@ more responsive application.
                 if (GenerateEntityIdOnTheClient.TryGetIdFromDynamic(entity, out id))
                     return id;
 
-                var key = await GenerateKeyAsync(entity).ConfigureAwait(false);
+                var key = await GenerateKeyAsync(entity);
                 // If we generated a new id, store it back into the Id field so the client has access to to it                    
                 if (key != null)
                     GenerateEntityIdOnTheClient.TrySetIdOnDynamic(entity, key);

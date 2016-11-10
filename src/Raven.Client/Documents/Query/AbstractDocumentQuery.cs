@@ -61,15 +61,6 @@ namespace Raven.Client.Documents
         /// Whatever to negate the next operation
         /// </summary>
         protected bool negate;
-        /// <summary>
-        /// The database commands to use
-        /// </summary>
-        protected readonly IDatabaseCommands theDatabaseCommands;
-
-        /// <summary>
-        /// Async database commands to use
-        /// </summary>
-        protected readonly IAsyncDatabaseCommands theAsyncDatabaseCommands;
 
         /// <summary>
         /// The index to query
@@ -219,22 +210,6 @@ namespace Raven.Client.Documents
         }
 
         /// <summary>
-        ///   Grant access to the database commands
-        /// </summary>
-        public virtual IDatabaseCommands DatabaseCommands
-        {
-            get { return theDatabaseCommands; }
-        }
-
-        /// <summary>
-        ///   Grant access to the async database commands
-        /// </summary>
-        public virtual IAsyncDatabaseCommands AsyncDatabaseCommands
-        {
-            get { return theAsyncDatabaseCommands; }
-        }
-
-        /// <summary>
         /// Gets the document convention from the query session
         /// </summary>
         public DocumentConvention DocumentConvention
@@ -278,37 +253,20 @@ namespace Raven.Client.Documents
         }
 
         /// <summary>
-        ///   Initializes a new instance of the <see cref = "DocumentQuery{T}" /> class.
-        /// </summary>
-        protected AbstractDocumentQuery(InMemoryDocumentSessionOperations theSession,
-                                     IDatabaseCommands databaseCommands,
-                                     string indexName,
-                                     string[] fieldsToFetch,
-                                     string[] projectionFields,
-                                     bool isMapReduce)
-            : this(theSession, databaseCommands, null, indexName, fieldsToFetch, projectionFields, isMapReduce)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="AbstractDocumentQuery{T, TSelf}"/> class.
         /// </summary>
         protected AbstractDocumentQuery(InMemoryDocumentSessionOperations theSession,
-                                     IDatabaseCommands databaseCommands,
-                                     IAsyncDatabaseCommands asyncDatabaseCommands,
                                      string indexName,
                                      string[] fieldsToFetch,
                                      string[] projectionFields,
                                      bool isMapReduce)
         {
-            theDatabaseCommands = databaseCommands;
             this.projectionFields = projectionFields;
             this.fieldsToFetch = fieldsToFetch;
             //this.queryListeners = queryListeners;
             this.isMapReduce = isMapReduce;
             this.indexName = indexName;
             this.theSession = theSession;
-            theAsyncDatabaseCommands = asyncDatabaseCommands;
             AfterQueryExecuted(UpdateStatsAndHighlightings);
 
             conventions = theSession == null ? new DocumentConvention() : theSession.Conventions;
@@ -334,8 +292,6 @@ namespace Raven.Client.Documents
         /// <param name = "other">The other.</param>
         protected AbstractDocumentQuery(AbstractDocumentQuery<T, TSelf> other)
         {
-            theDatabaseCommands = other.theDatabaseCommands;
-            theAsyncDatabaseCommands = other.theAsyncDatabaseCommands;
             indexName = other.indexName;
             linqPathProvider = other.linqPathProvider;
             allowMultipleIndexEntriesForSameDocumentToResultTransformer =
@@ -668,7 +624,7 @@ namespace Raven.Client.Documents
         {
             if (queryOperation != null)
                 return;
-            ClearSortHints(DatabaseCommands);
+            ClearSortHints();
 
             var beforeQueryExecutedEventArgs = new BeforeQueryExecutedEventArgs(theSession, this);
             theSession.OnBeforeQueryExecutedInvoke(beforeQueryExecutedEventArgs);
@@ -677,12 +633,13 @@ namespace Raven.Client.Documents
             ExecuteActualQuery();
         }
 
-        protected void ClearSortHints(IDatabaseCommands dbCommands)
+        protected void ClearSortHints()
         {
-            foreach (var key in dbCommands.OperationsHeaders.AllKeys.Where(key => key.StartsWith("SortHint")).ToArray())
+            throw new NotImplementedException();
+            /*foreach (var key in dbCommands.OperationsHeaders.AllKeys.Where(key => key.StartsWith("SortHint")).ToArray())
             {
                 dbCommands.OperationsHeaders.Remove(key);
-            }
+            }*/
         }
 
         protected virtual void ExecuteActualQuery()
@@ -719,11 +676,7 @@ namespace Raven.Client.Documents
         //and even if not, they should have the same operation headers 
         private NameValueCollection GetOperationHeaders()
         {
-            if (DatabaseCommands != null)
-                return DatabaseCommands.OperationsHeaders;
-
-            return AsyncDatabaseCommands != null ?
-                AsyncDatabaseCommands.OperationsHeaders : new NameValueCollection(0);
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -797,7 +750,7 @@ namespace Raven.Client.Documents
         {
             if (queryOperation != null)
                 return queryOperation;
-            ClearSortHints(AsyncDatabaseCommands);
+            ClearSortHints();
 
             var beforeQueryExecutedEventArgs = new BeforeQueryExecutedEventArgs(theSession, this);
             theSession.OnBeforeQueryExecutedInvoke(beforeQueryExecutedEventArgs);

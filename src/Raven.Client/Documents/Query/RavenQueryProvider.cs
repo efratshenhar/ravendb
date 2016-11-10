@@ -34,8 +34,6 @@ namespace Raven.Client.Documents
         private readonly IDocumentQueryGenerator queryGenerator;
         private readonly RavenQueryStatistics ravenQueryStatistics;
         private readonly RavenQueryHighlightings highlightings;
-        private readonly IDatabaseCommands databaseCommands;
-        private readonly IAsyncDatabaseCommands asyncDatabaseCommands;
         private readonly bool isMapReduce;
         private readonly Dictionary<string, object> transformerParamaters = new Dictionary<string, object>();
 
@@ -47,9 +45,7 @@ namespace Raven.Client.Documents
             string indexName,
             RavenQueryStatistics ravenQueryStatistics,
             RavenQueryHighlightings highlightings
-            , IDatabaseCommands databaseCommands
-            , IAsyncDatabaseCommands asyncDatabaseCommands,
-            bool isMapReduce
+            , bool isMapReduce
 )
         {
             FieldsToFetch = new HashSet<string>();
@@ -59,8 +55,6 @@ namespace Raven.Client.Documents
             this.indexName = indexName;
             this.ravenQueryStatistics = ravenQueryStatistics;
             this.highlightings = highlightings;
-            this.databaseCommands = databaseCommands;
-            this.asyncDatabaseCommands = asyncDatabaseCommands;
             this.isMapReduce = isMapReduce;
         }
         
@@ -131,11 +125,7 @@ namespace Raven.Client.Documents
             if (typeof(T) == typeof(S))
                 return this;
 
-            var ravenQueryProvider = new RavenQueryProvider<S>(queryGenerator, indexName, ravenQueryStatistics, highlightings
-                , databaseCommands
-                , asyncDatabaseCommands,
-                isMapReduce
-            );
+            var ravenQueryProvider = new RavenQueryProvider<S>(queryGenerator, indexName, ravenQueryStatistics, highlightings, isMapReduce);
             ravenQueryProvider.ResultTransformer = ResultTransformer;
             ravenQueryProvider.Customize(customizeQuery);
             foreach (var transformerParam in this.transformerParamaters)
@@ -161,9 +151,7 @@ namespace Raven.Client.Documents
         {
             var a = queryGenerator.CreateRavenQueryInspector<S>();
 
-            a.Init(this, ravenQueryStatistics, highlightings, indexName, expression, (InMemoryDocumentSessionOperations) queryGenerator
-                                              , databaseCommands
-                                              , asyncDatabaseCommands, isMapReduce);
+            a.Init(this, ravenQueryStatistics, highlightings, indexName, expression, (InMemoryDocumentSessionOperations) queryGenerator, isMapReduce);
 
             return a;
         }
@@ -177,9 +165,7 @@ namespace Raven.Client.Documents
                 var args = new object[]
                 {
                     this, ravenQueryStatistics, highlightings, indexName, expression, queryGenerator
-                    , databaseCommands
-                    , asyncDatabaseCommands,
-                    isMapReduce
+                    , isMapReduce
                 };
                 var queryInspectorInstance = Activator.CreateInstance(queryInspectorGenericType);
                 var methodInfo = queryInspectorGenericType.GetMethod("Init");

@@ -200,6 +200,12 @@ namespace Raven.Client
         DocumentConvention Conventions { get; }
 
         /// <summary>
+        /// Gets the  new conventions.
+        /// </summary>
+        /// <value>The conventions.</value>
+        Documents.DocumentConvention NewConventions { get; }
+
+        /// <summary>
         /// Gets the URL.
         /// </summary>
         string Url { get; }

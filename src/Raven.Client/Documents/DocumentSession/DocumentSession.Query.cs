@@ -69,7 +69,7 @@ namespace Raven.Client.Documents
         /// <returns></returns>
         public IDocumentQuery<T> DocumentQuery<T>(string indexName, bool isMapReduce = false)
         {
-            return new DocumentQuery<T>(this, DatabaseCommands, null, indexName, null, null, isMapReduce);
+            return new DocumentQuery<T>(this, indexName, null, null, isMapReduce);
         }
 
         /// <summary>
@@ -102,9 +102,9 @@ namespace Raven.Client.Documents
         {
             var ravenQueryStatistics = new RavenQueryStatistics();
             var highlightings = new RavenQueryHighlightings();
-            var ravenQueryProvider = new RavenQueryProvider<T>(this, indexName, ravenQueryStatistics, highlightings, DatabaseCommands, null, isMapReduce);
+            var ravenQueryProvider = new RavenQueryProvider<T>(this, indexName, ravenQueryStatistics, highlightings,  isMapReduce);
             var inspector = new RavenQueryInspector<T>();
-            inspector.Init(ravenQueryProvider, ravenQueryStatistics, highlightings, indexName, null, this, DatabaseCommands, null, isMapReduce);
+            inspector.Init(ravenQueryProvider, ravenQueryStatistics, highlightings, indexName, null, this, isMapReduce);
             return inspector;
         }
 

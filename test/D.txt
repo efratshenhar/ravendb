@@ -1,0 +1,1303 @@
+ Volume in drive C has no label.
+ Volume Serial Number is 0CF9-07EF
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Blittable
+
+09/19/2016  12:24 PM               828 ArrayParsingTests.cs
+09/19/2016  12:24 PM             2,311 BlittableJsonEqualityTests.cs
+11/01/2016  03:25 PM            30,856 BlittableValidationTest.cs
+11/01/2016  03:25 PM             2,507 MemoryPoolTests.cs
+09/19/2016  12:24 PM             4,986 MutatingJsonTests.cs
+09/19/2016  12:24 PM             5,018 ObjectJsonParsingTests.cs
+09/19/2016  12:24 PM             4,389 SmallStringCompressionTests.cs
+09/19/2016  12:24 PM               499 StringExtensions.cs
+09/19/2016  12:24 PM             6,618 UnmanagedStreamTests.cs
+               9 File(s)         58,012 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Blittable\Benchmark
+
+09/19/2016  12:24 PM             1,274 ProfilerWork.cs
+09/19/2016  12:24 PM             8,312 WriteToStreamBenchmark.cs
+               2 File(s)          9,586 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Blittable\BlittableJsonWriterTests
+
+09/19/2016  12:24 PM             3,164 BlittableFormatTests.cs
+09/19/2016  12:24 PM             6,807 BlittableJsonTestBase.cs
+11/01/2016  03:25 PM             1,609 ConcurrentAccessTests.cs
+10/25/2016  08:41 AM             8,476 FunctionalityTests.cs
+11/01/2016  03:25 PM             2,949 UnmanageJsonReaderTests.cs
+09/19/2016  12:24 PM             2,385 VariousPropertyAmountsTests.cs
+               6 File(s)         25,390 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Client
+
+11/06/2016  01:51 PM             1,753 CanParseToObjectFromBlittable.cs
+09/19/2016  12:24 PM             2,427 IncludesUtilTests.cs
+               2 File(s)          4,180 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Client\BulkInsert
+
+09/19/2016  12:24 PM             3,161 BulkInserts.cs
+               1 File(s)          3,161 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Client\Documents
+
+10/25/2016  08:41 AM             5,794 BasicDocuments.cs
+10/25/2016  08:41 AM             3,887 Load.cs
+               2 File(s)          9,681 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Client\Indexing
+
+09/19/2016  12:24 PM             4,476 DebugIndexing.cs
+10/25/2016  08:41 AM            30,069 IndexesFromClient.cs
+09/19/2016  12:24 PM             1,567 StaticIndexesFromClient.cs
+               3 File(s)         36,112 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Client\Subscriptions
+
+09/19/2016  12:24 PM             1,816 CriteriaScript.cs
+09/19/2016  12:24 PM             2,109 RavenDB-3193.cs
+09/19/2016  12:24 PM             3,176 RavenDB_3082.cs
+09/19/2016  12:24 PM            11,724 RavenDB_3491.cs
+09/19/2016  12:24 PM            12,103 Subscriptions.cs
+09/19/2016  12:24 PM               857 SubscriptionTestBase.cs
+               6 File(s)         31,785 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Issues
+
+10/25/2016  08:41 AM             1,003 BlittableParsing.cs
+09/19/2016  12:24 PM             2,490 RavenDB-5297.cs
+11/09/2016  11:02 AM             1,402 RavenDB-5570.cs
+10/25/2016  08:41 AM               832 RavenDB_5418.cs
+09/19/2016  12:24 PM             2,477 Raven_4877.cs
+               5 File(s)          8,204 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient
+
+10/31/2016  01:42 PM             6,306 CRUD.cs
+10/25/2016  08:41 AM             2,375 Delete.cs
+11/06/2016  01:51 PM             1,877 Events.cs
+10/25/2016  08:41 AM            22,548 Includes.cs
+10/25/2016  08:41 AM             3,785 Load.cs
+10/25/2016  08:41 AM             3,674 LoadAsync.cs
+11/01/2016  03:25 PM             9,084 Query.cs
+11/09/2016  11:02 AM             6,035 QueryAsync.cs
+10/25/2016  08:41 AM             2,003 Store.cs
+10/25/2016  08:41 AM             2,545 TrackEntity.cs
+10/25/2016  08:41 AM             1,010 Update.cs
+10/25/2016  08:41 AM             3,837 WhatChanged.cs
+              12 File(s)         65,079 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\Raven.Tests.Bugs\Async
+
+11/09/2016  11:02 AM             1,451 DynamicGeneratedIds.cs
+11/09/2016  11:02 AM               964 Querying.cs
+               2 File(s)          2,415 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\Raven.Tests.Bugs\Caching
+
+11/09/2016  11:02 AM            12,598 CachingOfDocumentInclude.cs
+               1 File(s)         12,598 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\Raven.Tests.Bugs\Entities
+
+11/09/2016  11:02 AM             3,035 CanSaveUpdateAndRead.cs
+               1 File(s)          3,035 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\Raven.Tests.Bugs\Errors
+
+11/09/2016  11:02 AM             2,234 QueryIssues.cs
+               1 File(s)          2,234 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\Raven.Tests.Bugs\Identifiers
+
+11/09/2016  11:02 AM               918 LongId.cs
+11/09/2016  11:02 AM             1,002 WithBase64Characters.cs
+               2 File(s)          1,920 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\Raven.Tests.Bugs\Metadata
+
+11/09/2016  11:02 AM             2,107 EscapeQuotes.cs
+11/09/2016  11:02 AM             1,665 LastModified.cs
+11/09/2016  11:02 AM             3,235 Querying.cs
+               3 File(s)          7,007 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\NewClient\ResultsTransformer
+
+11/02/2016  01:14 PM             3,857 AsyncTransformWith.cs
+11/02/2016  01:14 PM             6,531 NestingTransformers.cs
+11/09/2016  11:02 AM             4,085 RavenDB_4161.cs
+11/06/2016  01:51 PM            12,151 StronglyTypedResultsTransformer.cs
+11/09/2016  11:02 AM            12,228 TransformerParametersToResultTransformer.cs
+               5 File(s)         38,852 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\obj\Debug\netcoreapp1.0
+
+11/09/2016  12:02 PM               163 dotnet-compile.assemblyinfo.cs
+               1 File(s)            163 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Basic
+
+10/25/2016  08:41 AM             2,271 CanHandleNestedBooleanQueries.cs
+09/19/2016  12:24 PM               929 CollectionTests.cs
+09/19/2016  12:24 PM             1,986 Crud.cs
+09/19/2016  12:24 PM             1,358 MultiGetOperations.cs
+               4 File(s)          6,544 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Basic\Entities
+
+09/19/2016  12:24 PM               669 Camera.cs
+09/19/2016  12:24 PM             1,190 Company.cs
+09/19/2016  12:24 PM               262 Event.cs
+09/19/2016  12:24 PM               449 Headquater.cs
+09/19/2016  12:24 PM               199 ISearchable.cs
+09/19/2016  12:24 PM               647 Order.cs
+09/19/2016  12:24 PM               327 OrderLine.cs
+09/19/2016  12:24 PM               697 Post.cs
+09/19/2016  12:24 PM               485 PostContent.cs
+09/19/2016  12:24 PM               633 TShirt.cs
+09/19/2016  12:24 PM               496 TShirtType.cs
+09/19/2016  12:24 PM             1,257 User.cs
+09/19/2016  12:24 PM               497 UserWithoutId.cs
+              13 File(s)          7,808 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents
+
+10/25/2016  08:41 AM             3,054 Collections.cs
+11/06/2016  04:19 PM            21,412 DocumentsCrud.cs
+09/19/2016  12:24 PM             1,362 ModifyExistingDocument.cs
+               3 File(s)         25,828 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Alerts
+
+10/25/2016  08:41 AM             6,212 BasicAlertsTest.cs
+               1 File(s)          6,212 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Expiration
+
+10/25/2016  08:41 AM             5,316 Expiration.cs
+               1 File(s)          5,316 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Indexing
+
+09/19/2016  12:24 PM             4,809 BasicAnalyzers.cs
+10/25/2016  08:41 AM             7,594 BloomFilterTests.cs
+               2 File(s)         12,403 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Indexing\Auto
+
+10/25/2016  08:41 AM            55,025 BasicAutoMapIndexing.cs
+10/25/2016  08:41 AM            33,012 BasicAutoMapReduceIndexing.cs
+               2 File(s)         88,037 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Indexing\Lucene
+
+09/19/2016  12:24 PM             2,496 LazyStringValueReaderTests.cs
+11/02/2016  01:14 PM            17,749 LuceneDocumentConverterTests.cs
+10/25/2016  08:41 AM             1,468 UsingUnicode.cs
+               3 File(s)         21,713 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Indexing\MapReduce
+
+10/25/2016  08:41 AM            14,554 GroupByComplexObjects.cs
+10/25/2016  08:41 AM             4,911 RavenDB_5383.cs
+10/25/2016  08:41 AM             1,673 ReduceKeyProcessorTests.cs
+               3 File(s)         21,138 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Indexing\Static
+
+10/25/2016  08:41 AM            22,117 BasicStaticMapIndexing.cs
+11/01/2016  03:25 PM            15,310 BasicStaticMapReduceIndexing.cs
+11/01/2016  03:25 PM            11,545 CollisionsOfReduceKeyHashes.cs
+09/19/2016  12:24 PM             3,343 DynamicBlittableJsonTests.cs
+09/19/2016  12:24 PM               726 IndexCompilationTests.cs
+               5 File(s)         53,041 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Notifications
+
+11/06/2016  04:19 PM             6,521 ChangesTests.cs
+09/19/2016  12:24 PM             2,280 ObservableExtensions.cs
+               2 File(s)          8,801 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Operations
+
+10/25/2016  08:41 AM             8,266 BasicOperationsTests.cs
+               1 File(s)          8,266 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Patching
+
+09/19/2016  12:24 PM            33,115 AdvancedPatching.cs
+               1 File(s)         33,115 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\PeriodicExport
+
+09/19/2016  12:24 PM            11,341 PeriodicExportTests.cs
+               1 File(s)         11,341 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Queries
+
+09/19/2016  12:24 PM             1,725 NotModifiedQueryResults.cs
+09/19/2016  12:24 PM             3,051 WaitingForNonStaleResults.cs
+               2 File(s)          4,776 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Queries\Dynamic\Map
+
+09/19/2016  12:24 PM            17,183 BasicDynamicMapQueries.cs
+09/19/2016  12:24 PM            12,768 CreationOfAutoMapIndexDefinition.cs
+09/19/2016  12:24 PM             6,285 DynamicQueriesEnumsNestedFieldsAndCollections.cs
+09/19/2016  12:24 PM            13,003 MatchingAutoMapIndexesForDynamicQueries.cs
+               4 File(s)         49,239 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Queries\Dynamic\MapReduce
+
+09/19/2016  12:24 PM            24,063 BasicDynamicMapReduceQueries.cs
+09/19/2016  12:24 PM             7,675 CreationOfAutoMapReduceIndexDefinition.cs
+09/19/2016  12:24 PM            13,657 GroupByMultipleFields.cs
+09/19/2016  12:24 PM            17,672 MatchingAutoMapReduceIndexesForDynamicQueries.cs
+               4 File(s)         63,067 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\SqlReplication
+
+10/25/2016  08:41 AM            26,196 CanReplicate.cs
+09/19/2016  12:24 PM             3,400 DatabaseMemoryTarget.cs
+               2 File(s)         29,596 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Tombstones
+
+10/25/2016  08:41 AM             8,588 BasicTombstones.cs
+               1 File(s)          8,588 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Transformers
+
+11/09/2016  11:02 AM             6,129 BasicTransformers.cs
+               1 File(s)          6,129 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Documents\Versioning
+
+09/19/2016  12:24 PM             9,998 Versioning.cs
+09/19/2016  12:24 PM             1,638 VersioningTest.cs
+               2 File(s)         11,636 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Json
+
+09/19/2016  12:24 PM             7,971 BlittableJsonTraverserTests.cs
+               1 File(s)          7,971 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\OAuth
+
+09/19/2016  12:24 PM             7,571 CanAuthenticate.cs
+               1 File(s)          7,571 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Replication
+
+11/06/2016  01:51 PM             7,248 ReplicationAutomaticConflictResolution.cs
+11/06/2016  01:51 PM            11,577 ReplicationBasicTests.cs
+11/06/2016  01:51 PM            24,726 ReplicationConflictsTests.cs
+11/06/2016  01:51 PM             4,580 ReplicationDocuments.cs
+11/09/2016  11:02 AM            15,769 ReplicationIndexesAndTransformers.cs
+11/06/2016  01:51 PM             2,476 ReplicationManualConflictResolution.cs
+11/06/2016  01:51 PM             7,793 ReplicationTestsBase.cs
+11/09/2016  11:02 AM            11,853 ReplicationTombstoneTests.cs
+               8 File(s)         86,022 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Server\Routing
+
+09/19/2016  12:24 PM             2,242 TrieTests.cs
+               1 File(s)          2,242 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Smuggler
+
+09/19/2016  12:24 PM             7,016 SmugglerApiTests.cs
+               1 File(s)          7,016 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Sparrow
+
+09/19/2016  12:24 PM             4,742 Bits.cs
+09/19/2016  12:24 PM            24,529 BitVectors.cs
+09/19/2016  12:24 PM            11,269 ByteString.cs
+09/19/2016  12:24 PM             1,338 ChangeThreadPriorityTest.cs
+10/25/2016  08:41 AM             4,259 DiffPagesTests.cs
+09/19/2016  12:24 PM            14,285 Hashing.cs
+11/02/2016  01:14 PM             2,674 IoMetric.cs
+10/25/2016  08:41 AM             5,988 LZ4.cs
+09/19/2016  12:24 PM             1,467 PtrBitVector.cs
+09/19/2016  12:24 PM            27,442 ZFastTrie.cs
+              10 File(s)         97,993 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Utils
+
+10/25/2016  08:41 AM             2,491 ChunkedMmapStreamTests.cs
+09/19/2016  12:24 PM            51,636 IncludeUtilTests.cs
+09/19/2016  12:24 PM             1,543 LimitedStreamTests.cs
+10/25/2016  08:41 AM             3,884 TimeParsing.cs
+               4 File(s)         59,554 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron
+
+09/19/2016  12:24 PM             1,631 MultiTreeSize.cs
+10/25/2016  08:41 AM            13,574 MultiValueTree.cs
+10/25/2016  08:41 AM             5,683 StorageTest.cs
+09/19/2016  12:24 PM             7,070 ValidHeaders.cs
+               4 File(s)         27,958 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Backups
+
+09/19/2016  12:24 PM            10,878 BackupToOneZipFile.cs
+09/19/2016  12:24 PM             2,656 Full.cs
+09/19/2016  12:24 PM            16,709 Incremental.cs
+09/19/2016  12:24 PM             1,120 IncrementalBackupTestUtils.cs
+09/19/2016  12:24 PM             2,393 RavenDB_3115.cs
+               5 File(s)         33,756 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Bugs
+
+09/19/2016  12:24 PM             1,931 AccessViolationWithIteratorUsage.cs
+09/19/2016  12:24 PM             2,442 ChecksumMismatchAfterRecovery.cs
+09/19/2016  12:24 PM             6,091 DataCorruptionInOverflow.cs
+09/19/2016  12:24 PM             1,312 Deletes.cs
+09/19/2016  12:24 PM             2,038 EmptyTree.cs
+10/25/2016  08:41 AM             7,124 FlushingToDataFile.cs
+09/19/2016  12:24 PM             2,940 FreeSpaceAndOverflowPages.cs
+09/19/2016  12:24 PM             2,021 IndexPointToNonLeafPageTests.cs
+11/01/2016  03:25 PM             2,331 InvalidReleasesOfScratchPages.cs
+09/19/2016  12:24 PM             6,244 Isolation.cs
+10/25/2016  08:41 AM             1,520 Iterating.cs
+10/25/2016  08:41 AM             2,087 MemoryAccess.cs
+10/25/2016  08:41 AM             7,438 MultiAdds.cs
+09/19/2016  12:24 PM             2,708 MultiReads.cs
+09/19/2016  12:24 PM             3,090 OverflowsReusage.cs
+09/19/2016  12:24 PM             2,114 PageAllocation.cs
+09/19/2016  12:24 PM             3,371 PagesFilteredOutByJournalApplicator.cs
+09/19/2016  12:24 PM             1,679 PageTableIssue.cs
+09/19/2016  12:24 PM             1,435 RavenDb_4706.cs
+09/19/2016  12:24 PM             4,902 RecoveryWithManualFlush.cs
+10/25/2016  08:41 AM             1,733 StartsWithSearch.cs
+10/25/2016  08:41 AM             1,308 StorageEnvDisposeWithLazyTx.cs
+09/19/2016  12:24 PM             1,085 TestDataUtil.cs
+09/19/2016  12:24 PM            10,014 TreeRebalancer.cs
+09/19/2016  12:24 PM             1,112 UpdateLastItem.cs
+              25 File(s)         80,070 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Compaction
+
+10/25/2016  08:41 AM            12,819 StorageCompactionTests.cs
+               1 File(s)         12,819 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\FixedSize
+
+10/25/2016  08:41 AM             2,392 FixedSizeBugs.cs
+09/19/2016  12:24 PM             1,469 InlineDataWithRandomSeed.cs
+10/25/2016  08:41 AM             1,663 LargeFixedSizeTreeBugs.cs
+10/25/2016  08:41 AM            15,412 SimpleFixedSizeTrees.cs
+               4 File(s)         20,936 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Journal
+
+09/19/2016  12:24 PM             3,374 BasicActions.cs
+10/25/2016  08:41 AM             2,521 EdgeCases.cs
+09/19/2016  12:24 PM             2,331 Mvcc.cs
+11/02/2016  01:14 PM             1,663 UncommittedTransactions.cs
+               4 File(s)          9,889 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Optimizations
+
+09/19/2016  12:24 PM             2,902 Writes.cs
+               1 File(s)          2,902 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\RawData
+
+09/19/2016  12:24 PM            10,613 SmallDataSection.cs
+               1 File(s)         10,613 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\ScratchBuffer
+
+11/01/2016  03:25 PM             2,000 ActivelyUsedBytesTracking.cs
+10/25/2016  08:41 AM             2,583 ScratchCanForceToFlushOldPages.cs
+               2 File(s)          4,583 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Storage
+
+10/25/2016  08:41 AM             6,817 BigValue.cs
+09/19/2016  12:24 PM             5,930 Concurrency.cs
+09/19/2016  12:24 PM             2,475 Files.cs
+09/19/2016  12:24 PM             2,917 FreeScratchPages.cs
+09/19/2016  12:24 PM             1,729 Increments.cs
+10/25/2016  08:41 AM             3,561 InitialSize.cs
+09/19/2016  12:24 PM             5,828 MemoryMapWithoutBackingPagerTest.cs
+09/19/2016  12:24 PM             1,075 MultiTransactions.cs
+09/19/2016  12:24 PM             4,273 PageHandling.cs
+09/19/2016  12:24 PM             1,202 Pagers.cs
+09/19/2016  12:24 PM             1,237 Quotas.cs
+09/19/2016  12:24 PM             4,281 Restarts.cs
+09/19/2016  12:24 PM               796 Snapshots.cs
+11/06/2016  01:51 PM            12,806 StorageReportGenerationTests.cs
+09/19/2016  12:24 PM             2,396 VeryBig.cs
+              15 File(s)         57,323 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Tables
+
+10/25/2016  08:41 AM             4,554 BasicUsage.cs
+10/25/2016  08:41 AM             4,023 Bugs.cs
+10/25/2016  08:41 AM             4,912 CompositeIndex.cs
+10/25/2016  08:41 AM             4,675 SecondayIndex.cs
+10/25/2016  08:41 AM             8,458 Serialization.cs
+10/25/2016  08:41 AM             3,427 TableStorageTest.cs
+10/25/2016  08:41 AM             5,700 TableValue.cs
+10/25/2016  08:41 AM             5,564 Validate.cs
+               8 File(s)         41,313 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Trees
+
+10/25/2016  08:41 AM             5,748 Basic.cs
+09/19/2016  12:24 PM             1,255 CanDefrag.cs
+09/19/2016  12:24 PM             2,384 CanIterateBackward.cs
+09/19/2016  12:24 PM             3,488 Deletes.cs
+11/01/2016  03:25 PM             8,093 FreeSpaceTest.cs
+09/19/2016  12:24 PM             4,354 ItemsCount.cs
+09/19/2016  12:24 PM             2,047 Iteration.cs
+09/19/2016  12:24 PM             1,485 MultipleTrees.cs
+09/19/2016  12:24 PM             3,241 Rebalance.cs
+09/19/2016  12:24 PM             3,172 TreeRenaming.cs
+09/19/2016  12:24 PM             6,529 TreeStateTests.cs
+09/19/2016  12:24 PM             5,255 Updates.cs
+              12 File(s)         47,051 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\FastTests\Voron\Util
+
+09/19/2016  12:24 PM               572 ImmutableAppendOnlyTests.cs
+09/19/2016  12:24 PM             9,264 StreamExtensions.cs
+               2 File(s)          9,836 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests
+
+09/19/2016  12:24 PM             7,604 FacetTestBase.cs
+               1 File(s)          7,604 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Bundles
+
+09/19/2016  12:24 PM             1,009 ExpirationStressTest.cs
+10/25/2016  08:41 AM             6,629 MoreLikeThis.cs
+               2 File(s)          7,638 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Commands
+
+09/19/2016  12:24 PM             2,165 Batches.cs
+09/19/2016  12:24 PM             6,937 Documents.cs
+09/19/2016  12:24 PM             8,387 Indexes.cs
+09/19/2016  12:24 PM             5,464 Other.cs
+09/19/2016  12:24 PM             9,306 Patching.cs
+10/25/2016  08:41 AM            20,362 Querying.cs
+09/19/2016  12:24 PM             1,653 Transformers.cs
+               7 File(s)         54,274 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Indexing
+
+09/19/2016  12:24 PM            14,566 CustomAnalyzers.cs
+09/19/2016  12:24 PM             3,851 Fanout.cs
+09/19/2016  12:24 PM             7,154 IndexDefinitionMethods.cs
+09/19/2016  12:24 PM             1,798 IndexFieldsValidation.cs
+09/19/2016  12:24 PM             2,018 MultiMap.cs
+10/25/2016  08:41 AM            18,175 ReferencedDocuments.cs
+10/25/2016  08:41 AM            18,047 ResultTransformers.cs
+               7 File(s)         65,609 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Querying
+
+09/19/2016  12:24 PM             2,495 Filtering.cs
+09/19/2016  12:24 PM             3,710 Intersection.cs
+09/19/2016  12:24 PM             1,944 Linq.cs
+09/19/2016  12:24 PM             3,100 Paging.cs
+09/19/2016  12:24 PM             2,367 Projections.cs
+09/19/2016  12:24 PM            20,376 Searching.cs
+09/19/2016  12:24 PM             1,849 Sorting.cs
+               7 File(s)         35,841 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\ScriptedPatching
+
+09/19/2016  12:24 PM             3,672 ScriptedPatchTests.cs
+               1 File(s)          3,672 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Session
+
+09/19/2016  12:24 PM            19,191 Advanced.cs
+09/19/2016  12:24 PM             8,506 Crud.cs
+09/19/2016  12:24 PM             2,175 Includes.cs
+09/19/2016  12:24 PM             3,999 Keys.cs
+               4 File(s)         33,871 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Streaming
+
+09/19/2016  12:24 PM             2,975 DocumentStreaming.cs
+10/25/2016  08:41 AM             2,139 QueryStreaming.cs
+               2 File(s)          5,114 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Utils\Entities
+
+09/19/2016  12:24 PM               667 Camera.cs
+09/19/2016  12:24 PM             1,188 Company.cs
+09/19/2016  12:24 PM               260 Event.cs
+09/19/2016  12:24 PM               324 Headquater.cs
+09/19/2016  12:24 PM               197 ISearchable.cs
+09/19/2016  12:24 PM               627 Post.cs
+09/19/2016  12:24 PM               483 PostContent.cs
+09/19/2016  12:24 PM               633 TShirt.cs
+09/19/2016  12:24 PM               494 TShirtType.cs
+09/19/2016  12:24 PM               815 User.cs
+09/19/2016  12:24 PM               495 UserWithoutId.cs
+              11 File(s)          6,183 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Utils\Entities\Faceted
+
+09/19/2016  12:24 PM             2,575 Camera.cs
+09/19/2016  12:24 PM               443 Currency.cs
+09/19/2016  12:24 PM               414 Order.cs
+               3 File(s)          3,432 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Utils\Indexes
+
+09/19/2016  12:24 PM               833 CameraCost.cs
+09/19/2016  12:24 PM               837 Companies_AllProperties.cs
+09/19/2016  12:24 PM               737 Companies_ByEmployeeLastName.cs
+09/19/2016  12:24 PM             1,888 Companies_CompanyByType.cs
+09/19/2016  12:24 PM             2,226 Companies_CustomAnalyzers.cs
+09/19/2016  12:24 PM               998 Companies_SortByName.cs
+09/19/2016  12:24 PM             1,175 Companies_WithReferencedEmployees.cs
+09/19/2016  12:24 PM               951 Events_SpatialIndex.cs
+09/19/2016  12:24 PM               977 MultiMapIndex.cs
+09/19/2016  12:24 PM             1,014 Posts_ByContent.cs
+09/19/2016  12:24 PM               922 Posts_ByTitleAndContent.cs
+09/19/2016  12:24 PM               971 Posts_Recurse.cs
+09/19/2016  12:24 PM             1,409 TShirtIndex.cs
+09/19/2016  12:24 PM               648 Users_ByCity.cs
+09/19/2016  12:24 PM             1,083 Users_ByName.cs
+09/19/2016  12:24 PM               705 Users_CountByLastName.cs
+              16 File(s)         17,374 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Core\Utils\Transformers
+
+09/19/2016  12:24 PM               779 Companies_ContactsTransformer.cs
+09/19/2016  12:24 PM               679 Companies_NameTransformer.cs
+09/19/2016  12:24 PM             1,425 CompanyEmployeesTransformer.cs
+09/19/2016  12:24 PM             1,252 CompanyFullAddressTransformer.cs
+09/19/2016  12:24 PM             1,116 PostWithAsDocumentTransformer.cs
+09/19/2016  12:24 PM             1,497 PostWithContentTransformer.cs
+09/19/2016  12:24 PM             1,261 PostWithMetadataForTransformer.cs
+09/19/2016  12:24 PM               706 UsersTransformer.cs
+09/19/2016  12:24 PM             1,405 UserWithCustomDataAndAddressIncludeTransformer.cs
+               9 File(s)         10,120 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Issues
+
+11/09/2016  11:02 AM             1,504 RavenDB_5409.cs
+10/25/2016  08:41 AM             1,998 RavenDB_5422.cs
+10/25/2016  08:41 AM             2,476 RavenDB_5434.cs
+11/01/2016  03:25 PM             2,678 RavenDB_5489.cs
+               4 File(s)          8,656 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList
+
+09/19/2016  12:24 PM             2,029 AaronSt.cs
+09/19/2016  12:24 PM             2,030 Accounts.cs
+09/19/2016  12:24 PM             2,540 AddMapForAllTest.cs
+09/19/2016  12:24 PM             1,001 Adrian.cs
+09/19/2016  12:24 PM             4,748 Afif.cs
+09/19/2016  12:24 PM             4,603 Alexander.cs
+09/19/2016  12:24 PM             8,910 AlexanderLapa.cs
+09/19/2016  12:24 PM             3,067 AlexanderZeitler.cs
+09/19/2016  12:24 PM             1,737 Algirdas.cs
+09/19/2016  12:24 PM             2,428 AllPropertiesIndex.cs
+09/19/2016  12:24 PM             2,627 AmbiguousMatchExceptionTest.cs
+10/25/2016  08:41 AM             2,677 Andrew.cs
+09/19/2016  12:24 PM             3,210 AnyBugTest.cs
+09/19/2016  12:24 PM             4,976 Arun.cs
+09/19/2016  12:24 PM             1,936 Asger2.cs
+09/19/2016  12:24 PM             2,942 AsyncSpatial.cs
+09/19/2016  12:24 PM             3,076 AutoGenIndexLinqQuery.cs
+09/19/2016  12:24 PM             1,774 BadQuery.cs
+09/19/2016  12:24 PM             3,802 BadTransformer.cs
+10/25/2016  08:41 AM             7,368 Bassler.cs
+09/19/2016  12:24 PM             1,297 Benjamin.cs
+09/19/2016  12:24 PM             4,151 bhiku.cs
+09/19/2016  12:24 PM             4,116 bikkies.cs
+09/19/2016  12:24 PM             3,908 BooleanAndDateTimeNullables.cs
+09/19/2016  12:24 PM             4,214 BooleanCollection.cs
+09/19/2016  12:24 PM             2,478 BoundingBox.cs
+09/19/2016  12:24 PM             6,958 Brett.cs
+09/19/2016  12:24 PM             5,007 BrianVallelunga.cs
+09/19/2016  12:24 PM             6,761 Bruno.cs
+09/19/2016  12:24 PM             4,153 BuildStarted.cs
+09/19/2016  12:24 PM             3,076 CanExcludeNullItems.cs
+09/19/2016  12:24 PM             2,660 CanFacetOnList.cs
+09/19/2016  12:24 PM            23,399 CanHaveNullableDoubleProperty.cs
+09/19/2016  12:24 PM             2,849 CanLoadDocumentArray.cs
+09/19/2016  12:24 PM             1,203 CanQueryOnTrue.cs
+09/19/2016  12:24 PM             5,084 CanReduceAndTransform.cs
+09/19/2016  12:24 PM             4,977 CanRetrieveFacetCountsOfQueryResults.cs
+09/19/2016  12:24 PM             5,416 CanRetrieveFacetCountsOfQueryResults2.cs
+10/25/2016  08:41 AM             8,406 CanTransformWithDynamicFields3.cs
+09/19/2016  12:24 PM             4,776 chad.cs
+09/19/2016  12:24 PM             1,453 Chirea.cs
+09/19/2016  12:24 PM             3,078 Chirea2.cs
+09/19/2016  12:24 PM             6,872 ChrisMarisic.cs
+09/19/2016  12:24 PM             3,013 Class7.cs
+09/19/2016  12:24 PM             3,897 CoalescingOperatorWithStringARray.cs
+09/19/2016  12:24 PM             1,825 ComplexIndexMerge.cs
+09/19/2016  12:24 PM             4,840 CompoundOrQueryWithOrderByDescending .cs
+09/19/2016  12:24 PM             1,836 ConcurrencyTests.cs
+09/19/2016  12:24 PM             3,367 CustomAnalyzerStartsWithFailure.cs
+09/19/2016  12:24 PM             2,251 CustomIdInIndexCreationTask.cs
+09/19/2016  12:24 PM             6,795 Daniel.cs
+10/25/2016  08:41 AM             7,743 DataSetIndexTest.cs
+09/19/2016  12:24 PM             5,542 DateTimeOffsetIssues.cs
+09/19/2016  12:24 PM             4,211 DayOfWeekTest.cs
+09/19/2016  12:24 PM             2,125 DecimalQueries.cs
+09/19/2016  12:24 PM             1,802 DeserializationToObjectTests.cs
+09/19/2016  12:24 PM             2,279 DictionaryOfEnum.cs
+09/19/2016  12:24 PM             1,507 DicWithDateTimeKeys.cs
+09/19/2016  12:24 PM             1,251 DifferentKeysWithTheSameFirst127CharactersAreDifferent.cs
+09/19/2016  12:24 PM             2,240 DistinctBug.cs
+09/19/2016  12:24 PM             3,056 DistinctWithPaging.cs
+09/19/2016  12:24 PM             4,098 Dmitry.cs
+10/25/2016  08:41 AM             3,841 DynamicFieldNoAnalysisStillAnalyzesTest.cs
+11/01/2016  03:25 PM             6,220 DynamicFieldSorting.cs
+09/19/2016  12:24 PM            11,654 DynamicObjectTests.cs
+09/19/2016  12:24 PM             4,997 DynamicQueryIndexSelection.cs
+09/19/2016  12:24 PM             1,015 EnumAsInts.cs
+09/19/2016  12:24 PM             1,294 EnumInIndexDef.cs
+09/19/2016  12:24 PM            11,646 EtagIssue.cs
+09/19/2016  12:24 PM             8,229 Everett616.cs
+09/19/2016  12:24 PM            19,076 FacetCountTest.cs
+09/19/2016  12:24 PM             3,656 FacetHits.cs
+09/19/2016  12:24 PM             4,671 FacetQueryNotCorrectWithDefaultFieldSpecified.cs
+09/19/2016  12:24 PM             4,091 FacetsMultipleAggregation.cs
+09/19/2016  12:24 PM             1,808 FailingIndex.cs
+10/25/2016  08:41 AM             2,164 FailingProjection.cs
+09/19/2016  12:24 PM             7,882 Failing_lucene_query_where_in_tests.cs
+09/19/2016  12:24 PM             3,011 FilteredIndexTest.cs
+09/19/2016  12:24 PM             1,475 FirstOrDefaultNullableDate.cs
+09/19/2016  12:24 PM            12,954 FormOpensByDateAndMediaSourceAndVersionTest.cs
+09/19/2016  12:24 PM             7,834 FragmentFail.cs
+09/19/2016  12:24 PM             2,193 Gal.cs
+09/19/2016  12:24 PM             1,640 Garrett.cs
+09/19/2016  12:24 PM             2,028 gaz.cs
+09/19/2016  12:24 PM             2,908 Georgiosd.cs
+09/19/2016  12:24 PM             2,778 gjerster.cs
+09/19/2016  12:24 PM             4,938 Groenewoud.cs
+09/19/2016  12:24 PM             1,186 GuidProjection.cs
+09/19/2016  12:24 PM             5,600 HierarchicalInheritanceIndexing.cs
+09/19/2016  12:24 PM             4,612 HierarchyTests.cs
+09/19/2016  12:24 PM             5,202 Holt.cs
+09/19/2016  12:24 PM             4,146 IdComesBackLowerCase.cs
+09/19/2016  12:24 PM             8,614 IdentityUserDeserialization.cs
+09/19/2016  12:24 PM             6,300 IdsaTest.cs
+09/19/2016  12:24 PM             4,641 IndexCompilation.cs
+10/25/2016  08:41 AM             3,203 IndexesIgnoreNewtonsoftJsonPropertyAttributes.cs
+09/19/2016  12:24 PM             4,035 IndexMerging.cs
+10/25/2016  08:41 AM             1,326 IndexMetadata.cs
+09/19/2016  12:24 PM             5,374 IndexTest.cs
+09/19/2016  12:24 PM             1,687 IndexTest2.cs
+09/19/2016  12:24 PM             2,618 IndexTransformerTest.cs
+09/19/2016  12:24 PM             2,975 IndexWhereClause .cs
+09/19/2016  12:24 PM            15,659 IndexWithEnumNullableFailingUnitTest.cs
+09/19/2016  12:24 PM             1,284 IndexWithUnion.cs
+10/25/2016  08:41 AM             2,522 IndexWithWhere.cs
+09/19/2016  12:24 PM             2,445 InIssues.cs
+11/09/2016  11:02 AM             4,134 InQueries.cs
+10/25/2016  08:41 AM             8,871 ItemsBySetIdIndexTests.cs
+10/25/2016  08:41 AM             1,762 Joel.cs
+09/19/2016  12:24 PM               854 JoelAsync.cs
+09/19/2016  12:24 PM             2,214 JohanNilsson.cs
+09/19/2016  12:24 PM             3,687 Johnson.cs
+09/19/2016  12:24 PM             5,645 Jon.cs
+09/19/2016  12:24 PM             2,977 Jonas.cs
+09/19/2016  12:24 PM               646 Jorre.cs
+09/19/2016  12:24 PM             6,974 JustFacetSearch.cs
+09/19/2016  12:24 PM             8,067 Justin.cs
+09/19/2016  12:24 PM             5,368 kendaleiv.cs
+09/19/2016  12:24 PM             1,287 Kijana.cs
+09/19/2016  12:24 PM             4,313 Kushnir.cs
+09/19/2016  12:24 PM               563 Kwoodard.cs
+09/19/2016  12:24 PM             2,308 LargeQuery.cs
+09/19/2016  12:24 PM             1,821 Lars.cs
+09/19/2016  12:24 PM             3,421 LastModifiedMetadataTest.cs
+09/19/2016  12:24 PM             3,052 LateBoundValue.cs
+09/19/2016  12:24 PM             2,923 LazilyLoadByIdsWithTransformer.cs
+09/19/2016  12:24 PM             2,292 LazyAggregationEmbedded.cs
+09/19/2016  12:24 PM             9,178 LazyCount.cs
+09/19/2016  12:24 PM             2,708 LazyEncoding.cs
+09/19/2016  12:24 PM             7,765 LazyStats.cs
+09/19/2016  12:24 PM             5,733 LazyTests.cs
+09/19/2016  12:24 PM             2,483 LazyWithIncludes.cs
+09/19/2016  12:24 PM             3,628 Lindblom.cs
+09/19/2016  12:24 PM             1,369 linmouhong.cs
+09/19/2016  12:24 PM             2,442 linmouhong2.cs
+09/19/2016  12:24 PM             2,273 linmouhong3.cs
+09/19/2016  12:24 PM             2,619 LinqInExtensionTests.cs
+09/19/2016  12:24 PM             1,469 ListCount.cs
+09/19/2016  12:24 PM             1,567 LoadAllStartingWith.cs
+09/19/2016  12:24 PM             4,667 LongIds.cs
+09/19/2016  12:24 PM             7,779 LowerCaseIdIndexTest.cs
+09/19/2016  12:24 PM             3,089 LuceneQueryHighlightTest.cs
+09/19/2016  12:24 PM             4,973 LuceneScoreTests.cs
+09/19/2016  12:24 PM             4,753 LuceneSearchSample.cs
+09/19/2016  12:24 PM             6,078 LuceneSortDouble.cs
+10/25/2016  08:41 AM             2,809 MapLongTests.cs
+09/19/2016  12:24 PM               576 Mare.cs
+09/19/2016  12:24 PM             1,671 Mark2.cs
+09/19/2016  12:24 PM             1,675 MattJohnson.cs
+09/19/2016  12:24 PM             5,335 Maverix2.cs
+09/19/2016  12:24 PM             6,201 Maxime.cs
+09/19/2016  12:24 PM             3,297 Maxime2.cs
+09/19/2016  12:24 PM             1,424 Micha.cs
+09/19/2016  12:24 PM             1,878 MissingIncludes.cs
+09/19/2016  12:24 PM             5,612 MoreLikeThisEvaluation.cs
+09/19/2016  12:24 PM             3,903 Mouhong.cs
+10/25/2016  08:41 AM             6,545 MultiMapIndexWithDynamicFieldsTests.cs
+09/19/2016  12:24 PM             2,499 nberardi.cs
+09/19/2016  12:24 PM             2,506 Nick.cs
+09/19/2016  12:24 PM             2,753 NicolasGarfinkiel.cs
+09/19/2016  12:24 PM             2,307 NimaHa.cs
+09/19/2016  12:24 PM             3,502 NoTracking.cs
+09/19/2016  12:24 PM             1,706 NullableBoolQuery.cs
+09/19/2016  12:24 PM             3,235 NullableEnums.cs
+09/19/2016  12:24 PM             1,789 NullableGuidIndexTest.cs
+09/19/2016  12:24 PM             2,063 NullableInIndex.cs
+10/25/2016  08:41 AM             8,675 Nullables.cs
+09/19/2016  12:24 PM             2,352 NullableSorting.cs
+11/01/2016  03:25 PM             8,148 Oguzhntopcu.cs
+09/19/2016  12:24 PM            12,522 OrderByProjectSameField.cs
+09/19/2016  12:24 PM               684 OrderByValueTypeCast.cs
+09/19/2016  12:24 PM             1,721 Oregon.cs
+09/19/2016  12:24 PM             3,608 PeterBalzli.cs
+09/19/2016  12:24 PM             1,794 Pfeffer.cs
+09/19/2016  12:24 PM             1,798 PhilJones_Search.cs
+09/19/2016  12:24 PM             3,435 PhilJones_SelectMany_NoResults.cs
+09/19/2016  12:24 PM             2,274 ProjectingIdFromNestedClass.cs
+09/19/2016  12:24 PM             3,004 ProjectionShouldNotLoadDocument.cs
+09/19/2016  12:24 PM             4,736 ProjectionTests.cs
+09/19/2016  12:24 PM             6,234 QueryExplanation.cs
+09/19/2016  12:24 PM             2,945 QueryIn.cs
+09/19/2016  12:24 PM             2,822 QueryingIntArray.cs
+09/19/2016  12:24 PM             3,269 QueryingOnValueWithMultipleMinusAnalyzed .cs
+09/19/2016  12:24 PM             2,123 QueryingOn_A_Prefix.cs
+09/19/2016  12:24 PM             1,683 QueryingUsingOr.cs
+09/19/2016  12:24 PM             3,001 QueryNotAnyTest.cs
+09/19/2016  12:24 PM             3,108 QueryOnItems.cs
+09/19/2016  12:24 PM             5,971 QueryWhereInTests.cs
+09/19/2016  12:24 PM             2,713 RacielRod.cs
+10/25/2016  08:41 AM             2,541 Random.cs
+09/19/2016  12:24 PM             2,434 RangeQueriesOverSum.cs
+09/19/2016  12:24 PM             1,852 RavenArrayQueryInputTests.cs
+09/19/2016  12:24 PM             3,418 RavenAsyncTest.cs
+09/19/2016  12:24 PM             4,689 RavenCannotQueryAgainstFloatProperty.cs
+09/19/2016  12:24 PM             2,069 RavenCountTest.cs
+09/19/2016  12:24 PM            10,401 RavenDb1192_MapReduceNestedItemsTests.cs
+10/25/2016  08:41 AM             2,802 RavenDB252.cs
+09/19/2016  12:24 PM             2,679 RavenDbBugs.cs
+09/19/2016  12:24 PM             1,459 RavenDbPutTest.cs
+09/19/2016  12:24 PM             5,214 RavenDB_859.cs
+09/19/2016  12:24 PM             9,308 RavenDeserializationBug.cs
+10/25/2016  08:41 AM             7,610 RavenDynamicTests.cs
+09/19/2016  12:24 PM             3,683 RavenProjectionGuid.cs
+09/19/2016  12:24 PM             5,332 ReduceAndTransform2.cs
+09/19/2016  12:24 PM             1,837 RenamedProperty.cs
+09/19/2016  12:24 PM             5,494 ResultTransformerMetaData .cs
+09/19/2016  12:24 PM             5,724 Rob.cs
+09/19/2016  12:24 PM             1,075 ronne.cs
+09/19/2016  12:24 PM             2,838 Rudolph.cs
+09/19/2016  12:24 PM             1,942 Samina.cs
+09/19/2016  12:24 PM             3,226 Samina2.cs
+09/19/2016  12:24 PM             4,498 Samina3.cs
+09/19/2016  12:24 PM             3,640 Scott.cs
+09/19/2016  12:24 PM             2,630 ScriptedPathBug.cs
+09/19/2016  12:24 PM             1,053 Sean.cs
+09/19/2016  12:24 PM             6,453 SeanBuchanan.cs
+10/25/2016  08:41 AM             8,646 SearchByMapReduceExample.cs
+09/19/2016  12:24 PM             2,545 SetBased.cs
+09/19/2016  12:24 PM             2,816 ShardedFacets.cs
+11/01/2016  03:25 PM             5,260 SkippedResults.cs
+09/19/2016  12:24 PM             2,290 SortingOnMapReduce.cs
+09/19/2016  12:24 PM             2,841 SortOnNullableTests.cs
+09/19/2016  12:24 PM             4,695 SortTest.cs
+09/19/2016  12:24 PM             7,398 SpatialQueryWithTransformTests.cs
+09/19/2016  12:24 PM               586 SpecialChars.cs
+09/19/2016  12:24 PM             3,223 Stacey2.cs
+09/19/2016  12:24 PM             9,102 StatsTest.cs
+09/19/2016  12:24 PM             3,271 Stif.cs
+09/19/2016  12:24 PM             2,618 Stockholm.cs
+09/19/2016  12:24 PM             1,692 Strange_select_behaviour_in_query_tests.cs
+10/25/2016  08:41 AM             1,573 StreamingHalfWay.cs
+10/25/2016  08:41 AM             3,262 StreamingTests.cs
+10/25/2016  08:41 AM             2,153 StreamSortTest.cs
+09/19/2016  12:24 PM               396 StringIsNullOrEmpty.cs
+09/19/2016  12:24 PM             3,388 SubObjectProperty.cs
+09/19/2016  12:24 PM             2,070 SuggestAsync.cs
+09/19/2016  12:24 PM             7,680 SuggestionFail.cs
+09/19/2016  12:24 PM             5,525 SumTests.cs
+09/19/2016  12:24 PM             3,532 Tamir.cs
+09/19/2016  12:24 PM             2,937 tcoonfield.cs
+09/19/2016  12:24 PM             2,029 TermVectorsInMultiMapIndexes.cs
+09/19/2016  12:24 PM             3,828 TertiaryOperator.cs
+09/19/2016  12:24 PM             3,435 TestIndexAndTransforSubcollections.cs
+09/19/2016  12:24 PM             2,666 TestRavenIncludes.cs
+09/19/2016  12:24 PM             2,123 TimeZoneQueries.cs
+10/25/2016  08:41 AM             8,691 Tobias.cs
+09/19/2016  12:24 PM             1,517 TomCabanski.cs
+09/19/2016  12:24 PM             2,427 Tony.cs
+09/19/2016  12:24 PM             2,216 TransfomerLoadCaching.cs
+09/19/2016  12:24 PM             1,847 TransformerDictionaryOrderTests.cs
+09/19/2016  12:24 PM             2,177 TransformerParameterTests.cs
+09/19/2016  12:24 PM             2,653 TransformersAndEtags.cs
+09/19/2016  12:24 PM             3,417 TransformerTest.cs
+09/19/2016  12:24 PM             6,160 TransformResultsWithProjection.cs
+09/19/2016  12:24 PM             3,947 TransformWithConversionListener.cs
+09/19/2016  12:24 PM             6,818 TransformWithLoad.cs
+09/19/2016  12:24 PM            14,291 Troy.cs
+09/19/2016  12:24 PM             5,313 Troy2.cs
+09/19/2016  12:24 PM             6,449 TroyMapReduce.cs
+09/19/2016  12:24 PM             2,680 UintId.cs
+09/19/2016  12:24 PM             5,199 VacancyCampaignsTests.cs
+09/19/2016  12:24 PM             1,380 ValerioBorioni.cs
+09/19/2016  12:24 PM             1,901 Vicente.cs
+10/25/2016  08:41 AM             2,175 Victor.cs
+09/19/2016  12:24 PM             5,048 Vitaliy.cs
+09/19/2016  12:24 PM             2,689 Vitaly.cs
+09/19/2016  12:24 PM             6,804 Vlad.cs
+09/19/2016  12:24 PM             4,326 Wallace.cs
+09/19/2016  12:24 PM             3,041 WallaceTurner.cs
+09/19/2016  12:24 PM             2,236 Weave.cs
+09/19/2016  12:24 PM             3,937 What.cs
+09/19/2016  12:24 PM             3,325 When_trying_to_load_a_non_existing_document.cs
+09/19/2016  12:24 PM             1,509 WhereClauseTest.cs
+09/19/2016  12:24 PM             3,318 WhereInQueryTests.cs
+09/19/2016  12:24 PM             6,682 WhereInTests.cs
+09/19/2016  12:24 PM             2,778 WhereStringEqualsInCollection.cs
+09/19/2016  12:24 PM               508 WildCardQuery.cs
+09/19/2016  12:24 PM            12,311 Willem.cs
+09/19/2016  12:24 PM             2,011 Zeitler.cs
+09/19/2016  12:24 PM             5,310 ZNS.cs
+09/19/2016  12:24 PM             5,843 ZNS2.cs
+             281 File(s)      1,126,956 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\Apo
+
+09/19/2016  12:24 PM             1,721 Lazy.cs
+               1 File(s)          1,721 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\Everett
+
+09/19/2016  12:24 PM             6,948 CanReadBytes.cs
+               1 File(s)          6,948 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\Jabber
+
+09/19/2016  12:24 PM             5,415 Games.cs
+               1 File(s)          5,415 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\PhilJones
+
+09/19/2016  12:24 PM             3,378 PhilJones.cs
+09/19/2016  12:24 PM             9,260 PhilJones88.cs
+09/19/2016  12:24 PM             1,188 Projections.cs
+               3 File(s)         13,826 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\RobStats
+
+09/19/2016  12:24 PM             5,173 StatisticsBug.cs
+               1 File(s)          5,173 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\spokeypokey
+
+09/19/2016  12:24 PM             6,484 Spokey.cs
+09/19/2016  12:24 PM             6,390 Spokey5.cs
+09/19/2016  12:24 PM             5,126 spokeypokey.cs
+09/19/2016  12:24 PM             9,581 spokeypokey2.cs
+09/19/2016  12:24 PM             6,829 spokeypokey3.cs
+09/19/2016  12:24 PM             6,302 spokeypokey4.cs
+               6 File(s)         40,712 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\Stacey
+
+09/19/2016  12:24 PM             2,481 InServerTesting.cs
+               1 File(s)          2,481 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\Thor
+
+09/19/2016  12:24 PM             7,063 LinqTest.cs
+               1 File(s)          7,063 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\MailingList\ThorTimeRange
+
+09/19/2016  12:24 PM             6,508 Repro.cs
+               1 File(s)          6,508 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\NewClient\Raven.Tests.Core\Session
+
+11/09/2016  11:02 AM            19,959 Advanced.cs
+11/09/2016  11:02 AM             8,312 Crud.cs
+11/07/2016  04:35 PM             1,974 Includes.cs
+11/09/2016  11:02 AM             3,792 Keys.cs
+11/09/2016  11:02 AM             7,429 OptimisticConcurrency.cs
+               5 File(s)         41,466 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\obj\Debug\netcoreapp1.0
+
+11/09/2016  12:02 PM               163 dotnet-compile.assemblyinfo.cs
+               1 File(s)            163 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\PeriodicExport
+
+09/19/2016  12:24 PM            10,128 RavenDB-4613.cs
+09/19/2016  12:24 PM             8,160 RavenDB_2181.cs
+               2 File(s)         18,288 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Server\Documents\Indexing
+
+09/19/2016  12:24 PM             1,135 CollisionsOfReduceKeyHashes_StressTests.cs
+               1 File(s)          1,135 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Server\Documents\SqlReplication
+
+09/19/2016  12:24 PM             2,392 CanReplicate.cs
+               1 File(s)          2,392 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\SlowTests\Bugs
+
+09/19/2016  12:24 PM             2,742 AsyncSetBasedOps.cs
+09/19/2016  12:24 PM             2,758 ManyDocumentWithMapReduce.cs
+11/01/2016  03:25 PM             7,931 TimeoutTester.cs
+09/19/2016  12:24 PM             2,096 VeryBigResultSet.cs
+               4 File(s)         15,527 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\SlowTests\Faceted
+
+09/19/2016  12:24 PM            29,259 FacetPaging.cs
+               1 File(s)         29,259 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\SlowTests\Indexes
+
+09/19/2016  12:24 PM             3,249 MapReduceIndexOnLargeDataSet.cs
+               1 File(s)          3,249 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\SlowTests\Issues
+
+11/01/2016  03:25 PM             4,820 RavenDB_1280.cs
+11/01/2016  03:25 PM             3,026 RavenDB_1280_ReOpen.cs
+09/19/2016  12:24 PM             7,178 RavenDB_1411.cs
+09/19/2016  12:24 PM             2,054 RavenDB_2134.cs
+09/19/2016  12:24 PM             2,655 RavenDB_2660 .cs
+09/19/2016  12:24 PM             3,100 RavenDB_2812.cs
+               6 File(s)         22,833 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\SlowTests\MailingList
+
+09/19/2016  12:24 PM             8,196 Jalchr.cs
+10/25/2016  08:41 AM             4,717 Jalchr2.cs
+11/01/2016  03:25 PM             4,719 Jalchr3.cs
+               3 File(s)         17,632 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\SlowTests\Queries
+
+09/19/2016  12:24 PM             4,649 IntersectionWithLargeDataset.cs
+               1 File(s)          4,649 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Smuggler
+
+10/25/2016  08:41 AM             2,477 LegacySmugglerTests.cs
+               1 File(s)          2,477 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests
+
+09/19/2016  12:24 PM             4,501 ClientProjectionShouldWork.cs
+09/19/2016  12:24 PM               855 InflectorTests.cs
+09/19/2016  12:24 PM             1,213 NoNonDisposableTests.cs
+09/19/2016  12:24 PM             2,518 Subscriptions.cs
+               4 File(s)          9,087 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Bugs\QueryOptimizer
+
+10/25/2016  08:41 AM            17,482 QueryOptimizeTests.cs
+10/25/2016  08:41 AM            17,598 QueryOptimizeTests_ExplicitCollections.cs
+               2 File(s)         35,080 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Bugs\TransformResults
+
+09/19/2016  12:24 PM               550 Answer.cs
+09/19/2016  12:24 PM               574 AnswerEntity.cs
+09/19/2016  12:24 PM             3,184 Answers_ByAnswerEntity.cs
+09/19/2016  12:24 PM             2,240 Answers_ByQuestion.cs
+09/19/2016  12:24 PM             1,466 Answers_ByQuestion_NoTransformResults.cs
+09/19/2016  12:24 PM               433 AnswerViewItem.cs
+09/19/2016  12:24 PM               514 AnswerVote.cs
+09/19/2016  12:24 PM               526 AnswerVoteEntity.cs
+10/25/2016  08:41 AM            18,208 ComplexValuesFromTransformResults.cs
+09/19/2016  12:24 PM               497 Question.cs
+09/19/2016  12:24 PM               437 QuestionView.cs
+09/19/2016  12:24 PM               188 QuestionVote.cs
+09/19/2016  12:24 PM             1,934 QuestionWithVoteTotalIndex.cs
+09/19/2016  12:24 PM             4,133 SortHintTester.cs
+09/19/2016  12:24 PM               181 User.cs
+09/19/2016  12:24 PM             1,424 Votes_ByAnswerEntity.cs
+              16 File(s)         36,489 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Bugs\Vlko
+
+09/19/2016  12:24 PM               808 QueryWithMultipleWhere.cs
+09/19/2016  12:24 PM             2,372 RelationIdIndex.cs
+               2 File(s)          3,180 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Bugs\Zhang
+
+09/19/2016  12:24 PM             2,182 UseMaxForDateTimeTypeInReduce.cs
+09/19/2016  12:24 PM             2,225 UseMaxForLongTypeInReduce.cs
+               2 File(s)          4,407 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\DistinctFacets
+
+09/19/2016  12:24 PM             7,424 DistinctAndFacets.cs
+09/19/2016  12:24 PM             3,747 FromUser.cs
+               2 File(s)         11,171 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Faceted
+
+09/19/2016  12:24 PM            25,948 Aggregation.cs
+09/19/2016  12:24 PM            10,069 AggregationFacet.cs
+09/19/2016  12:24 PM             2,365 ConditionalGetHelper.cs
+09/19/2016  12:24 PM             7,287 DynamicFacets.cs
+09/19/2016  12:24 PM             5,738 FacetAdvancedAPI.cs
+10/25/2016  08:41 AM            14,782 FacetedIndex.cs
+10/25/2016  08:41 AM            28,475 FacetedIndexLimit.cs
+09/19/2016  12:24 PM             3,819 LargeFacets.cs
+09/19/2016  12:24 PM             3,052 LazyFacets.cs
+               9 File(s)        101,535 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Indexes
+
+09/19/2016  12:24 PM               709 AnalyzerResolution.cs
+09/19/2016  12:24 PM             4,100 BoostingDuringIndexing.cs
+09/19/2016  12:24 PM             3,539 CastingInIndexDefinition.cs
+09/19/2016  12:24 PM             1,797 ComplexIndexOnNotAnalyzedField.cs
+09/19/2016  12:24 PM             1,051 CreateIndexesWithCasting.cs
+09/19/2016  12:24 PM             1,875 IndexLocking.cs
+09/19/2016  12:24 PM             2,778 IndexWithSubProperty.cs
+11/02/2016  01:14 PM            14,506 LinqIndexesFromClient.cs
+10/25/2016  08:41 AM             3,319 OldIndexRunWhileNewIndexesAreRunning.cs
+09/19/2016  12:24 PM             1,726 QueryingOnStaleIndexes.cs
+09/19/2016  12:24 PM             3,285 ReduceCanUseExtensionMethods.cs
+09/19/2016  12:24 PM             1,153 WithDecimalValue.cs
+09/19/2016  12:24 PM             1,808 WithNullableDateTime.cs
+              13 File(s)         41,646 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Issues
+
+09/19/2016  12:24 PM               509 RavenDB-3691.cs
+               1 File(s)            509 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Linq
+
+09/19/2016  12:24 PM             6,994 Any.cs
+10/25/2016  08:41 AM             3,659 CanCallLastOnArray.cs
+09/19/2016  12:24 PM             5,385 Contains.cs
+09/19/2016  12:24 PM             3,889 DynamicQueriesWithStaticIndexes.cs
+09/19/2016  12:24 PM             1,797 FirstOrDefault.cs
+09/19/2016  12:24 PM             2,860 FlagsEnum.cs
+09/19/2016  12:24 PM            12,100 GroupByAndDocumentId.cs
+09/19/2016  12:24 PM             8,766 In.cs
+09/19/2016  12:24 PM             4,065 IsNullOrEmpty.cs
+09/19/2016  12:24 PM             2,690 ListIndexOf.cs
+09/19/2016  12:24 PM             2,118 Not.cs
+09/19/2016  12:24 PM             2,603 OfTypeSupport.cs
+09/19/2016  12:24 PM             2,180 OfTypeSupport2.cs
+09/19/2016  12:24 PM             2,369 OrderBy.cs
+09/19/2016  12:24 PM             1,975 RavenDB14.cs
+09/19/2016  12:24 PM             1,754 SelectDictionaryItem.cs
+09/19/2016  12:24 PM             7,560 SelectManyShouldWork.cs
+10/25/2016  08:41 AM            36,257 UsingRavenQueryProvider.cs
+09/19/2016  12:24 PM             8,894 UsingWhereConditions.cs
+09/19/2016  12:24 PM            38,515 WhereClause.cs
+09/19/2016  12:24 PM             6,946 WhereStringEquals.cs
+              21 File(s)        163,376 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\MultiGet
+
+09/19/2016  12:24 PM             8,678 MultiGetBasic.cs
+09/19/2016  12:24 PM             1,655 MultiGetBugs.cs
+09/19/2016  12:24 PM             2,088 MultiGetNonStaleResults.cs
+09/19/2016  12:24 PM            12,414 MultiGetQueries.cs
+               4 File(s)         24,835 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\NestedIndexing
+
+09/19/2016  12:24 PM            11,474 CanIndexReferencedEntity.cs
+10/25/2016  08:41 AM            11,934 CanTrackWhatCameFromWhat.cs
+09/19/2016  12:24 PM             4,970 WithMapReduce.cs
+               3 File(s)         28,378 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Queries
+
+09/19/2016  12:24 PM             2,898 CanQueryOnCustomClass.cs
+09/19/2016  12:24 PM             1,599 CanQueryOnLargeXml.cs
+09/19/2016  12:24 PM               983 CommentsInQueries.cs
+09/19/2016  12:24 PM            21,124 Includes.cs
+09/19/2016  12:24 PM            11,915 Intersection.cs
+10/25/2016  08:41 AM             7,756 RavenDb_2239.cs
+               6 File(s)         46,275 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Querying
+
+09/19/2016  12:24 PM             1,453 CachingOfLongQueries.cs
+09/19/2016  12:24 PM            22,736 DynamicIndexesWithCollections.cs
+09/19/2016  12:24 PM             5,174 HighlightesTests.cs
+09/19/2016  12:24 PM             1,955 SearchOperator.cs
+09/19/2016  12:24 PM             2,606 SkipDuplicates.cs
+09/19/2016  12:24 PM             9,917 UsingDocumentQuery.cs
+09/19/2016  12:24 PM            20,976 UsingDynamicQueryWithLocalServer.cs
+09/19/2016  12:24 PM            22,708 UsingDynamicQueryWithRemoteServer.cs
+09/19/2016  12:24 PM             4,704 UsingStronglyTypedDocumentQuery.cs
+               9 File(s)         92,229 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\ResultsTransformer
+
+09/19/2016  12:24 PM             3,849 AsyncTransformWith.cs
+09/19/2016  12:24 PM             6,557 NestingTransformers.cs
+09/19/2016  12:24 PM            10,946 StonglyTypedResultsTransformer.cs
+09/19/2016  12:24 PM             8,341 TransformerParametersToResultTransformer.cs
+               4 File(s)         29,693 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Sorting
+
+09/19/2016  12:24 PM            26,169 AlphaNumericSorting.cs
+               1 File(s)         26,169 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Suggestions
+
+09/19/2016  12:24 PM             6,010 Suggestions.cs
+09/19/2016  12:24 PM             2,308 SuggestionsLazy.cs
+09/19/2016  12:24 PM             9,112 SuggestionsUsingAnIndex.cs
+               3 File(s)         17,430 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Track
+
+11/02/2016  01:14 PM             3,048 AsyncProjectionShouldWork.cs
+09/19/2016  12:24 PM             5,218 RavenDB053.cs
+               2 File(s)          8,266 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Tests\Views
+
+11/01/2016  03:25 PM             9,119 MapReduce.cs
+09/19/2016  12:24 PM             3,182 MapReduce_IndependentSteps.cs
+               2 File(s)         12,301 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Utils
+
+09/19/2016  12:24 PM             1,136 IncrementalBackupTestUtils.cs
+09/19/2016  12:24 PM             1,459 InlineDataWithRandomSeed.cs
+09/19/2016  12:24 PM             1,040 TestDataUtil.cs
+09/19/2016  12:24 PM               546 TestHelper.cs
+               4 File(s)          4,181 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Utils\Analyzers
+
+09/19/2016  12:24 PM             1,074 NGramAnalyzer.cs
+09/19/2016  12:24 PM             3,614 NGramTokenFilter.cs
+               2 File(s)          4,688 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Utils\Attributes
+
+09/19/2016  12:24 PM               711 CriticalCulturesAttribute.cs
+               1 File(s)            711 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Voron
+
+10/25/2016  08:41 AM             1,424 BigValue.cs
+10/25/2016  08:41 AM             2,725 DuplicatePageUsage.cs
+09/19/2016  12:24 PM             2,709 Full.cs
+11/01/2016  03:25 PM             4,544 InvalidReleasesOfScratchPages.cs
+10/25/2016  08:41 AM            17,249 LargeFixedSizeTrees.cs
+09/19/2016  12:24 PM             3,215 LargeValues.cs
+09/19/2016  12:24 PM             6,510 LongKeys.cs
+10/25/2016  08:41 AM             4,189 MemoryMapWithoutBackingPagerTest.cs
+10/25/2016  08:41 AM             2,447 MultiAdds.cs
+09/19/2016  12:24 PM             2,782 MutipleScratchBuffersUsage.cs
+09/19/2016  12:24 PM             9,969 PageSplitter.cs
+10/25/2016  08:41 AM             2,167 RavenDB_2939.cs
+09/19/2016  12:24 PM            10,085 Recovery.cs
+09/19/2016  12:24 PM            10,114 RecoveryMultipleJournals.cs
+09/19/2016  12:24 PM             2,793 Snapshots.cs
+09/19/2016  12:24 PM             3,179 SplittingVeryBig.cs
+09/19/2016  12:24 PM             5,906 StorageCompactionTests.cs
+10/25/2016  08:41 AM             5,600 StorageTest.cs
+09/19/2016  12:24 PM             1,367 Versioning.cs
+              19 File(s)         98,974 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\SlowTests\Voron\Bugs
+
+09/19/2016  12:24 PM             8,194 DataInconsistencyRepro.cs
+               1 File(s)          8,194 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\StressTests
+
+10/25/2016  08:41 AM             7,755 HugeTransactions.cs
+               1 File(s)          7,755 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\StressTests\obj\Debug\netcoreapp1.0
+
+11/09/2016  12:03 PM               376 dotnet-compile.assemblyinfo.cs
+               1 File(s)            376 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\StressTests\Properties
+
+10/25/2016  08:41 AM               842 AssemblyInfo.cs
+               1 File(s)            842 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Studio\obj\Debug\netstandard1.6
+
+11/09/2016  11:16 AM               377 dotnet-compile.assemblyinfo.cs
+               1 File(s)            377 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Studio\Properties
+
+09/19/2016  12:24 PM               837 AssemblyInfo.cs
+               1 File(s)            837 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Tests.Infrastructure
+
+09/19/2016  12:24 PM               554 LinuxRaceConditionWorkAround.cs
+09/19/2016  12:24 PM               161 NoDisposalNeeded.cs
+09/19/2016  12:24 PM               373 NonLinuxFactAttribute.cs
+11/06/2016  04:19 PM             3,377 RavenLowLevelTestBase.cs
+11/09/2016  11:02 AM            18,022 RavenTestBase.cs
+11/01/2016  03:25 PM             3,474 RavenTestHelper.cs
+09/19/2016  12:24 PM               309 SkippableFact.cs
+09/19/2016  12:24 PM             3,497 SkippableTest.cs
+               8 File(s)         29,767 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Tests.Infrastructure\obj\Debug\netcoreapp1.0
+
+11/09/2016  12:02 PM               376 dotnet-compile.assemblyinfo.cs
+               1 File(s)            376 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Tests.Infrastructure\Properties
+
+09/19/2016  12:24 PM               851 AssemblyInfo.cs
+               1 File(s)            851 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Tryouts
+
+11/09/2016  11:02 AM               639 Program.cs
+               1 File(s)            639 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Tryouts\obj\Debug\netcoreapp1.0
+
+11/09/2016  12:03 PM               376 dotnet-compile.assemblyinfo.cs
+               1 File(s)            376 bytes
+
+ Directory of C:\work\RavenDB4.0_Client\test\Tryouts\Properties
+
+09/19/2016  12:24 PM               999 AssemblyInfo.cs
+               1 File(s)            999 bytes
+
+     Total Files Listed:
+             781 File(s)      3,916,686 bytes
+               0 Dir(s)  299,219,181,568 bytes free

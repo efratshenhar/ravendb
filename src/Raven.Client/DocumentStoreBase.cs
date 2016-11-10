@@ -194,6 +194,18 @@ namespace Raven.Client
             set { conventions = value; }
         }
 
+        private Documents.DocumentConvention newConventions;
+
+        /// <summary>
+        /// Gets the conventions.
+        /// </summary>
+        /// <value>The conventions.</value>
+        public virtual Documents.DocumentConvention NewConventions
+        {
+            get { return newConventions ?? (newConventions = new Documents.DocumentConvention()); }
+            set { newConventions = value; }
+        }
+
         private string url;
 
         /// <summary>

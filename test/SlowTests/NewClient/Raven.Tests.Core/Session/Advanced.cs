@@ -246,7 +246,7 @@ namespace SlowTests.NewClient.Raven.Tests.Core.Session
             }
         }
 
-        [Fact]
+        [Fact(Skip = "TODO: Change DatabaseCommands")]
         public void CanGetDocumentMetadata()
         {
             const string companyId = "companies/1";

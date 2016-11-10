@@ -320,8 +320,7 @@ namespace Raven.Client.Document
             {
                 var databaseName = options.Database ?? DefaultDatabase ?? MultiDatabase.GetDatabaseName(Url);
                 var requestExecuter = GetRequestExecuter(databaseName);
-                var session = new Documents.DocumentSession(databaseName, this, sessionId,
-                    SetupCommands(DatabaseCommands, databaseName, options.Credentials, options), requestExecuter);
+                var session = new Documents.DocumentSession(databaseName, this, sessionId, requestExecuter);
                 RegisterEvents(session);
                 // AfterSessionCreated(session);
                 return session;
@@ -655,13 +654,9 @@ namespace Raven.Client.Document
             currentSessionId = sessionId;
             try
             {
-                var asyncDatabaseCommands = SetupCommandsAsync(AsyncDatabaseCommands, options.Database, options.Credentials, options);
-                if (AsyncDatabaseCommands == null)
-                    throw new InvalidOperationException("You cannot open an async session because it is not supported on embedded mode");
-
-                var databaseName = options.Database ?? DefaultDatabase ?? MultiDatabase.GetDatabaseName(Url);
+               var databaseName = options.Database ?? DefaultDatabase ?? MultiDatabase.GetDatabaseName(Url);
                 var requestExecuter = GetRequestExecuter(databaseName);
-                var session = new Documents.Async.AsyncDocumentSession(databaseName, this, asyncDatabaseCommands, requestExecuter, sessionId);
+                var session = new Documents.Async.AsyncDocumentSession(databaseName, this, requestExecuter, sessionId);
                 //AfterSessionCreated(session);
                 return session;
             }

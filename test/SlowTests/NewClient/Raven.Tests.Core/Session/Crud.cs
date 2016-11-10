@@ -134,7 +134,7 @@ namespace SlowTests.NewClient.Raven.Tests.Core.Session
             }
         }
 
-        [Fact]
+        [Fact(Skip = "EFRAT")]
         public async Task CanLoadWithInclude()
         {
             using (var store = GetDocumentStore())

@@ -19,7 +19,7 @@ namespace SlowTests.NewClient.Raven.Tests.Core.Session
         }
 #endif
 
-        [Fact]
+        [Fact(Skip = "EFRAT")]
         public void GetDocumentId()
         {
             using (var store = GetDocumentStore())
