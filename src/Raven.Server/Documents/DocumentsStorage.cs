@@ -243,16 +243,18 @@ namespace Raven.Server.Documents
         public void Initialize()
         {
             if (_logger.IsInfoEnabled)
+            {
                 _logger.Info
                     ("Starting to open document storage for " + (_documentDatabase.Configuration.Core.RunInMemory ?
-                    "<memory>" : _documentDatabase.Configuration.Core.DataDirectory));
+                    "<memory>" : _documentDatabase.Configuration.Core.DataDirectory.FullPath));
+            }
 
             var options = _documentDatabase.Configuration.Core.RunInMemory
-                ? StorageEnvironmentOptions.CreateMemoryOnly(_documentDatabase.Configuration.Core.DataDirectory)
+                ? StorageEnvironmentOptions.CreateMemoryOnly(_documentDatabase.Configuration.Core.DataDirectory.FullPath)
                 : StorageEnvironmentOptions.ForPath(
-                    _documentDatabase.Configuration.Core.DataDirectory,
-                    _documentDatabase.Configuration.Storage.TempPath,
-                    _documentDatabase.Configuration.Storage.JournalsStoragePath
+                    _documentDatabase.Configuration.Core.DataDirectory.FullPath,
+                    _documentDatabase.Configuration.Storage.TempPath?.FullPath,
+                    _documentDatabase.Configuration.Storage.JournalsStoragePath?.FullPath
                     );
 
             try
@@ -1103,8 +1105,16 @@ namespace Raven.Server.Documents
                 var result = GetDocumentOrTombstone(context, loweredKey);
                 if (result.Item2 != null) //already have a tombstone -> need to update the change vector
                 {
-                    UpdateTombstoneChangeVector(context, changeVector, result.Item2, lowerKey, lowerSize, keyPtr,
-                        keySize);
+                    CreateTombstone(context,
+                        lowerKey,
+                        lowerSize,
+                        keyPtr,
+                        keySize,
+                        result.Item2.Etag,
+                        collectionName,
+                        result.Item2.ChangeVector,
+                        lastModifiedTicks,
+                        changeVector);
                 }
                 else
                 {
@@ -1158,40 +1168,7 @@ namespace Raven.Server.Documents
                 }
             }
         }
-
-        private void UpdateTombstoneChangeVector(
-            DocumentsOperationContext context,
-            ChangeVectorEntry[] changeVector,
-            DocumentTombstone tombstone,
-            byte* lowerKey, int lowerSize,
-            byte* keyPtr, int keySize)
-        {
-            var collectionName = GetCollection(tombstone.Collection, throwIfDoesNotExist: true);
-
-            tombstone.ChangeVector = changeVector;
-            var tombstoneTables = context.Transaction.InnerTransaction.OpenTable(TombstonesSchema,
-                collectionName.GetTableName(CollectionTableType.Tombstones));
-            var newEtag = GenerateNextEtag();
-            var newEtagBigEndian = Bits.SwapBytes(newEtag);
-            var documentEtag = tombstone.DeletedEtag;
-            var documentEtagBigEndian = Bits.SwapBytes(documentEtag);
-
-            fixed (ChangeVectorEntry* pChangeVector = changeVector)
-            {
-                //update change vector and etag of the tombstone, other values are unchanged
-                var tbv = new TableValueBuilder
-                {
-                    {lowerKey, lowerSize},
-                    newEtagBigEndian,
-                    documentEtagBigEndian,
-                    {keyPtr, keySize},
-                    {(byte*) pChangeVector, sizeof(ChangeVectorEntry)*changeVector.Length},
-                    {tombstone.Collection.Buffer, tombstone.Collection.Size}
-                };
-                tombstoneTables.Set(tbv);
-            }
-        }
-
+        
         private long CreateTombstone(
             DocumentsOperationContext context,
             byte* lowerKey, int lowerSize,

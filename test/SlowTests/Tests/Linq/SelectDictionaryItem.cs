@@ -6,14 +6,12 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using FastTests;
-using Raven.Client.Linq;
 using Xunit;
 
 namespace SlowTests.Tests.Linq
 {
-    public class SelectDictionaryItem : RavenTestBase
+    public class SelectDictionaryItem : RavenNewTestBase
     {
         [Fact]
         public void SupportProjectionOnDictionaryField()
@@ -46,7 +44,7 @@ namespace SlowTests.Tests.Linq
 
         private class Product
         {
-            public int Id { get; set; }
+            public string Id { get; set; }
             public Dictionary<string, string> Properties { get; set; }
         }
     }

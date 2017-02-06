@@ -78,7 +78,9 @@ namespace Sparrow.Json
 
         public int WriteNull()
         {
-            return _position;
+            var startPos = _position++;
+            _unmanagedWriteBuffer.WriteByte(0);
+            return startPos;
         }
 
         public int WriteValue(double value)
@@ -132,7 +134,7 @@ namespace Sparrow.Json
 
         public void ResetAndRenew()
         {
-            _context.RegisterForDispose(_unmanagedWriteBuffer);
+            _unmanagedWriteBuffer.Dispose();
             _unmanagedWriteBuffer = (TWriter)(object)_context.GetStream();
             _position = 0;
         }

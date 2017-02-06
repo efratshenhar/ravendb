@@ -83,7 +83,7 @@ namespace Raven.Server.Web.System
 
             string errorMessage;
             if (
-                ResourceNameValidator.IsValidResourceName(name, ServerStore.Configuration.Core.DataDirectory,
+                ResourceNameValidator.IsValidResourceName(name, ServerStore.Configuration.Core.DataDirectory.FullPath,
                     out errorMessage) == false)
             {
                 HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -250,6 +250,25 @@ namespace Raven.Server.Web.System
             });
 
             ServerStore.DatabaseInfoCache.Delete(name);
+        }
+    }
+
+    public class ResourceDeleteResult
+    {
+        public string QualifiedName { get; set; }
+
+        public bool Deleted { get; set; }
+
+        public string Reason { get; set; }
+
+        public DynamicJsonValue ToJson()
+        {
+            return new DynamicJsonValue
+            {
+                [nameof(QualifiedName)] = QualifiedName,
+                [nameof(Deleted)] = Deleted,
+                [nameof(Reason)] = Reason
+            };
         }
     }
 }

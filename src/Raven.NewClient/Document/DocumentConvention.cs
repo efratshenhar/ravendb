@@ -24,15 +24,12 @@ using Newtonsoft.Json.Serialization;
 using Raven.NewClient.Abstractions.Data;
 using Raven.NewClient.Abstractions.Json;
 using Raven.NewClient.Abstractions.Util;
-using Raven.NewClient.Client.Converters;
 using Raven.NewClient.Client.Helpers;
 using Raven.NewClient.Client.Util;
 
 using Raven.NewClient.Client.Json;
 using Raven.NewClient.Client.Replication;
 using Sparrow.Json;
-
-
 
 namespace Raven.NewClient.Client.Document
 {
@@ -64,12 +61,6 @@ namespace Raven.NewClient.Client.Document
         /// </summary>
         public DocumentConvention()
         {
-            IdentityTypeConvertors = new List<ITypeConverter>
-            {
-                new GuidConverter(),
-                new Int32Converter(),
-                new Int64Converter(),
-            };
             PreserveDocumentPropertiesNotFoundOnModel = true;
             PrettifyGeneratedLinqExpressions = true;
             DisableProfiling = true;
@@ -104,7 +95,7 @@ namespace Raven.NewClient.Client.Document
             {
                 serializer.Binder = new ClientSerializationBinder();
             };
-            FindIdValuePartForValueTypeConversion = (entity, id) => id.Split(new[] {IdentityPartsSeparator}, StringSplitOptions.RemoveEmptyEntries).Last();
+            FindIdValuePartForValueTypeConversion = (entity, id) => id.Split(new[] { IdentityPartsSeparator }, StringSplitOptions.RemoveEmptyEntries).Last();
             ShouldAggressiveCacheTrackChanges = true;
             ShouldSaveChangesForceAggressiveCacheCheck = true;
             IndexAndTransformerReplicationMode = IndexAndTransformerReplicationMode.Indexes | IndexAndTransformerReplicationMode.Transformers;
@@ -196,12 +187,6 @@ namespace Raven.NewClient.Client.Document
         /// Disable all profiling support
         /// </summary>
         public bool DisableProfiling { get; set; }
-
-        ///<summary>
-        /// A list of type converters that can be used to translate the document key (string)
-        /// to whatever type it is that is used on the entity, if the type isn't already a string
-        ///</summary>
-        public List<ITypeConverter> IdentityTypeConvertors { get; set; }
 
         /// <summary>
         /// Gets or sets the max length of Url of GET requests.
@@ -495,7 +480,9 @@ namespace Raven.NewClient.Client.Document
 
             CustomizeJsonSerializer(jsonSerializer);
             //TODO - EFRAT
-            jsonSerializer.Converters.Add(new StringEnumConverter());
+            if (SaveEnumsAsIntegers == false)
+                jsonSerializer.Converters.Add(new StringEnumConverter());
+
             jsonSerializer.Converters.Add(new JsonDateTimeISO8601Converter());
             // TODO: Iftah
             //var convertersToUse = SaveEnumsAsIntegers ? DefaultConvertersEnumsAsIntegers : DefaultConverters;
