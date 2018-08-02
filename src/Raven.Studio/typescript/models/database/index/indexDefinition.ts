@@ -33,7 +33,8 @@ class indexDefinition {
     
     maps = ko.observableArray<mapItem>();
     reduce = ko.observable<string>();
-    //isTestIndex = ko.observable<boolean>(false);
+    isTestIndex = ko.observable<boolean>(false);
+    numberOfEntriesToTest = ko.observable<number>(100);
     fields = ko.observableArray<indexFieldOptions>();
     additionalSources = ko.observableArray<additionalSource>();
     defaultFieldOptions = ko.observable<indexFieldOptions>(null);
@@ -193,6 +194,8 @@ class indexDefinition {
             Type: this.detectIndexType(),
             LockMode: this.lockMode,
             Priority: this.priority(),
+            IsTestIndex: this.isTestIndex(),
+            NumberOfEntriesToTest: this.numberOfEntriesToTest(),
             Configuration: this.configurationToDto(),
             Fields: this.fieldToDto(),
             OutputReduceToCollection: this.outputReduceToCollection() ? this.reduceToCollectionName() : null,
@@ -247,7 +250,8 @@ class indexDefinition {
             Reduce: undefined,
             Priority: "Normal",
             Configuration: null,
-            //IsTestIndex: false,
+            IsTestIndex: false,
+            NumberOfEntriesToTest: 0,
             Type: "Map",
             OutputReduceToCollection: null,
             AdditionalSources: null

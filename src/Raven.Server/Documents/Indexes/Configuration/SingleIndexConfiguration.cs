@@ -27,7 +27,17 @@ namespace Raven.Server.Documents.Indexes.Configuration
 
         public override bool Disabled => _databaseConfiguration.Indexing.Disabled;
 
-        public override bool RunInMemory => _databaseConfiguration.Indexing.RunInMemory;
+        public override bool RunInMemory
+        {
+            get
+            {
+                if (_runInMemory == null)
+                    _runInMemory = _databaseConfiguration.Indexing.RunInMemory;
+                return (bool)_runInMemory;
+            }
+
+            set => _runInMemory = value;
+        }
 
         public override PathSetting TempPath => _databaseConfiguration.Indexing.TempPath;
 

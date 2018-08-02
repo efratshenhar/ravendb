@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Raven.Client;
 using Raven.Client.Documents.Changes;
 using Raven.Client.Documents.Indexes;
@@ -66,13 +67,21 @@ namespace Raven.Server.Documents.Indexes.MapReduce.Static
             _mre.Set();
         }
 
-        public static MapReduceIndex CreateNew(IndexDefinition definition, DocumentDatabase documentDatabase, bool isIndexReset = false)
+        public static MapReduceIndex CreateNew(IndexDefinition definition, DocumentDatabase documentDatabase, bool isIndexReset = false, bool isTestIndex = false)
         {
             var instance = CreateIndexInstance(definition, documentDatabase.Configuration);
             ValidateReduceResultsCollectionName(definition, instance._compiled, documentDatabase, isIndexReset);
 
+            var config = new SingleIndexConfiguration(definition.Configuration, documentDatabase.Configuration);
+            if (isTestIndex)
+            {
+                //instance.NumberOfEntriesToTest = testDefinition.NumberOfEntriesToTest;
+                instance.IsTestIndex = true;
+                instance._indexingProcessCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(documentDatabase.DatabaseShutdown);
+                config.RunInMemory = true;
+            }
             instance.Initialize(documentDatabase,
-                new SingleIndexConfiguration(definition.Configuration, documentDatabase.Configuration),
+                config,
                 documentDatabase.Configuration.PerformanceHints);
 
             return instance;

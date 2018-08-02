@@ -23,7 +23,6 @@ namespace Raven.Client.Documents.Indexes
             _configuration = new IndexConfiguration();
         }
 
-
         /// <summary>
         /// This is the means by which the outside world refers to this index definition
         /// </summary>
@@ -188,6 +187,7 @@ namespace Raven.Client.Documents.Indexes
                 result = (result * 397) ^ kvp.Key.GetHashCode();
                 result = (result * 397) ^ (!Equals(kvp.Value, default(TValue)) ? kvp.Value.GetHashCode() : 0);
             }
+
             return result;
         }
 
@@ -209,12 +209,16 @@ namespace Raven.Client.Documents.Indexes
 
         [JsonIgnore]
         private byte[] _cachedHashCodeAsBytes;
+
         [JsonIgnore]
         private HashSet<string> _maps;
+
         [JsonIgnore]
         private Dictionary<string, IndexFieldOptions> _fields;
+
         [JsonIgnore]
         private Dictionary<string, string> _additionalSources;
+
         [JsonIgnore]
         private IndexConfiguration _configuration;
 
@@ -331,8 +335,8 @@ namespace Raven.Client.Documents.Indexes
                 Fields.Remove(key);
         }
 
-        private static readonly Regex CommentsStripper = new Regex(@"\s+|\/\*[\s\S]*?\*\/|\/\/.*$", 
-            RegexOptions.IgnorePatternWhitespace | 
+        private static readonly Regex CommentsStripper = new Regex(@"\s+|\/\*[\s\S]*?\*\/|\/\/.*$",
+            RegexOptions.IgnorePatternWhitespace |
             RegexOptions.Multiline);
 
         public IndexType DetectStaticIndexType()
@@ -342,7 +346,8 @@ namespace Raven.Client.Documents.Indexes
                 throw new ArgumentNullException("Index definitions contains no Maps");
 
             while (true)
-            { // strip whitespace, comments, etc
+            {
+                // strip whitespace, comments, etc
                 var m = CommentsStripper.Match(firstMap);
                 if (m.Success == false || m.Index != 0)
                     break;
@@ -359,6 +364,7 @@ namespace Raven.Client.Documents.Indexes
 
                 return IndexType.MapReduce;
             }
+
             if (string.IsNullOrWhiteSpace(Reduce))
                 return IndexType.JavaScriptMap;
 
@@ -366,9 +372,9 @@ namespace Raven.Client.Documents.Indexes
         }
 
 #if FEATURE_TEST_INDEX
-        /// <summary>
-        /// Whether this is a temporary test only index
-        /// </summary>
+/// <summary>
+/// Whether this is a temporary test only index
+/// </summary>
         public bool IsTestIndex { get; set; }
 #endif
 

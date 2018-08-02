@@ -230,6 +230,7 @@ namespace Raven.Server.Documents.Indexes
                     {
                         if (i is FaultyInMemoryIndex)
                             return;
+
                         indexName = Constants.Documents.Indexing.SideBySideIndexNamePrefix + name;
                         if (_indexes.TryGetByName(indexName, out Index j) && j is FaultyInMemoryIndex)
                             return;
@@ -282,7 +283,7 @@ namespace Raven.Server.Documents.Indexes
             if (creationOptions == IndexCreationOptions.Update)
             {
                 Debug.Assert(currentIndex != null);
-
+                
                 definition.Name = replacementIndexName;
                 var replacementIndex = GetIndex(replacementIndexName);
                 if (replacementIndex != null)
@@ -364,6 +365,38 @@ namespace Raven.Server.Documents.Indexes
             return index;
         }
 
+        public Index CreateIndexInstanceWithoutCaching(IndexDefinition definition)
+        {
+            definition.RemoveDefaultValues();//??
+            ValidateAnalyzers(definition);//??
+
+            Index index;
+            switch (definition.Type)
+            {
+                case IndexType.Map:
+                case IndexType.JavaScriptMap:
+                    index = MapIndex.CreateNew(definition, _documentDatabase, true);
+                    break;
+                case IndexType.MapReduce:
+                case IndexType.JavaScriptMapReduce:
+                    index = MapReduceIndex.CreateNew(definition, _documentDatabase, true);//TODO
+                    break;
+                default:
+                    throw new NotSupportedException($"Cannot create {definition.Type} index from IndexDefinition");
+            }
+            _indexes.Add(index);
+            return index;
+        }
+
+        public void DeleteTestIndex(string Name)
+        {
+            Index index;
+            if (_indexes.TryGetByName(Name, out index))
+            {
+                DeleteIndexInternal(index, false);
+            }
+        }
+
         public async Task<Index> CreateIndex(IndexDefinition definition)
         {
             if (definition == null)
@@ -441,6 +474,8 @@ namespace Raven.Server.Documents.Indexes
             var creationOptions = GetIndexCreationOptions(definition, existingIndex, out IndexDefinitionCompareDifferences _);
             return creationOptions != IndexCreationOptions.Noop;
         }
+
+        private Timer _deleteTestIndexTimer;
 
         private void CreateIndexInternal(Index index)
         {
@@ -1399,5 +1434,21 @@ namespace Raven.Server.Documents.Indexes
     public class CustomIndexPaths
     {
         public Dictionary<string, string> Paths;
+    }
+
+    public class TestIndex
+    {
+        private string _name;
+        private DocumentDatabase _documentDataBase;
+
+        public TestIndex(string name, DocumentDatabase documentDataBase)
+        {
+            _name = name;
+            _documentDataBase = documentDataBase;
+        }
+        public void DeleteTestIndexTimerCallback(Object stat)
+        {
+            _documentDataBase.IndexStore.DeleteIndex(_name);
+        }
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Raven.Client;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Exceptions.Documents.Indexes;
+using Raven.Server.Documents.Queries;
 using Raven.Server.Json;
 using Raven.Server.Routing;
 using Raven.Server.ServerWide.Context;
@@ -15,11 +16,77 @@ namespace Raven.Server.Documents.Handlers.Admin
 {
     public class AdminIndexHandler : DatabaseRequestHandler
     {
+        [RavenAction("/databases/*/admin/test", "PUT", AuthorizationStatus.DatabaseAdmin)]
+        public async Task PutTest()
+        {
+             PutTestInternal(validatedAsAdmin: true);
+        }
+
+        [RavenAction("/databases/*/test", "PUT", AuthorizationStatus.ValidUser)]
+        public async Task PutTestJavaScript()
+        {
+             PutTestInternal(validatedAsAdmin: false);
+        }
+
+        private async Task PutTestInternal(bool validatedAsAdmin)
+        {
+            using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
+            {
+                var input = await context.ReadForMemoryAsync(RequestBodyStream(), "Index");
+                if (input.TryGet("Index", out BlittableJsonReaderArray indexDef) == false)
+                    ThrowRequiredPropertyNameInRequest("Index");
+
+                var indexDefinition = JsonDeserializationServer.IndexDefinition((BlittableJsonReaderObject)indexDef[0]);
+                indexDefinition.Name = indexDefinition.Name?.Trim();
+
+                if (LoggingSource.AuditLog.IsInfoEnabled)
+                {
+                    var clientCert = GetCurrentCertificate();
+
+                    var auditLog = LoggingSource.AuditLog.GetLogger(Database.Name, "Audit");
+                    auditLog.Info($"Index {indexDefinition.Name} PUT by {clientCert?.Subject} {clientCert?.Thumbprint} with definition: {indexDef}");
+                }
+
+                if (indexDefinition.Maps == null || indexDefinition.Maps.Count == 0)
+                        throw new ArgumentException("Index must have a 'Maps' fields");
+
+                indexDefinition.Type = indexDefinition.DetectStaticIndexType();
+
+                // C# index using a non-admin endpoint
+                if (indexDefinition.Type.IsJavaScript() == false && validatedAsAdmin == false)
+                {
+                    throw new UnauthorizedAccessException(
+                        $"Index {indexDefinition.Name} is a C# index but was sent through a non-admin endpoint using REST api, this is not allowed.");
+                }
+
+                var index = Database.IndexStore.CreateIndexInstanceWithoutCaching(indexDefinition);
+                index.Test(15,null);
+
+                if ((input.TryGet("Query", out string queryDef) == false) || queryDef == "") 
+                    queryDef = $"FROM INDEX '{index.Name}'";
+                var result = Database.QueryRunner.ExecuteQuery(new IndexQueryServerSide(queryDef), context, 0, CreateTimeLimitedQueryToken()).Result;
+
+                Database.IndexStore.DeleteTestIndex(index.Name);
+                
+                HttpContext.Response.StatusCode = (int)HttpStatusCode.Created;
+
+                using (var writer = new BlittableJsonTextWriter(context, ResponseBodyStream()))
+                {
+                    var results = result.Results;
+                    var metadataOnly = GetBoolValueQueryString("metadataOnly", required: false) ?? false;
+                    writer.WritePropertyName(nameof(result.Results));
+                    writer.WriteDocuments(context, results, metadataOnly, out int _);
+                    writer.WriteComma();
+                }
+            }
+        }
+
         [RavenAction("/databases/*/admin/indexes", "PUT", AuthorizationStatus.DatabaseAdmin)]
         public async Task Put()
         {
             await PutInternal(validatedAsAdmin:true);
         }
+
 
         [RavenAction("/databases/*/indexes", "PUT", AuthorizationStatus.ValidUser)]
         public async Task PutJavaScript()
