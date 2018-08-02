@@ -107,6 +107,8 @@ namespace Raven.Server.Documents.Indexes.Workers
                                             indexWriter, indexContext, collectionStats);
                                         _index.MapsPerSec.Mark(numberOfResults);
                                         resultsCount += numberOfResults;
+                                        if (_index.IsTestIndex)
+                                            _index.NumberOfEntriesToTest--;
                                         collectionStats.RecordMapSuccess();
                                     }
                                     catch (Exception e)
@@ -218,6 +220,9 @@ namespace Raven.Server.Documents.Indexes.Workers
 
         public bool CanContinueBatch(DocumentsOperationContext documentsContext, TransactionOperationContext indexingContext, IndexingStatsScope stats, long currentEtag, long maxEtag, int count)
         {
+            if (_index.IsTestIndex && _index.NumberOfEntriesToTest <= count)
+                return false;
+
             if (stats.Duration >= _configuration.MapTimeout.AsTimeSpan)
             {
                 stats.RecordMapCompletedReason($"Exceeded maximum configured map duration ({_configuration.MapTimeout.AsTimeSpan}). Was {stats.Duration}");
@@ -242,7 +247,13 @@ namespace Raven.Server.Documents.Indexes.Workers
         private IEnumerable<Document> GetDocumentsEnumerator(DocumentsOperationContext databaseContext, string collection, long lastEtag, int pageSize)
         {
             if (collection == Constants.Documents.Collections.AllDocumentsCollection)
+            {
+                if (_index.IsTestIndex)
+                    return _documentsStorage.GetDocumentsFrom(databaseContext, lastEtag + 1, 0, _index.NumberOfEntriesToTest);
                 return _documentsStorage.GetDocumentsFrom(databaseContext, lastEtag + 1, 0, pageSize);
+            }
+            if (_index.IsTestIndex)
+                return _documentsStorage.GetDocumentsFrom(databaseContext, collection, lastEtag + 1, 0, _index.NumberOfEntriesToTest);
             return _documentsStorage.GetDocumentsFrom(databaseContext, collection, lastEtag + 1, 0, pageSize);
         }
     }

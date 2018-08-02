@@ -23,7 +23,6 @@ namespace Raven.Client.Documents.Indexes
             _configuration = new IndexConfiguration();
         }
 
-
         /// <summary>
         /// This is the means by which the outside world refers to this index definition
         /// </summary>
@@ -33,6 +32,13 @@ namespace Raven.Client.Documents.Indexes
         /// Priority of an index
         /// </summary>
         public IndexPriority? Priority { get; set; }
+
+        /// <summary>
+        /// Test index
+        /// </summary>
+        public bool IsTestIndex { get; set; } = false;
+
+        public int NumberOfEntriesToTest { get; set; } = 0;
 
         /// <summary>
         /// Index lock mode:

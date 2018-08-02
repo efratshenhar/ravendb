@@ -10,7 +10,7 @@ namespace Raven.Server.Config.Categories
 {
     public class IndexingConfiguration : ConfigurationCategory
     {
-        private bool? _runInMemory;
+        public bool? _runInMemory;
 
         private readonly RavenConfiguration _root;
 
@@ -34,7 +34,7 @@ namespace Raven.Server.Config.Categories
                 return _runInMemory.Value;
             }
 
-            protected set => _runInMemory = value;
+            set => _runInMemory = value;
         }
 
         [DefaultValue(false)]

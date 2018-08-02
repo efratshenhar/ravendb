@@ -89,6 +89,8 @@ namespace Raven.Server.Documents.Indexes.Static
             definition.Type = IndexDefinition.Type;
             definition.LockMode = LockMode;
             definition.Priority = Priority;
+            definition.IsTestIndex = IndexDefinition.IsTestIndex;
+            definition.NumberOfEntriesToTest = IndexDefinition.NumberOfEntriesToTest;
             return definition;
         }
 

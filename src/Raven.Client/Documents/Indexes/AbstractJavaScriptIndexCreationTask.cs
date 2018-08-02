@@ -21,6 +21,18 @@ namespace Raven.Client.Documents.Indexes
             set => _definition.Maps = value;
         }
 
+        public bool IsTestIndex
+        {
+            get => _definition.IsTestIndex;
+            set => _definition.IsTestIndex = value;
+        }
+
+        public int NumberOfEntriesToTest
+        {
+            get => _definition.NumberOfEntriesToTest;
+            set => _definition.NumberOfEntriesToTest = value;
+        }
+
         public Dictionary<string, IndexFieldOptions> Fields
         {
             get => _definition.Fields;

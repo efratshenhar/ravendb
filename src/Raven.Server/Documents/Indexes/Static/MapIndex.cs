@@ -184,6 +184,13 @@ namespace Raven.Server.Documents.Indexes.Static
         public static Index CreateNew(IndexDefinition definition, DocumentDatabase documentDatabase)
         {
             var instance = CreateIndexInstance(definition, documentDatabase.Configuration);
+
+            if (definition.IsTestIndex)
+            {
+                instance.IsTestIndex = true;
+                instance.NumberOfEntriesToTest = definition.NumberOfEntriesToTest;
+            }
+
             instance.Initialize(documentDatabase,
                 new SingleIndexConfiguration(definition.Configuration, documentDatabase.Configuration),
                 documentDatabase.Configuration.PerformanceHints);

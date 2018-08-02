@@ -230,6 +230,8 @@ namespace Raven.Server.Documents.Indexes
                     {
                         if (i is FaultyInMemoryIndex)
                             return;
+                        if (i.IsTestIndex != definition.IsTestIndex)
+                            return;
                         indexName = Constants.Documents.Indexing.SideBySideIndexNamePrefix + name;
                         if (_indexes.TryGetByName(indexName, out Index j) && j is FaultyInMemoryIndex)
                             return;
@@ -282,6 +284,8 @@ namespace Raven.Server.Documents.Indexes
             if (creationOptions == IndexCreationOptions.Update)
             {
                 Debug.Assert(currentIndex != null);
+                if ( currentIndex.IsTestIndex != definition.IsTestIndex)
+                    throw new NotSupportedException($"Can not change from index to test index and vice versa");
 
                 definition.Name = replacementIndexName;
                 var replacementIndex = GetIndex(replacementIndexName);
@@ -442,6 +446,8 @@ namespace Raven.Server.Documents.Indexes
             return creationOptions != IndexCreationOptions.Noop;
         }
 
+        private Timer _deleteTestIndexTimer;
+
         private void CreateIndexInternal(Index index)
         {
             Debug.Assert(index != null);
@@ -458,6 +464,13 @@ namespace Raven.Server.Documents.Indexes
                     Name = index.Name,
                     Type = IndexChangeTypes.IndexAdded
                 });
+            if (index.IsTestIndex)
+            {
+                var testIndex = new TestIndex(index.Name, _documentDatabase);
+
+                _deleteTestIndexTimer = new Timer(testIndex.DeleteTestIndexTimerCallback);
+                _deleteTestIndexTimer?.Change(TimeSpan.FromMinutes(5), TimeSpan.FromMilliseconds(-1));
+            }
         }
 
         private void UpdateIndex(IndexDefinition definition, Index existingIndex, IndexDefinitionCompareDifferences indexDifferences)
@@ -1399,5 +1412,21 @@ namespace Raven.Server.Documents.Indexes
     public class CustomIndexPaths
     {
         public Dictionary<string, string> Paths;
+    }
+
+    public class TestIndex
+    {
+        private string _name;
+        private DocumentDatabase _documentDataBase;
+
+        public TestIndex(string name, DocumentDatabase documentDataBase)
+        {
+            _name = name;
+            _documentDataBase = documentDataBase;
+        }
+        public void DeleteTestIndexTimerCallback(Object stat)
+        {
+            _documentDataBase.IndexStore.DeleteIndex(_name);
+        }
     }
 }

@@ -22,6 +22,7 @@ using Raven.Server.Config.Categories;
 using Raven.Server.Config.Settings;
 using Raven.Server.Documents.Includes;
 using Raven.Server.Documents.Indexes.Auto;
+using Raven.Server.Documents.Indexes.Configuration;
 using Raven.Server.Documents.Indexes.MapReduce.Auto;
 using Raven.Server.Documents.Indexes.MapReduce.Exceptions;
 using Raven.Server.Documents.Indexes.MapReduce.Static;
@@ -76,6 +77,10 @@ namespace Raven.Server.Documents.Indexes
 
     public abstract class Index : ITombstoneAware, IDisposable, ILowMemoryHandler
     {
+        public bool IsTestIndex;
+
+        public int NumberOfEntriesToTest;
+
         private long _writeErrors;
 
         private long _unexpectedErrors;
@@ -395,6 +400,9 @@ namespace Raven.Server.Documents.Indexes
             {
                 if (_initialized)
                     throw new InvalidOperationException($"Index '{Name}' was already initialized.");
+
+                if (IsTestIndex)
+                    configuration.RunInMemory = true;
 
                 var options = CreateStorageEnvironmentOptions(documentDatabase, configuration);
 
@@ -747,7 +755,6 @@ namespace Raven.Server.Documents.Indexes
             }
         }
 
-
         protected virtual bool IsStale(DocumentsOperationContext databaseContext, TransactionOperationContext indexContext, long? cutoff = null, List<string> stalenessReasons = null)
         {
             if (Type == IndexType.Faulty)
@@ -765,6 +772,9 @@ namespace Raven.Server.Documents.Indexes
 
                 if (cutoff == null)
                 {
+                    if (IsTestIndex && NumberOfEntriesToTest == 0)
+                        return false;
+
                     if (lastDocEtag > lastProcessedDocEtag)
                     {
                         if (stalenessReasons == null)
@@ -1069,6 +1079,9 @@ namespace Raven.Server.Documents.Indexes
                                 _didWork = true;
                                 _firstBatchTimeout = null;
                             }
+
+                            if (IsTestIndex && NumberOfEntriesToTest == 0)
+                                return;
 
                             var batchCompletedAction = DocumentDatabase.IndexStore.IndexBatchCompleted;
                             batchCompletedAction?.Invoke((Name, didWork));
@@ -1455,8 +1468,8 @@ namespace Raven.Server.Documents.Indexes
                             }
 
                             _indexStorage.WriteReferences(CurrentIndexingScope.Current, tx);
-                        }
 
+                        }
                         using (stats.For(IndexingOperation.Storage.Commit))
                         {
                             tx.InnerTransaction.LowLevelTransaction.RetrieveCommitStats(out CommitStats commitStats);
@@ -3036,6 +3049,9 @@ namespace Raven.Server.Documents.Indexes
                 // restart environment
                 if (_currentlyRunningQueriesLock.IsWriteLockHeld == false)
                     throw new InvalidOperationException("Expected to be called only via DrainRunningQueries");
+
+                if (IsTestIndex)
+                    Configuration.RunInMemory = true;
 
                 var options = CreateStorageEnvironmentOptions(DocumentDatabase, Configuration);
                 try
