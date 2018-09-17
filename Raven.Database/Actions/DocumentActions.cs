@@ -117,12 +117,12 @@ namespace Raven.Database.Actions
             var addedDocs = 0;
             var docCountOnLastAdd = 0;
             var matchedDocs = 0;
-
+            int docCount = 0;
             TransactionalStorage.Batch(
                 actions =>
                 {
                     var docsToSkip = canPerformRapidPagination ? 0 : start;
-                    int docCount;
+                    
 
                     AbstractTransformer storedTransformer = null;
                     var hasTransformer = transformer != null;
@@ -143,6 +143,7 @@ namespace Raven.Database.Actions
 
                         foreach (var doc in docs)
                         {
+                            
                             token.ThrowIfCancellationRequested();
                             docCount++;
                             if (docCount - docCountOnLastAdd > 1000)
@@ -180,12 +181,16 @@ namespace Raven.Database.Actions
                                 break;
                         }
 
+
+                        //actualStart += docCount;
                         actualStart += pageSize;
+
                     } while (docCount > 0 && addedDocs < pageSize && actualStart > 0 && actualStart < int.MaxValue);
                 });
 
             if (addedDocs != pageSize)
-                nextStart = start; // will mark as last page
+                //nextStart = actualStart; // will mark as last page
+                nextStart = start;
             else if (canPerformRapidPagination)
                 nextStart = start + matchedDocs;
             else
