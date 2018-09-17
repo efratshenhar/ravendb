@@ -24,7 +24,7 @@ namespace Raven.Tests.Issues
                 //Assert.Equal(LoadEmployeesWithoutPagingInformation("CH*|IT*", store).Count(), 20);
                 //Assert.Equal(LoadEmployeesWithoutPagingInformation("ES*|IT*", store).Count(), 20);
 
-                Assert.Equal(LoadEmployeesWithPagingInformation("CH*|ES*", store).Count(), 20);
+                //Assert.Equal(LoadEmployeesWithPagingInformation("CH*|ES*", store).Count(), 20);
                 Assert.Equal(LoadEmployeesWithPagingInformation("CH*|IT*", store).Count(), 20);
                 //Assert.Equal(LoadEmployeesWithPagingInformation("ES*|IT*", store).Count(), 20);
             }
