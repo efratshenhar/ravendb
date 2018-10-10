@@ -526,34 +526,33 @@ namespace FastTests
                 AdminCertificate = serverCertificate
             }))
             {
-                var requestExecutor = store.GetRequestExecutor();
-                using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
+                try
                 {
-                    var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
-                        .GetCommand(store.Conventions, context);
-                    try
+                    var requestExecutor = store.GetRequestExecutor();
+                    using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
                     {
+                        var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
+                            .GetCommand(store.Conventions, context);
+
                         requestExecutor.Execute(command, context);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("*******************");
-                        Console.WriteLine(e);
-                        Console.WriteLine("*******************");
-                        throw;
-                    }
-                    
-                    using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
-                    {
-                        var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
-                        using (var stream = entry.Open())
+                        using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
                         {
-                            var destination = new MemoryStream();
-                            stream.CopyTo(destination);
-                            clientCertificate = new X509Certificate2(destination.ToArray(), (string)null, X509KeyStorageFlags.MachineKeySet);
+                            var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
+                            using (var stream = entry.Open())
+                            {
+                                var destination = new MemoryStream();
+                                stream.CopyTo(destination);
+                                clientCertificate = new X509Certificate2(destination.ToArray(), (string)null, X509KeyStorageFlags.MachineKeySet);
+                            }
                         }
                     }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+                
             }
             return clientCertificate;
         }
