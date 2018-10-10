@@ -123,7 +123,7 @@ namespace Raven.Server.Documents.Replication
                 NativeMemory.EnsureRegistered();
                 if (_log.IsInfoEnabled)
                     _log.Info($"Will replicate to {Destination.FromString()} via {_connectionInfo.Url}");
-                //Console.WriteLine($"1: Will replicate from {_parent._server.NodeTag} to {GetNode()} via {_connectionInfo.Url}");
+                Console.WriteLine($"1: Will replicate from {_parent._server.NodeTag} to {GetNode()} via {_connectionInfo.Url}");
                 using (_parent._server.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                 using (context.OpenReadTransaction())
                 {
