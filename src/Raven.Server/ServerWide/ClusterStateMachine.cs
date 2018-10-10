@@ -718,6 +718,10 @@ namespace Raven.Server.ServerWide
                     return addDatabaseCommand.Record.Topology.Members;
                 }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
             finally
             {
                 NotifyDatabaseChanged(context, addDatabaseCommand.Name, index, nameof(AddDatabaseCommand));
