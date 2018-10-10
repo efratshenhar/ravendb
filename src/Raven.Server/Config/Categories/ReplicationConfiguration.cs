@@ -20,7 +20,7 @@ namespace Raven.Server.Config.Categories
         public TimeSetting ReplicationMinimalHeartbeat { get; set; }
 
         [Description("If the replication failed, we try to replicate again after the specified time elapsed.")]
-        [DefaultValue(15)]
+        [DefaultValue(2)]
         [TimeUnit(TimeUnit.Seconds)]
         [ConfigurationEntry("Replication.RetryReplicateAfterInSec", ConfigurationEntryScope.ServerWideOrPerDatabase)]
         public TimeSetting RetryReplicateAfter { get; set; }
