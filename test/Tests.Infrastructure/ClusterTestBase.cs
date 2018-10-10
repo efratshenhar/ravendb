@@ -184,23 +184,39 @@ namespace Tests.Infrastructure
             var nodes = topology.AllNodes;
             var servers = new List<ServerStore>();
             var tasks = new Dictionary<string, Task<T>>();
-            foreach (var node in nodes)
+            try
             {
-                var server = Servers.Single(s => s.ServerStore.NodeTag == node);
-                servers.Add(server.ServerStore);
 
+                foreach (var node in nodes)
+                {
+                    var server = Servers.Single(s => s.ServerStore.NodeTag == node);
+                    servers.Add(server.ServerStore);
+
+                }
+
+                foreach (var server in servers)
+                {
+                    var task = WaitForValueAsync(() => func(server), expected);
+                    tasks.Add(server.NodeTag, task);
+                }
+
+                var res = await Task.WhenAll(tasks.Values);
+                var hasExpectedVals = res.Where(t => t?.Equals(expected) ?? false);
+
+                if (hasExpectedVals.Count() == servers.Count)
+                    return expected;
             }
-            foreach (var server in servers)
+            catch (Exception e)
             {
-                var task = WaitForValueAsync(() => func(server), expected);
-                tasks.Add(server.NodeTag, task);
+                Console.WriteLine(e);
+                throw;
             }
-
-            var res = await Task.WhenAll(tasks.Values);
-            var hasExpectedVals = res.Where(t => t?.Equals(expected) ?? false);
-
-            if (hasExpectedVals.Count() == servers.Count)
-                return expected;
+            finally
+            {
+                Console.WriteLine("finally");
+            }
+            
+            
 
             var lookup = tasks.ToLookup(key => key.Value.Result, val => val.Key);
 
