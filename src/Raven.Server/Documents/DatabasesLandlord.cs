@@ -402,7 +402,11 @@ namespace Raven.Server.Documents
         {
             var config = CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase);
             if (config == null)
+            {
+                Console.WriteLine("NULL");
                 return Task.FromResult<DocumentDatabase>(null);
+            }
+                
 
             if (!_databaseSemaphore.Wait(0))
                 return UnlikelyCreateDatabaseUnderContention(databaseName, config);
@@ -433,7 +437,6 @@ namespace Raven.Server.Documents
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
                 _databaseSemaphore.Release();
                 throw;
             }
