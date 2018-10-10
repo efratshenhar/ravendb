@@ -562,7 +562,7 @@ namespace RachisTests.DatabaseCluster
 
 
         [Theory]
-        [InlineData(false)]
+        //[InlineData(false)]
         [InlineData(true)]
         public async Task DoNotReplicateBack(bool useSsl)
         {
@@ -591,10 +591,11 @@ namespace RachisTests.DatabaseCluster
                 var databaseResult = await store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(doc, clusterSize));
                 var topology = databaseResult.Topology;
                 Assert.Equal(clusterSize, topology.AllNodes.Count());
-                await Task.Delay(20000);
+                
                 await WaitForValueOnGroupAsync(topology, s =>
                {
                    var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
+                   
                    return db.ReplicationLoader?.OutgoingConnections.Count();
                }, clusterSize - 1);
 

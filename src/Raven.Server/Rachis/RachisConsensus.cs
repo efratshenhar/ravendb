@@ -529,6 +529,10 @@ namespace Raven.Server.Rachis
                 using (context.OpenReadTransaction())
                 {
                     var clusterTopology = GetTopology(context);
+                    foreach (var no in clusterTopology.AllNodes)
+                    {
+                        Console.WriteLine($"Node Tag : { nodeTag} - node in topology {no.Key} , {no.Value}");    
+                    }
                     switch (modification)
                     {
                         case Leader.TopologyModification.Voter:
