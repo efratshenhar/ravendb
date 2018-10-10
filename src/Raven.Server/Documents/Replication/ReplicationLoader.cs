@@ -739,7 +739,7 @@ namespace Raven.Server.Documents.Replication
                 }
                 if (node is InternalReplication internalNode)
                 {
-                    using (var cts = new CancellationTokenSource(_server.Engine.TcpConnectionTimeout))
+                    using (var cts = new CancellationTokenSource((_server.Engine.TcpConnectionTimeout)*10))
                     {
                         return ReplicationUtils.GetTcpInfo(internalNode.Url, internalNode.Database, "Replication", _server.Server.Certificate.Certificate, cts.Token);
                     }
@@ -752,7 +752,7 @@ namespace Raven.Server.Documents.Replication
                 // will try to fetch it again later
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
-                Console.WriteLine($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later. {e.Message}");
+                Console.WriteLine($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later. ");
                 _reconnectQueue.TryAdd(shutdownInfo);
             }
             return null;
