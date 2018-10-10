@@ -122,7 +122,7 @@ namespace Raven.Server.Documents.Replication
                 NativeMemory.EnsureRegistered();
                 if (_log.IsInfoEnabled)
                     _log.Info($"Will replicate to {Destination.FromString()} via {_connectionInfo.Url}");
-
+                Console.WriteLine($"Will replicate to {Destination.FromString()} via {_connectionInfo.Url}");
                 using (_parent._server.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                 using (context.OpenReadTransaction())
                 {
@@ -138,6 +138,7 @@ namespace Raven.Server.Documents.Replication
                 var task = TcpUtils.ConnectSocketAsync(_connectionInfo, _parent._server.Engine.TcpConnectionTimeout, _log);
                 Console.WriteLine($"ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
                 task.Wait(CancellationToken);
+                Console.WriteLine($"ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
                 using (Interlocked.Exchange(ref _tcpClient, task.Result))
                 {
                     var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
