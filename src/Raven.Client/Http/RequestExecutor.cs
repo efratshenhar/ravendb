@@ -693,7 +693,8 @@ namespace Raven.Client.Http
                                     if (sessionInfo != null)
                                         sessionInfo.AsyncCommandRunning = false;
 
-                                    if (await HandleServerDown(url, chosenNode, nodeIndex, context, command, request, response, timeoutException, sessionInfo).ConfigureAwait(false) == false)
+                                    if (await HandleServerDown(url, chosenNode, nodeIndex, context, command, request, response, timeoutException, sessionInfo)
+                                            .ConfigureAwait(false) == false)
                                         ThrowFailedToContactAllNodes(command, request);
 
                                     return;
@@ -713,10 +714,12 @@ namespace Raven.Client.Http
 
                         response = await preferredTask.ConfigureAwait(false);
                     }
+
                     sp.Stop();
                 }
                 catch (HttpRequestException e) // server down, network down
                 {
+                    Console.WriteLine($"Error: {e}");
                     if (shouldRetry == false)
                         throw;
 
@@ -733,6 +736,10 @@ namespace Raven.Client.Http
                     }
 
                     return;
+                }
+                catch (Exception ee)
+                {
+                    Console.WriteLine($"Error: {ee.Message}");
                 }
                 finally
                 {
