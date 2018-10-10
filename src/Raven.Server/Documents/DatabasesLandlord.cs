@@ -593,16 +593,9 @@ namespace Raven.Server.Documents
             if (ignoreBeenDeleted == false && databaseIsBeenDeleted)
                 throw new DatabaseDisabledException(databaseName + " is currently being deleted on " + _serverStore.NodeTag);
             
-            if (databaseRecord == null)
-                Console.WriteLine("databaseRecord");
-            if (databaseRecord.Topology == null)
-                Console.WriteLine("databaseRecord.Topology");
-            if (_serverStore == null)
-                Console.WriteLine("_serverStore");
-            if (_serverStore.NodeTag == null)
-                Console.WriteLine("_serverStore.NodeTag");
-            
-            if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
+         
+            //if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
+            if (ignoreNotRelevant == false &&
                 databaseIsBeenDeleted == false)
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
             return CreateConfiguration(databaseRecord);
