@@ -433,7 +433,7 @@ namespace Raven.Server.Documents
             }
             catch (Exception e)
             {
-                _databaseSemaphore.Release();
+                                _databaseSemaphore.Release();
                 throw;
             }
         }
@@ -592,10 +592,12 @@ namespace Raven.Server.Documents
                             deletionInProgress != DeletionInProgressStatus.No;
             if (ignoreBeenDeleted == false && databaseIsBeenDeleted)
                 throw new DatabaseDisabledException(databaseName + " is currently being deleted on " + _serverStore.NodeTag);
-            
-         
-            //if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
-            if (ignoreNotRelevant == false &&
+
+            if (databaseRecord.Topology == null)
+            {
+                return CreateConfiguration(databaseRecord);
+            }
+            if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
                 databaseIsBeenDeleted == false)
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
             return CreateConfiguration(databaseRecord);
