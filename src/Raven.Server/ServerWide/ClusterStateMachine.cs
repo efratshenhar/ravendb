@@ -274,10 +274,6 @@ namespace Raven.Server.ServerWide
                         break;
                     case nameof(AddDatabaseCommand):
                         var addedNodes = AddDatabase(context, cmd, index, leader);
-                        foreach (var node in addedNodes)
-                        {
-                            Console.WriteLine($"Node : {node}");    
-                        }
                         if (addedNodes != null)
                             leader?.SetStateOf(index, addedNodes);
                         break;
@@ -289,11 +285,13 @@ namespace Raven.Server.ServerWide
             }
             catch (Exception e) when (e is VoronErrorException || e is UnknownClusterCommand)
             {
+                Console.WriteLine("Error");
                 NotifyLeaderAboutError(index, leader, new CommandExecutionException($"Cannot execute command of type {type}", e));
                 throw;
             }
             catch (Exception e)
             {
+                Console.WriteLine("Error");
                 NotifyLeaderAboutError(index, leader, new CommandExecutionException($"Cannot execute command of type {type}", e));
             }
             finally
