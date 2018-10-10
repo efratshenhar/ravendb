@@ -431,8 +431,9 @@ namespace Raven.Server.Documents
 
                 return database;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.WriteLine(e);
                 _databaseSemaphore.Release();
                 throw;
             }
