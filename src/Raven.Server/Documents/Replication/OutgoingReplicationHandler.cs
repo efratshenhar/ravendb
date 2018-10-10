@@ -136,6 +136,7 @@ namespace Raven.Server.Documents.Replication
                 }
 
                 var task = TcpUtils.ConnectSocketAsync(_connectionInfo, _parent._server.Engine.TcpConnectionTimeout, _log);
+                Console.WriteLine($"ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
                 task.Wait(CancellationToken);
                 using (Interlocked.Exchange(ref _tcpClient, task.Result))
                 {
