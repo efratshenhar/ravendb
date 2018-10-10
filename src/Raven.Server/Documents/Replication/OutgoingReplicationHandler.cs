@@ -102,7 +102,7 @@ namespace Raven.Server.Documents.Replication
 
         public void Start()
         {
-            //Console.WriteLine($"0: Will replicate from {_parent._server.NodeTag} to {GetNode()}");
+            
             _longRunningSendingWork =
                 PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => ReplicateToDestination(), null, OutgoingReplicationThreadName);
         }
