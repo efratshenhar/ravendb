@@ -592,7 +592,9 @@ namespace Raven.Server.Documents
                             deletionInProgress != DeletionInProgressStatus.No;
             if (ignoreBeenDeleted == false && databaseIsBeenDeleted)
                 throw new DatabaseDisabledException(databaseName + " is currently being deleted on " + _serverStore.NodeTag);
-            Console.WriteLine($"ignoreNotRelevant : {ignoreNotRelevant}, databaseRecord.Topology.RelevantFor(_serverStore.NodeTag):{databaseRecord.Topology.RelevantFor(_serverStore.NodeTag)}, databaseIsBeenDeleted:{databaseIsBeenDeleted}");
+            Console.WriteLine($"ignoreNotRelevant : {ignoreNotRelevant}");
+            Console.WriteLine($"databaseRecord.Topology.RelevantFor(_serverStore.NodeTag):{databaseRecord.Topology.RelevantFor(_serverStore.NodeTag)}");
+            Console.WriteLine($"databaseIsBeenDeleted:{databaseIsBeenDeleted}");
             if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
                 databaseIsBeenDeleted == false)
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
