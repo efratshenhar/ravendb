@@ -285,13 +285,11 @@ namespace Raven.Server.ServerWide
             }
             catch (Exception e) when (e is VoronErrorException || e is UnknownClusterCommand)
             {
-                Console.WriteLine("Error");
                 NotifyLeaderAboutError(index, leader, new CommandExecutionException($"Cannot execute command of type {type}", e));
                 throw;
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error");
                 NotifyLeaderAboutError(index, leader, new CommandExecutionException($"Cannot execute command of type {type}", e));
             }
             finally

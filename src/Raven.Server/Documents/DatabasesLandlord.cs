@@ -378,7 +378,12 @@ namespace Raven.Server.Documents
                         return database;
                     }
                 }
+
                 return CreateDatabase(databaseName, ignoreDisabledDatabase);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
             finally
             {
