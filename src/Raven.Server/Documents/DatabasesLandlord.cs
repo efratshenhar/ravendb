@@ -384,6 +384,7 @@ namespace Raven.Server.Documents
             catch (Exception e)
             {
                 Console.WriteLine(e);
+                throw;
             }
             finally
             {
