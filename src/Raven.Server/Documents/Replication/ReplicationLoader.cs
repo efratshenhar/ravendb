@@ -687,7 +687,6 @@ namespace Raven.Server.Documents.Replication
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
             var info = GetConnectionInfo(node, external);
-            Console.WriteLine($"1 : {_server.NodeTag} --> {node}");
             if (info == null)
             {
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
@@ -697,7 +696,7 @@ namespace Raven.Server.Documents.Replication
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
-            Console.WriteLine($"2 : {_server.NodeTag} --> {node}");
+            
             outgoingReplication.Start();
 
             OutgoingReplicationAdded?.Invoke(outgoingReplication);
