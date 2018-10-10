@@ -686,6 +686,7 @@ namespace Raven.Server.Documents.Replication
 
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
+            Console.WriteLine($"*: Will replicate from {_server.NodeTag} to {node}");
             var info = GetConnectionInfo(node, external);
             if (info == null)
             {
@@ -696,12 +697,13 @@ namespace Raven.Server.Documents.Replication
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
+            Console.WriteLine($"**: Will replicate from {_server.NodeTag} to {node}");
             try
             {
                 outgoingReplication.Start();
 
                 OutgoingReplicationAdded?.Invoke(outgoingReplication);
-                Console.WriteLine($"*: Will replicate from {_server.NodeTag} to {node}");
+                Console.WriteLine($"***: Will replicate from {_server.NodeTag} to {node}");
             }
             catch (Exception e)
             {
