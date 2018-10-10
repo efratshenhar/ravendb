@@ -102,8 +102,19 @@ namespace Raven.Server.Documents.Replication
 
         public void Start()
         {
-            _longRunningSendingWork =
-                PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => ReplicateToDestination(), null, OutgoingReplicationThreadName);
+            
+            try
+            {
+                Console.WriteLine($"3 : {_parent._server.NodeTag} --> {GetNode()}");
+                _longRunningSendingWork =
+                    PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => ReplicateToDestination(), null, OutgoingReplicationThreadName);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
         }
 
         public string OutgoingReplicationThreadName => $"Outgoing replication {FromToString}";
