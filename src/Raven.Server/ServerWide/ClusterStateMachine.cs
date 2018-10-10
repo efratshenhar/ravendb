@@ -273,8 +273,11 @@ namespace Raven.Server.ServerWide
                         PutValue<ClientConfiguration>(context, type, cmd, index, leader);
                         break;
                     case nameof(AddDatabaseCommand):
-                        Console.WriteLine("AddDatabaseCommand");
                         var addedNodes = AddDatabase(context, cmd, index, leader);
+                        foreach (var node in addedNodes)
+                        {
+                            Console.WriteLine($"Node : {node}");    
+                        }
                         if (addedNodes != null)
                             leader?.SetStateOf(index, addedNodes);
                         break;
