@@ -136,7 +136,7 @@ namespace Raven.Server.Documents.Replication
                             $"{record.DatabaseName} is encrypted, and require HTTPS for replication, but had endpoint with url {Destination.Url} to database {Destination.Database}");
                 }
                 
-                var task = TcpUtils.ConnectSocketAsync(_connectionInfo, _parent._server.Engine.TcpConnectionTimeout, _log);
+                var task = TcpUtils.ConnectSocketAsync(_connectionInfo, (_parent._server.Engine.TcpConnectionTimeout)*5, _log);
                 
                 task.Wait(CancellationToken);
                 Console.WriteLine($" 1: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
@@ -144,7 +144,7 @@ namespace Raven.Server.Documents.Replication
                 {
                     Console.WriteLine($" 2: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
                     var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
-                    Console.WriteLine($" 3: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
+                    Console.WriteLine($" 3: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}, Success: {wrapSsl.IsCompletedSuccessfully} - fail:{wrapSsl.IsFaulted}");
                     wrapSsl.Wait(CancellationToken);
                     Console.WriteLine($" 4: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
                     using (_stream = wrapSsl.Result) // note that _stream is being disposed by the interruptible read
