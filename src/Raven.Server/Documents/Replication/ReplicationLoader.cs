@@ -687,7 +687,7 @@ namespace Raven.Server.Documents.Replication
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
             var info = GetConnectionInfo(node, external);
-
+            Console.WriteLine($"{_server.NodeTag} --> {node}");
             if (info == null)
             {
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
