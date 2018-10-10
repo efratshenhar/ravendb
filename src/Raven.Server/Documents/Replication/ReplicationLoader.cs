@@ -686,11 +686,9 @@ namespace Raven.Server.Documents.Replication
 
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
-            //Console.WriteLine($"*: Will replicate from {_server.NodeTag} to {node}");
             var info = GetConnectionInfo(node, external);
             if (info == null)
             {
-                Console.WriteLine($"Info == null : {_server.NodeTag} to {node}");
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
                 return;
             }
@@ -699,18 +697,11 @@ namespace Raven.Server.Documents.Replication
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
             
-            try
-            {
+            
                 outgoingReplication.Start();
 
                 OutgoingReplicationAdded?.Invoke(outgoingReplication);
-                Console.WriteLine($"***: Will replicate from {_server.NodeTag} to {node}");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            
             
         }
 
@@ -752,7 +743,6 @@ namespace Raven.Server.Documents.Replication
                 // will try to fetch it again later
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
-                Console.WriteLine($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later. ");
                 _reconnectQueue.TryAdd(shutdownInfo);
             }
             return null;

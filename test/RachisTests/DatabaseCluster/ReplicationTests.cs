@@ -566,63 +566,72 @@ namespace RachisTests.DatabaseCluster
         [InlineData(true)]
         public async Task DoNotReplicateBack(bool useSsl)
         {
-            var clusterSize = 5;
-            var databaseName = GetDatabaseName();
-            var leader = await CreateRaftClusterAndGetLeader(clusterSize, useSsl: useSsl);
-
-            X509Certificate2 adminCertificate = null;
-            if (useSsl)
+            try
             {
-                adminCertificate = AskServerForClientCertificate(_selfSignedCertFileName, new Dictionary<string, DatabaseAccess>(), SecurityClearance.ClusterAdmin, server: leader);
-            }
+                var clusterSize = 5;
+                var databaseName = GetDatabaseName();
+                var leader = await CreateRaftClusterAndGetLeader(clusterSize, useSsl: useSsl);
 
-            using (var store = new DocumentStore()
-            {
-                Urls = new[] { leader.WebUrl },
-                Database = databaseName,
-                Certificate = adminCertificate,
-                Conventions =
+                X509Certificate2 adminCertificate = null;
+                if (useSsl)
+                {
+                    adminCertificate = AskServerForClientCertificate(_selfSignedCertFileName, new Dictionary<string, DatabaseAccess>(), SecurityClearance.ClusterAdmin, server: leader);
+                }
+
+                using (var store = new DocumentStore()
+                {
+                    Urls = new[] { leader.WebUrl },
+                    Database = databaseName,
+                    Certificate = adminCertificate,
+                    Conventions =
                 {
                     DisableTopologyUpdates = true
                 }
-            }.Initialize())
-            {
-                var doc = new DatabaseRecord(databaseName);
-                var databaseResult = await store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(doc, clusterSize));
-                var topology = databaseResult.Topology;
-                Assert.Equal(clusterSize, topology.AllNodes.Count());
-                
-                await WaitForValueOnGroupAsync(topology, s =>
-               {
-                   var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
-                   
-                   return db.ReplicationLoader?.OutgoingConnections.Count();
-               }, clusterSize - 1);
-
-                using (var session = store.OpenAsyncSession())
+                }.Initialize())
                 {
-                    await session.StoreAsync(new User { Name = "Karmel" }, "users/1");
-                    await session.SaveChangesAsync();
-                }
-                Assert.True(await WaitForDocumentInClusterAsync<User>(
-                    databaseResult.Topology,
-                    databaseName,
-                    "users/1",
-                    u => u.Name.Equals("Karmel"),
-                    TimeSpan.FromSeconds(clusterSize + 5),
-                    certificate: adminCertificate));
+                    var doc = new DatabaseRecord(databaseName);
+                    var databaseResult = await store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(doc, clusterSize));
+                    var topology = databaseResult.Topology;
+                    Assert.Equal(clusterSize, topology.AllNodes.Count());
 
-                topology.RemoveFromTopology(leader.ServerStore.NodeTag);
-                await Task.Delay(200); // twice the heartbeat
-                await Assert.ThrowsAsync<Exception>(async () =>
-                {
-                    await WaitForValueOnGroupAsync(topology, (s) =>
+                    await WaitForValueOnGroupAsync(topology, s =>
                     {
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
-                        return db.ReplicationLoader?.OutgoingHandlers.Any(o => o.GetReplicationPerformance().Any(p => p.Network.DocumentOutputCount > 0)) ?? false;
-                    }, true);
-                });
+
+                        return db.ReplicationLoader?.OutgoingConnections.Count();
+                    }, clusterSize - 1);
+
+                    using (var session = store.OpenAsyncSession())
+                    {
+                        await session.StoreAsync(new User { Name = "Karmel" }, "users/1");
+                        await session.SaveChangesAsync();
+                    }
+                    Assert.True(await WaitForDocumentInClusterAsync<User>(
+                        databaseResult.Topology,
+                        databaseName,
+                        "users/1",
+                        u => u.Name.Equals("Karmel"),
+                        TimeSpan.FromSeconds(clusterSize + 5),
+                        certificate: adminCertificate));
+
+                    topology.RemoveFromTopology(leader.ServerStore.NodeTag);
+                    await Task.Delay(200); // twice the heartbeat
+                    await Assert.ThrowsAsync<Exception>(async () =>
+                    {
+                        await WaitForValueOnGroupAsync(topology, (s) =>
+                        {
+                            var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
+                            return db.ReplicationLoader?.OutgoingHandlers.Any(o => o.GetReplicationPerformance().Any(p => p.Network.DocumentOutputCount > 0)) ?? false;
+                        }, true);
+                    });
+                }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine("********************EXIT****************");
+                throw;
+            }
+            
         }
 
         [Theory]

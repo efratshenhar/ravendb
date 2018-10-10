@@ -123,7 +123,7 @@ namespace Raven.Server.Documents.Replication
                 NativeMemory.EnsureRegistered();
                 if (_log.IsInfoEnabled)
                     _log.Info($"Will replicate to {Destination.FromString()} via {_connectionInfo.Url}");
-                //Console.WriteLine($"1: Will replicate from {_parent._server.NodeTag} to {GetNode()} via {_connectionInfo.Url}");
+                
                 using (_parent._server.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                 using (context.OpenReadTransaction())
                 {
@@ -136,19 +136,19 @@ namespace Raven.Server.Documents.Replication
                         throw new InvalidOperationException(
                             $"{record.DatabaseName} is encrypted, and require HTTPS for replication, but had endpoint with url {Destination.Url} to database {Destination.Database}");
                 }
-                //Console.WriteLine($"2: Will replicate from {_parent._server.NodeTag} to {GetNode()}  ");
+                
                 var task = TcpUtils.ConnectSocketAsync(_connectionInfo, (_parent._server.Engine.TcpConnectionTimeout), _log);
-                //Console.WriteLine($" 0: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
+               
                 task.Wait(CancellationToken);
-                //Console.WriteLine($" 1: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
+                 
                 
                 using (Interlocked.Exchange(ref _tcpClient, task.Result))
                 {
-                    //Console.WriteLine($" 2: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
+                    
                     var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
-                    //Console.WriteLine($" 3: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}, Success: {wrapSsl.IsCompletedSuccessfully} - fail:{wrapSsl.IsFaulted}");
+                   
                     wrapSsl.Wait(CancellationToken);
-                    //Console.WriteLine($" 4: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
+                    
                     using (_stream = wrapSsl.Result) // note that _stream is being disposed by the interruptible read
                     using (_interruptibleRead = new InterruptibleRead(_database.DocumentsStorage.ContextPool, _stream))
                     using (_buffer = JsonOperationContext.ManagedPinnedBuffer.LongLivedInstance())
