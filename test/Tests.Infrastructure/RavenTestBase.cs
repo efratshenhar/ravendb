@@ -518,42 +518,34 @@ namespace FastTests
             }
 
             X509Certificate2 clientCertificate;
-            try
+
+            using (var store = GetDocumentStore(new Options
             {
-                using (var store = GetDocumentStore(new Options
-                {
-                    Server = server,
-                    ClientCertificate = serverCertificate,
-                    AdminCertificate = serverCertificate
-                }))
-                {
+                Server = server,
+                ClientCertificate = serverCertificate,
+                AdminCertificate = serverCertificate
+            }))
+            {
 
-                    var requestExecutor = store.GetRequestExecutor();
-                    using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
+                var requestExecutor = store.GetRequestExecutor();
+                using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
+                {
+                    var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
+                        .GetCommand(store.Conventions, context);
+
+                    requestExecutor.Execute(command, context);
+                    using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
                     {
-                        var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
-                            .GetCommand(store.Conventions, context);
-
-                        requestExecutor.Execute(command, context);
-                        using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
+                        var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
+                        using (var stream = entry.Open())
                         {
-                            var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
-                            using (var stream = entry.Open())
-                            {
-                                var destination = new MemoryStream();
-                                stream.CopyTo(destination);
-                                clientCertificate = new X509Certificate2(destination.ToArray(), (string)null, X509KeyStorageFlags.MachineKeySet);
-                            }
+                            var destination = new MemoryStream();
+                            stream.CopyTo(destination);
+                            clientCertificate = new X509Certificate2(destination.ToArray(), (string)null, X509KeyStorageFlags.MachineKeySet);
                         }
                     }
                 }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            
             return clientCertificate;
         }
 
@@ -588,17 +580,26 @@ namespace FastTests
             IDictionary<string, string> customSettings = null,
             string serverUrl = null)
         {
-            var serverCertPath = GenerateAndSaveSelfSignedCertificate();
+            try
+            {
+                var serverCertPath = GenerateAndSaveSelfSignedCertificate();
 
-            if (customSettings == null)
-                customSettings = new ConcurrentDictionary<string, string>();
+                if (customSettings == null)
+                    customSettings = new ConcurrentDictionary<string, string>();
 
-            customSettings[RavenConfiguration.GetKey(x => x.Security.CertificatePath)] = serverCertPath;
-            customSettings[RavenConfiguration.GetKey(x => x.Core.ServerUrls)] = serverUrl ?? "https://" + Environment.MachineName + ":0";
+                customSettings[RavenConfiguration.GetKey(x => x.Security.CertificatePath)] = serverCertPath;
+                customSettings[RavenConfiguration.GetKey(x => x.Core.ServerUrls)] = serverUrl ?? "https://" + Environment.MachineName + ":0";
 
-            DoNotReuseServer(customSettings);
+                DoNotReuseServer(customSettings);
 
-            return serverCertPath;
+                return serverCertPath;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
         }
 
         public class Options
