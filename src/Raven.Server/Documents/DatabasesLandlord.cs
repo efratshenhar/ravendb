@@ -597,9 +597,16 @@ namespace Raven.Server.Documents
             {
                 return CreateConfiguration(databaseRecord);
             }
+
             if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
                 databaseIsBeenDeleted == false)
+            {
+                Console.WriteLine(ignoreNotRelevant);
+                Console.WriteLine(databaseRecord.Topology.RelevantFor(_serverStore.NodeTag));
+                Console.WriteLine(databaseIsBeenDeleted);
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
+            }
+                
             return CreateConfiguration(databaseRecord);
         }
 
