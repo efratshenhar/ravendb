@@ -402,11 +402,7 @@ namespace Raven.Server.Documents
         {
             var config = CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase);
             if (config == null)
-            {
-                Console.WriteLine("NULL");
                 return Task.FromResult<DocumentDatabase>(null);
-            }
-                
 
             if (!_databaseSemaphore.Wait(0))
                 return UnlikelyCreateDatabaseUnderContention(databaseName, config);
@@ -596,7 +592,7 @@ namespace Raven.Server.Documents
                             deletionInProgress != DeletionInProgressStatus.No;
             if (ignoreBeenDeleted == false && databaseIsBeenDeleted)
                 throw new DatabaseDisabledException(databaseName + " is currently being deleted on " + _serverStore.NodeTag);
-
+            Console.WriteLine($"ignoreNotRelevant : {ignoreNotRelevant}, databaseRecord.Topology.RelevantFor(_serverStore.NodeTag):{databaseRecord.Topology.RelevantFor(_serverStore.NodeTag)}, databaseIsBeenDeleted:{databaseIsBeenDeleted}");
             if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
                 databaseIsBeenDeleted == false)
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
