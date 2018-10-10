@@ -127,6 +127,7 @@ namespace Raven.Server.Documents.Replication
                 using (context.OpenReadTransaction())
                 {
                     var record = _parent.LoadDatabaseRecord();
+                    
                     if (record == null)
                         throw new InvalidOperationException($"The database record for {_parent.Database.Name} does not exist?!");
 
@@ -134,11 +135,11 @@ namespace Raven.Server.Documents.Replication
                         throw new InvalidOperationException(
                             $"{record.DatabaseName} is encrypted, and require HTTPS for replication, but had endpoint with url {Destination.Url} to database {Destination.Database}");
                 }
-
+                
                 var task = TcpUtils.ConnectSocketAsync(_connectionInfo, _parent._server.Engine.TcpConnectionTimeout, _log);
-                Console.WriteLine($"ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
+                
                 task.Wait(CancellationToken);
-                Console.WriteLine($"ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
+                Console.WriteLine($" {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
                 using (Interlocked.Exchange(ref _tcpClient, task.Result))
                 {
                     var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
