@@ -719,7 +719,6 @@ namespace Raven.Client.Http
                 }
                 catch (HttpRequestException e) // server down, network down
                 {
-                    Console.WriteLine($"Error: {e}");
                     if (shouldRetry == false)
                         throw;
 
@@ -736,10 +735,6 @@ namespace Raven.Client.Http
                     }
 
                     return;
-                }
-                catch (Exception ee)
-                {
-                    Console.WriteLine($"Error: {ee.Message}");
                 }
                 finally
                 {
@@ -1173,6 +1168,7 @@ namespace Raven.Client.Http
         private static async Task AddFailedResponseToCommand<TResult>(ServerNode chosenNode, JsonOperationContext context, RavenCommand<TResult> command,
             HttpRequestMessage request, HttpResponseMessage response, Exception e)
         {
+            
             if (response != null)
             {
                 var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -1200,6 +1196,8 @@ namespace Raven.Client.Http
                 }
                 return;
             }
+
+            
             //this would be connections that didn't have response, such as "couldn't connect to remote server"
             command.FailedNodes.Add(chosenNode, ExceptionDispatcher.Get(new ExceptionDispatcher.ExceptionSchema
             {

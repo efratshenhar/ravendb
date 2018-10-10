@@ -531,8 +531,18 @@ namespace FastTests
                 {
                     var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
                         .GetCommand(store.Conventions, context);
-
-                    requestExecutor.Execute(command, context);
+                    try
+                    {
+                        requestExecutor.Execute(command, context);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("*******************");
+                        Console.WriteLine(e);
+                        Console.WriteLine("*******************");
+                        throw;
+                    }
+                    
                     using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
                     {
                         var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
