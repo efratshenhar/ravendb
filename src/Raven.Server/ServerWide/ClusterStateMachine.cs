@@ -721,6 +721,7 @@ namespace Raven.Server.ServerWide
             catch (Exception e)
             {
                 Console.WriteLine(e);
+                throw;
             }
             finally
             {
