@@ -20,17 +20,26 @@ namespace Raven.Server.Utils
 
         public static async Task<TcpConnectionInfo> GetTcpInfoAsync(string url, string databaseName, string tag, X509Certificate2 certificate, CancellationToken token)
         {
-            using (var requestExecutor = ClusterRequestExecutor.CreateForSingleNode(url, certificate))
-            using (requestExecutor.ContextPool.AllocateOperationContext(out var context))
-            {                
-                var getTcpInfoCommand = new GetTcpInfoCommand(tag ,databaseName);
-                await requestExecutor.ExecuteAsync(getTcpInfoCommand, context, token: token);
+            try
+            {
+                using (var requestExecutor = ClusterRequestExecutor.CreateForSingleNode(url, certificate))
+                using (requestExecutor.ContextPool.AllocateOperationContext(out var context))
+                {
+                    var getTcpInfoCommand = new GetTcpInfoCommand(tag, databaseName);
+                    await requestExecutor.ExecuteAsync(getTcpInfoCommand, context, token: token);
 
-                var tcpConnectionInfo = getTcpInfoCommand.Result;
-                if (url.StartsWith("https",StringComparison.OrdinalIgnoreCase) && tcpConnectionInfo.Certificate == null)
-                    throw new InvalidOperationException("Getting TCP info over HTTPS but the server didn't return the expected certificate to use over TCP, invalid response, aborting");
-                return tcpConnectionInfo;
+                    var tcpConnectionInfo = getTcpInfoCommand.Result;
+                    if (url.StartsWith("https", StringComparison.OrdinalIgnoreCase) && tcpConnectionInfo.Certificate == null)
+                        throw new InvalidOperationException("Getting TCP info over HTTPS but the server didn't return the expected certificate to use over TCP, invalid response, aborting");
+                    return tcpConnectionInfo;
+                }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
         }
 
         public static void EnsureCollectionTag(BlittableJsonReaderObject obj, string collection)
