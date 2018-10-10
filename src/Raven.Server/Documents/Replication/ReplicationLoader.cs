@@ -696,10 +696,19 @@ namespace Raven.Server.Documents.Replication
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
-            
-            outgoingReplication.Start();
+            try
+            {
+                outgoingReplication.Start();
 
-            OutgoingReplicationAdded?.Invoke(outgoingReplication);
+                OutgoingReplicationAdded?.Invoke(outgoingReplication);
+                Console.WriteLine($"*: Will replicate from {_server.NodeTag} to {node}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
         }
 
         private TcpConnectionInfo GetConnectionInfo(ReplicationNode node, bool external)
