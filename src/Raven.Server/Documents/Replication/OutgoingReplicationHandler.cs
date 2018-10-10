@@ -136,7 +136,7 @@ namespace Raven.Server.Documents.Replication
                             $"{record.DatabaseName} is encrypted, and require HTTPS for replication, but had endpoint with url {Destination.Url} to database {Destination.Database}");
                 }
                 
-                var task = TcpUtils.ConnectSocketAsync(_connectionInfo, (_parent._server.Engine.TcpConnectionTimeout)*5, _log);
+                var task = TcpUtils.ConnectSocketAsync(_connectionInfo, (_parent._server.Engine.TcpConnectionTimeout)*10, _log);
                 
                 task.Wait(CancellationToken);
                 Console.WriteLine($" 1: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url},Success: {task.IsCompletedSuccessfully} - fail:{task.IsFaulted}");
