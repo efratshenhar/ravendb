@@ -696,11 +696,8 @@ namespace Raven.Server.Documents.Replication
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
-            
-            
-                outgoingReplication.Start();
-
-                OutgoingReplicationAdded?.Invoke(outgoingReplication);
+            outgoingReplication.Start();
+            OutgoingReplicationAdded?.Invoke(outgoingReplication);
             
             
         }

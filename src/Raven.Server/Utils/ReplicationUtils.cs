@@ -25,7 +25,16 @@ namespace Raven.Server.Utils
             using (requestExecutor.ContextPool.AllocateOperationContext(out var context))
             {                
                 var getTcpInfoCommand = new GetTcpInfoCommand(tag ,databaseName);
-                await requestExecutor.ExecuteAsync(getTcpInfoCommand, context, token: token);
+                try
+                {
+                    await requestExecutor.ExecuteAsync(getTcpInfoCommand, context, token: token);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+                
 
                 var tcpConnectionInfo = getTcpInfoCommand.Result;
                 if (url.StartsWith("https",StringComparison.OrdinalIgnoreCase) && tcpConnectionInfo.Certificate == null)
