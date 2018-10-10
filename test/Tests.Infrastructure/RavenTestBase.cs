@@ -507,46 +507,54 @@ namespace FastTests
 
         protected X509Certificate2 AskServerForClientCertificate(string serverCertPath, Dictionary<string, DatabaseAccess> permissions, SecurityClearance clearance = SecurityClearance.ValidUser, RavenServer server = null)
         {
-            X509Certificate2 serverCertificate;
             try
             {
-                serverCertificate = new X509Certificate2(serverCertPath, (string)null, X509KeyStorageFlags.MachineKeySet);
-            }
-            catch (CryptographicException e)
-            {
-                throw new CryptographicException($"Failed to load the test certificate from {serverCertPath}.", e);
-            }
-
-            X509Certificate2 clientCertificate;
-
-            using (var store = GetDocumentStore(new Options
-            {
-                Server = server,
-                ClientCertificate = serverCertificate,
-                AdminCertificate = serverCertificate
-            }))
-            {
-
-                var requestExecutor = store.GetRequestExecutor();
-                using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
+                X509Certificate2 serverCertificate;
+                try
                 {
-                    var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
-                        .GetCommand(store.Conventions, context);
+                    serverCertificate = new X509Certificate2(serverCertPath, (string)null, X509KeyStorageFlags.MachineKeySet);
+                }
+                catch (CryptographicException e)
+                {
+                    throw new CryptographicException($"Failed to load the test certificate from {serverCertPath}.", e);
+                }
 
-                    requestExecutor.Execute(command, context);
-                    using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
+                X509Certificate2 clientCertificate;
+
+                using (var store = GetDocumentStore(new Options
+                {
+                    Server = server,
+                    ClientCertificate = serverCertificate,
+                    AdminCertificate = serverCertificate
+                }))
+                {
+
+                    var requestExecutor = store.GetRequestExecutor();
+                    using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
                     {
-                        var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
-                        using (var stream = entry.Open())
+                        var command = new CreateClientCertificateOperation("client certificate", permissions, clearance)
+                            .GetCommand(store.Conventions, context);
+
+                        requestExecutor.Execute(command, context);
+                        using (var archive = new ZipArchive(new MemoryStream(command.Result.RawData)))
                         {
-                            var destination = new MemoryStream();
-                            stream.CopyTo(destination);
-                            clientCertificate = new X509Certificate2(destination.ToArray(), (string)null, X509KeyStorageFlags.MachineKeySet);
+                            var entry = archive.Entries.First(e => string.Equals(Path.GetExtension(e.Name), ".pfx", StringComparison.OrdinalIgnoreCase));
+                            using (var stream = entry.Open())
+                            {
+                                var destination = new MemoryStream();
+                                stream.CopyTo(destination);
+                                clientCertificate = new X509Certificate2(destination.ToArray(), (string)null, X509KeyStorageFlags.MachineKeySet);
+                            }
                         }
                     }
                 }
+                return clientCertificate;
             }
-            return clientCertificate;
+            finally 
+            {
+                Console.WriteLine("finally");    
+            }
+            
         }
 
         protected IDisposable RestoreDatabase(IDocumentStore store, RestoreBackupConfiguration config, TimeSpan? timeout = null)
@@ -580,26 +588,17 @@ namespace FastTests
             IDictionary<string, string> customSettings = null,
             string serverUrl = null)
         {
-            try
-            {
-                var serverCertPath = GenerateAndSaveSelfSignedCertificate();
+            var serverCertPath = GenerateAndSaveSelfSignedCertificate();
 
-                if (customSettings == null)
-                    customSettings = new ConcurrentDictionary<string, string>();
+            if (customSettings == null)
+                customSettings = new ConcurrentDictionary<string, string>();
 
-                customSettings[RavenConfiguration.GetKey(x => x.Security.CertificatePath)] = serverCertPath;
-                customSettings[RavenConfiguration.GetKey(x => x.Core.ServerUrls)] = serverUrl ?? "https://" + Environment.MachineName + ":0";
+            customSettings[RavenConfiguration.GetKey(x => x.Security.CertificatePath)] = serverCertPath;
+            customSettings[RavenConfiguration.GetKey(x => x.Core.ServerUrls)] = serverUrl ?? "https://" + Environment.MachineName + ":0";
 
-                DoNotReuseServer(customSettings);
+            DoNotReuseServer(customSettings);
 
-                return serverCertPath;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            
+            return serverCertPath;
         }
 
         public class Options
