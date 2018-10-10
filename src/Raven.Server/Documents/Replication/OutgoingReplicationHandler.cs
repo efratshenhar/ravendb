@@ -102,7 +102,7 @@ namespace Raven.Server.Documents.Replication
 
         public void Start()
         {
-            Console.WriteLine($"0: Will replicate from {_parent._server.NodeTag} to {GetNode()}");
+            //Console.WriteLine($"0: Will replicate from {_parent._server.NodeTag} to {GetNode()}");
             _longRunningSendingWork =
                 PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => ReplicateToDestination(), null, OutgoingReplicationThreadName);
         }
@@ -123,7 +123,7 @@ namespace Raven.Server.Documents.Replication
                 NativeMemory.EnsureRegistered();
                 if (_log.IsInfoEnabled)
                     _log.Info($"Will replicate to {Destination.FromString()} via {_connectionInfo.Url}");
-                Console.WriteLine($"1: Will replicate from {_parent._server.NodeTag} to {GetNode()} via {_connectionInfo.Url}");
+                //Console.WriteLine($"1: Will replicate from {_parent._server.NodeTag} to {GetNode()} via {_connectionInfo.Url}");
                 using (_parent._server.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                 using (context.OpenReadTransaction())
                 {
@@ -136,7 +136,7 @@ namespace Raven.Server.Documents.Replication
                         throw new InvalidOperationException(
                             $"{record.DatabaseName} is encrypted, and require HTTPS for replication, but had endpoint with url {Destination.Url} to database {Destination.Database}");
                 }
-                Console.WriteLine($"2: Will replicate from {_parent._server.NodeTag} to {GetNode()}  ");
+                //Console.WriteLine($"2: Will replicate from {_parent._server.NodeTag} to {GetNode()}  ");
                 var task = TcpUtils.ConnectSocketAsync(_connectionInfo, (_parent._server.Engine.TcpConnectionTimeout), _log);
                 //Console.WriteLine($" 0: {_parent._server.NodeTag} ConnectSocketAsync : {_connectionInfo.Url}");
                 task.Wait(CancellationToken);
