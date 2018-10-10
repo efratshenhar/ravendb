@@ -518,16 +518,16 @@ namespace FastTests
             }
 
             X509Certificate2 clientCertificate;
-
-            using (var store = GetDocumentStore(new Options
+            try
             {
-                Server = server,
-                ClientCertificate = serverCertificate,
-                AdminCertificate = serverCertificate
-            }))
-            {
-                try
+                using (var store = GetDocumentStore(new Options
                 {
+                    Server = server,
+                    ClientCertificate = serverCertificate,
+                    AdminCertificate = serverCertificate
+                }))
+                {
+
                     var requestExecutor = store.GetRequestExecutor();
                     using (requestExecutor.ContextPool.AllocateOperationContext(out JsonOperationContext context))
                     {
@@ -547,13 +547,13 @@ namespace FastTests
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
-                
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
             return clientCertificate;
         }
 
