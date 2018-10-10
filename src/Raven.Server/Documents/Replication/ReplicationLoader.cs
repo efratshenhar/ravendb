@@ -690,14 +690,15 @@ namespace Raven.Server.Documents.Replication
             var info = GetConnectionInfo(node, external);
             if (info == null)
             {
+                Console.WriteLine($"Info == null : {_server.NodeTag} to {node}");
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
                 return;
             }
             var outgoingReplication = new OutgoingReplicationHandler(this, Database, node, external, info);
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
-            _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
-            Console.WriteLine($"**: Will replicate from {_server.NodeTag} to {node}");
+            var x = _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
+            Console.WriteLine($"*{x}*: Will replicate from {_server.NodeTag} to {node}");
             try
             {
                 outgoingReplication.Start();
