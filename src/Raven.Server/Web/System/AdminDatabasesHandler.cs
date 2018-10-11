@@ -373,18 +373,17 @@ namespace Raven.Server.Web.System
 
             var members = (List<string>)result;
             await WaitForExecutionOnRelevantNodes(context, name, clusterTopology, members, newIndex);
-            Console.WriteLine("1");
+            
             var nodeUrlsAddedTo = new List<string>();
             foreach (var member in members)
             {
                 nodeUrlsAddedTo.Add(clusterTopology.GetUrlFromTag(member));
             }
-            Console.WriteLine("2");
+            
             using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext ctx))
             using (ctx.OpenReadTransaction())
             {
                 var record = ServerStore.Cluster.ReadDatabase(ctx, name);
-                Console.WriteLine($"3 - {nodeUrlsAddedTo.Count}");
                 return (newIndex, record.Topology, nodeUrlsAddedTo);
             }
             
