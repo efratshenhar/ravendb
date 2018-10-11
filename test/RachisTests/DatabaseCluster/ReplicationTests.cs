@@ -597,8 +597,7 @@ namespace RachisTests.DatabaseCluster
                     await WaitForValueOnGroupAsync(topology, s =>
                     {
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
-                        Console.WriteLine($"{s.NodeTag} : {s.DatabasesLandlord.IsDatabaseLoaded(databaseName)}");
-                        
+                        Task.Delay(200);
                         return db.ReplicationLoader?.OutgoingConnections.Count();
                     }, clusterSize - 1);
 
