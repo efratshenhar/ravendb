@@ -195,8 +195,10 @@ namespace Tests.Infrastructure
 
                 foreach (var server in servers)
                 {
+                    Console.WriteLine("---------1-------");
                     var task = WaitForValueAsync(() => func(server), expected);
-                    tasks.Add(server.NodeTag, task);
+                    Console.WriteLine("---------2-------");
+                tasks.Add(server.NodeTag, task);
                 }
 
                 var res = await Task.WhenAll(tasks.Values);
