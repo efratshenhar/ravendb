@@ -373,19 +373,21 @@ namespace Raven.Server.Web.System
 
             var members = (List<string>)result;
             await WaitForExecutionOnRelevantNodes(context, name, clusterTopology, members, newIndex);
-
+            Console.WriteLine("1");
             var nodeUrlsAddedTo = new List<string>();
             foreach (var member in members)
             {
                 nodeUrlsAddedTo.Add(clusterTopology.GetUrlFromTag(member));
             }
-
+            Console.WriteLine("2");
             using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext ctx))
             using (ctx.OpenReadTransaction())
             {
                 var record = ServerStore.Cluster.ReadDatabase(ctx, name);
+                Console.WriteLine($"3 - {nodeUrlsAddedTo.Count}");
                 return (newIndex, record.Topology, nodeUrlsAddedTo);
             }
+            
         }
 
         [RavenAction("/admin/databases/reorder", "POST", AuthorizationStatus.Operator)]
@@ -448,11 +450,7 @@ namespace Raven.Server.Web.System
                 {
                     var task = await Task.WhenAny(waitingTasks);
                     if (task == timeoutTask)
-                    {
-                        Console.WriteLine("Waited too long for the raft command");
                         throw new TimeoutException($"Waited too long for the raft command (number {index}) to be executed on any of the relevant nodes to this command.");
-                    }
-                        
                     if (task.IsCompletedSuccessfully)
                     {
                         break;
