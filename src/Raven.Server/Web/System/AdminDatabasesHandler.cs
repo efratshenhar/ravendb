@@ -448,7 +448,11 @@ namespace Raven.Server.Web.System
                 {
                     var task = await Task.WhenAny(waitingTasks);
                     if (task == timeoutTask)
+                    {
+                        Console.WriteLine("Waited too long for the raft command");
                         throw new TimeoutException($"Waited too long for the raft command (number {index}) to be executed on any of the relevant nodes to this command.");
+                    }
+                        
                     if (task.IsCompletedSuccessfully)
                     {
                         break;
