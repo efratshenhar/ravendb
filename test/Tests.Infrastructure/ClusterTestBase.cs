@@ -197,12 +197,13 @@ namespace Tests.Infrastructure
                 {
                     Console.WriteLine("---------1-------");
                     var task = WaitForValueAsync(() => func(server), expected);
-                    Console.WriteLine("---------2-------");
-                tasks.Add(server.NodeTag, task);
+                    
+                    tasks.Add(server.NodeTag, task);
                 }
 
                 var res = await Task.WhenAll(tasks.Values);
-                var hasExpectedVals = res.Where(t => t?.Equals(expected) ?? false);
+            Console.WriteLine("---------2-------");
+            var hasExpectedVals = res.Where(t => t?.Equals(expected) ?? false);
 
                 if (hasExpectedVals.Count() == servers.Count)
                     return expected;
