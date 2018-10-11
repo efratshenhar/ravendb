@@ -184,8 +184,7 @@ namespace Tests.Infrastructure
             var nodes = topology.AllNodes;
             var servers = new List<ServerStore>();
             var tasks = new Dictionary<string, Task<T>>();
-            try
-            {
+            
 
                 foreach (var node in nodes)
                 {
@@ -205,16 +204,7 @@ namespace Tests.Infrastructure
 
                 if (hasExpectedVals.Count() == servers.Count)
                     return expected;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            finally
-            {
-                Console.WriteLine("finally");
-            }
+            
             
             
 

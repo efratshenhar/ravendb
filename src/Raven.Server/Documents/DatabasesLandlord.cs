@@ -381,11 +381,6 @@ namespace Raven.Server.Documents
 
                 return CreateDatabase(databaseName, ignoreDisabledDatabase);
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
             finally
             {
                 if (_disposing.IsReadLockHeld)
