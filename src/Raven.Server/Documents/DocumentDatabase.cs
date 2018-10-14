@@ -868,7 +868,10 @@ namespace Raven.Server.Documents
                     LastDatabaseRecordIndex = index;
                     
                     IndexStore.HandleDatabaseRecordChange(record, index);
-                    
+                    if (ReplicationLoader == null)
+                    {
+                        Console.WriteLine("NULL");
+                    }
                     ReplicationLoader?.HandleDatabaseRecordChange(record);
                     
                     EtlLoader?.HandleDatabaseRecordChange(record);
@@ -880,7 +883,6 @@ namespace Raven.Server.Documents
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
                     if (_logger.IsInfoEnabled)
                         _logger.Info($"Encounter an error while processing record {index} for {record.DatabaseName}.", e);
                     throw;
