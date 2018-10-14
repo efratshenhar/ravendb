@@ -597,13 +597,13 @@ namespace RachisTests.DatabaseCluster
 
                     await WaitForValueOnGroupAsync(topology, s =>
                         {
-                        if (s.Cluster.WaitForIndexNotification(databaseResult.RaftCommandIndex).Wait(TimeSpan.FromSeconds(5)))
+                        if (s.Cluster.WaitForIndexNotification(databaseResult.RaftCommandIndex).Wait(TimeSpan.FromSeconds(5)) == false)
                         {
                             Console.WriteLine($"Waited too long for index to apply on {s.NodeTag}");
                             return 0;
                         }
 
-                        if (s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Wait(TimeSpan.FromSeconds(5)))
+                        if (s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Wait(TimeSpan.FromSeconds(5)) == false)
                         {
                             Console.WriteLine($"Waited for database to load on {s.NodeTag}");
                             return 0;
