@@ -596,7 +596,11 @@ namespace RachisTests.DatabaseCluster
                     Assert.Equal(clusterSize, topology.AllNodes.Count());
 
                     await WaitForValueOnGroupAsync(topology, s =>
-                    {
+                        {
+                        if (s.Cluster.WaitForIndexNotification(databaseResult.RaftCommandIndex).Wait(TimeSpan.FromSeconds(5)))
+                        {
+                            Console.WriteLine($"Waited too long for index to apply on {s.NodeTag}");
+                        }
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
                         
                         var count = db.ReplicationLoader?.OutgoingConnections.Count();
