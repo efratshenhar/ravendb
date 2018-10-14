@@ -14,7 +14,7 @@ namespace Raven.Server.Config.Categories
         public TimeSetting ActiveConnectionTimeout { get; set; }
         
         [Description("Minimal time in milliseconds before sending another heartbeat")]
-        [DefaultValue(15)]
+        [DefaultValue(1)]
         [TimeUnit(TimeUnit.Seconds)]
         [ConfigurationEntry("Replication.ReplicationMinimalHeartbeatInSec", ConfigurationEntryScope.ServerWideOrPerDatabase)]
         public TimeSetting ReplicationMinimalHeartbeat { get; set; }
