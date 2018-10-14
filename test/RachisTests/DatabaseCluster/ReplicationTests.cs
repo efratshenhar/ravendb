@@ -569,7 +569,7 @@ namespace RachisTests.DatabaseCluster
         {
             try
             {
-                var clusterSize = 5;
+                var clusterSize = 3;
                 var databaseName = GetDatabaseName();
                 var leader = await CreateRaftClusterAndGetLeader(clusterSize, useSsl: useSsl);
 
