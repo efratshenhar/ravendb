@@ -845,6 +845,7 @@ namespace Raven.Server.Documents
 
         private void NotifyFeaturesAboutStateChange(DatabaseRecord record, long index)
         {
+            Console.WriteLine($"{_serverStore.NodeTag}- {record.DatabaseName}");
             lock (this)
             {
                 Debug.Assert(string.Equals(Name, record.DatabaseName, StringComparison.OrdinalIgnoreCase),
