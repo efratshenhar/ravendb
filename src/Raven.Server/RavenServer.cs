@@ -1132,6 +1132,8 @@ namespace Raven.Server
                         _tcpLogger.Info("Failed to accept new tcp connection", e);
                     }
 
+                    Console.WriteLine("!!!!!!!!");
+                    Console.WriteLine(e);
                     return;
                 }
 
