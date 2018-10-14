@@ -598,11 +598,11 @@ namespace Raven.Server.Documents.Replication
 
         private void HandleInternalReplication(DatabaseRecord newRecord, List<OutgoingReplicationHandler> instancesToDispose)
         {
-            Console.WriteLine($" 1: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+            
             var newInternalDestinations =
                 newRecord.Topology?.GetDestinations(_server.NodeTag, Database.Name, newRecord.DeletionInProgress, _clusterTopology, _server.Engine.CurrentState);
             var internalConnections = DatabaseTopology.FindChanges(_internalDestinations, newInternalDestinations);
-            Console.WriteLine($" 2: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+            
             if (internalConnections.RemovedDestiantions.Count > 0)
             {
                 var removed = internalConnections.RemovedDestiantions.Select(r => new InternalReplication
@@ -614,7 +614,7 @@ namespace Raven.Server.Documents.Replication
 
                 DropOutgoingConnections(removed, instancesToDispose);
             }
-            Console.WriteLine($" 3: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+            Console.WriteLine($" 1: HandleInternalReplication {_server.NodeTag} - {internalConnections.AddedDestinations.Count}");
             if (internalConnections.AddedDestinations.Count > 0)
             {
                 var added = internalConnections.AddedDestinations.Select(r => new InternalReplication
@@ -623,15 +623,16 @@ namespace Raven.Server.Documents.Replication
                     Url = r,
                     Database = Database.Name
                 });
+                Console.WriteLine($" 2: HandleInternalReplication {_server.NodeTag} ");
                 StartOutgoingConnections(added.ToList());
             }
-            Console.WriteLine($" 4: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+            Console.WriteLine($" 3: HandleInternalReplication {_server.NodeTag}");
             _internalDestinations.Clear();
             foreach (var item in newInternalDestinations)
             {
                 _internalDestinations.Add(item);
             }
-            Console.WriteLine($" 5: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+            
         }
 
         private void StartOutgoingConnections(IReadOnlyCollection<ReplicationNode> connectionsToAdd, bool external = false)
