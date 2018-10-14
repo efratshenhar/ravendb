@@ -215,6 +215,12 @@ namespace Tests.Infrastructure
                     otherValues += str + ", ";
                 }
             }
+
+            foreach (var task in tasks.Values)
+            {
+                await task;
+            }
+
             throw new Exception($"Not all node in the group have the expected value of {expected}. {otherValues}");
         }
 
