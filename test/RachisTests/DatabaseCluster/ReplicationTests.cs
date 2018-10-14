@@ -17,6 +17,7 @@ using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations;
 using Raven.Client.ServerWide.Operations.Certificates;
 using Raven.Server;
+using Raven.Server.ServerWide;
 using Raven.Server.Web;
 using Raven.Server.Web.System;
 using Raven.Tests.Core.Utils.Entities;
@@ -593,7 +594,7 @@ namespace RachisTests.DatabaseCluster
                     var databaseResult = await store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(doc, clusterSize));
                     var topology = databaseResult.Topology;
                     Assert.Equal(clusterSize, topology.AllNodes.Count());
-                    
+
                     await WaitForValueOnGroupAsync(topology, s =>
                     {
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;

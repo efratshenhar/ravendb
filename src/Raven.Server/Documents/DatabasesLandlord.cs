@@ -397,10 +397,15 @@ namespace Raven.Server.Documents
 
         private Task<DocumentDatabase> CreateDatabase(StringSegment databaseName, bool ignoreDisabledDatabase = false)
         {
-            Console.WriteLine("In CreateDatabase");
+            Console.WriteLine($"In CreateDatabase {databaseName}");
             var config = CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase);
+            
             if (config == null)
+            {
+                Console.WriteLine($"Config is null");
                 return Task.FromResult<DocumentDatabase>(null);
+            }
+                
 
             if (!_databaseSemaphore.Wait(0))
                 return UnlikelyCreateDatabaseUnderContention(databaseName, config);

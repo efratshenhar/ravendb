@@ -46,7 +46,6 @@ namespace Raven.Server.Documents
             try
             {
                 var documentDatabase = await _serverStore.DatabasesLandlord.TryGetOrCreateResourceStore(_database);
-                Console.WriteLine("In Execute ");
                 var configuration = _serverStore.DatabasesLandlord.CreateDatabaseConfiguration(_database);
 
                 using (await _serverStore.DatabasesLandlord.UnloadAndLockDatabase(_database, "it is being compacted"))
