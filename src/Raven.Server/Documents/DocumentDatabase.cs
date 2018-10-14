@@ -845,7 +845,7 @@ namespace Raven.Server.Documents
 
         private void NotifyFeaturesAboutStateChange(DatabaseRecord record, long index)
         {
-            Console.WriteLine($"{_serverStore.NodeTag}- {record.DatabaseName}");
+            Console.WriteLine($"{_serverStore.NodeTag}- {record.DatabaseName}- {index}");
             lock (this)
             {
                 Debug.Assert(string.Equals(Name, record.DatabaseName, StringComparison.OrdinalIgnoreCase),
@@ -871,9 +871,9 @@ namespace Raven.Server.Documents
                     EtlLoader?.HandleDatabaseRecordChange(record);
                     OnDatabaseRecordChanged(record);
                     SubscriptionStorage?.HandleDatabaseValueChange(record);
-
+                    Console.WriteLine($"Finish to process record {index} for {record.DatabaseName}.");
                     if (_logger.IsInfoEnabled)
-                        _logger.Info($"Finish to process record {index} for {record.DatabaseName}.");
+                        _logger.Info($"Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
                 }
                 catch (Exception e)
                 {
