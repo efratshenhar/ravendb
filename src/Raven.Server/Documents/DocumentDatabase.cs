@@ -866,19 +866,21 @@ namespace Raven.Server.Documents
                 {
                     InitializeFromDatabaseRecord(record);
                     LastDatabaseRecordIndex = index;
-                    Console.WriteLine($"1 - Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
+                    
                     IndexStore.HandleDatabaseRecordChange(record, index);
-                    Console.WriteLine($"2 - Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
+                    
                     ReplicationLoader?.HandleDatabaseRecordChange(record);
-                    Console.WriteLine($"3 - Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
+                    
                     EtlLoader?.HandleDatabaseRecordChange(record);
                     OnDatabaseRecordChanged(record);
                     SubscriptionStorage?.HandleDatabaseValueChange(record);
+                    Console.WriteLine($"Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
                     if (_logger.IsInfoEnabled)
                         _logger.Info($"Finish to process record {index} for {record.DatabaseName}.");
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine(e);
                     if (_logger.IsInfoEnabled)
                         _logger.Info($"Encounter an error while processing record {index} for {record.DatabaseName}.", e);
                     throw;
