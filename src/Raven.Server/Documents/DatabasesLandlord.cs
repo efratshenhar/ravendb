@@ -405,11 +405,11 @@ namespace Raven.Server.Documents
                 Console.WriteLine($"Config is null");
                 return Task.FromResult<DocumentDatabase>(null);
             }
-                
 
+            Console.WriteLine($"In CreateDatabase 2");
             if (!_databaseSemaphore.Wait(0))
                 return UnlikelyCreateDatabaseUnderContention(databaseName, config);
-
+            Console.WriteLine($"In CreateDatabase 3");
             return CreateDatabaseUnderResourceSemaphore(databaseName, config);
         }
 
