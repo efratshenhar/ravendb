@@ -594,7 +594,7 @@ namespace RachisTests.DatabaseCluster
                     var databaseResult = await store.Maintenance.Server.SendAsync(new CreateDatabaseOperation(doc, clusterSize));
                     var topology = databaseResult.Topology;
                     Assert.Equal(clusterSize, topology.AllNodes.Count());
-
+                    Console.WriteLine("Create DB...");
                     await WaitForValueOnGroupAsync(topology, s =>
                         {
                         if (s.Cluster.WaitForIndexNotification(databaseResult.RaftCommandIndex).Wait(TimeSpan.FromSeconds(5)) == false)
@@ -613,13 +613,15 @@ namespace RachisTests.DatabaseCluster
                         var count = db.ReplicationLoader?.OutgoingConnections.Count();
                         return count;
                     }, clusterSize - 1);
-
+                    Console.WriteLine("Finished Creation");
                     using (var session = store.OpenAsyncSession())
                     {
                         await session.StoreAsync(new User { Name = "Karmel" }, "users/1");
                         await session.SaveChangesAsync();
                     }
                     await Task.Delay(200); // twice the heartbeat
+
+                    Console.WriteLine("Wait for replication");
                     Assert.True(await WaitForDocumentInClusterAsync<User>(
                         databaseResult.Topology,
                         databaseName,
@@ -627,6 +629,8 @@ namespace RachisTests.DatabaseCluster
                         u => u.Name.Equals("Karmel"),
                         TimeSpan.FromSeconds(clusterSize + 5),
                         certificate: adminCertificate));
+
+                    Console.WriteLine("All replicated");
 
                     topology.RemoveFromTopology(leader.ServerStore.NodeTag);
                     await Task.Delay(200); // twice the heartbeat
