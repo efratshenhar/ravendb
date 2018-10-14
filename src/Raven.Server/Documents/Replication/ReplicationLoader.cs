@@ -403,9 +403,7 @@ namespace Raven.Server.Documents.Replication
 
         private void HandleTopologyChange(DatabaseRecord newRecord)
         {
-            Console.WriteLine($"1 : {_server.NodeTag} - {newRecord.DatabaseName}");
-            try
-            {
+
                 var instancesToDispose = new List<OutgoingReplicationHandler>();
                 if (newRecord == null || _server.IsPassive())
                 {
@@ -416,29 +414,19 @@ namespace Raven.Server.Documents.Replication
                     DisposeConnections(instancesToDispose);
                     return;
                 }
-                Console.WriteLine($"1 : {_server.NodeTag} - {newRecord.DatabaseName}");
+                
                 _clusterTopology = GetClusterTopology();
-                Console.WriteLine($"2 : {_server.NodeTag} - {newRecord.DatabaseName}");
+
                 HandleInternalReplication(newRecord, instancesToDispose);
-                Console.WriteLine($"3 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 HandleExternalReplication(newRecord, instancesToDispose);
-                Console.WriteLine($"4 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 var destinations = new List<ReplicationNode>();
                 destinations.AddRange(_internalDestinations);
-                Console.WriteLine($"5 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 destinations.AddRange(_externalDestinations);
                 _destinations = destinations;
-                Console.WriteLine($"6 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 _numberOfSiblings = _destinations.Select(x => x.Url).Intersect(_clusterTopology.AllNodes.Select(x => x.Value)).Count();
-                Console.WriteLine($"7 : {_server.NodeTag} - {newRecord.DatabaseName}");
+                
                 DisposeConnections(instancesToDispose);
-            }
-            catch (Exception e)
-            {
 
-                Console.WriteLine(e);
-                throw;
-            }
             
         }
 
@@ -610,11 +598,11 @@ namespace Raven.Server.Documents.Replication
 
         private void HandleInternalReplication(DatabaseRecord newRecord, List<OutgoingReplicationHandler> instancesToDispose)
         {
-            Console.WriteLine($"HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+            Console.WriteLine($" 1: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
             var newInternalDestinations =
                 newRecord.Topology?.GetDestinations(_server.NodeTag, Database.Name, newRecord.DeletionInProgress, _clusterTopology, _server.Engine.CurrentState);
             var internalConnections = DatabaseTopology.FindChanges(_internalDestinations, newInternalDestinations);
-
+            Console.WriteLine($" 2: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
             if (internalConnections.RemovedDestiantions.Count > 0)
             {
                 var removed = internalConnections.RemovedDestiantions.Select(r => new InternalReplication
@@ -626,6 +614,7 @@ namespace Raven.Server.Documents.Replication
 
                 DropOutgoingConnections(removed, instancesToDispose);
             }
+            Console.WriteLine($" 3: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
             if (internalConnections.AddedDestinations.Count > 0)
             {
                 var added = internalConnections.AddedDestinations.Select(r => new InternalReplication
@@ -636,11 +625,13 @@ namespace Raven.Server.Documents.Replication
                 });
                 StartOutgoingConnections(added.ToList());
             }
+            Console.WriteLine($" 4: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
             _internalDestinations.Clear();
             foreach (var item in newInternalDestinations)
             {
                 _internalDestinations.Add(item);
             }
+            Console.WriteLine($" 5: HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
         }
 
         private void StartOutgoingConnections(IReadOnlyCollection<ReplicationNode> connectionsToAdd, bool external = false)
