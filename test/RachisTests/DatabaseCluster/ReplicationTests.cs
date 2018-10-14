@@ -600,6 +600,13 @@ namespace RachisTests.DatabaseCluster
                         if (s.Cluster.WaitForIndexNotification(databaseResult.RaftCommandIndex).Wait(TimeSpan.FromSeconds(5)))
                         {
                             Console.WriteLine($"Waited too long for index to apply on {s.NodeTag}");
+                            return 0;
+                        }
+
+                        if (s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Wait(TimeSpan.FromSeconds(5)))
+                        {
+                            Console.WriteLine($"Waited for database to load on {s.NodeTag}");
+                            return 0;
                         }
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
                         
