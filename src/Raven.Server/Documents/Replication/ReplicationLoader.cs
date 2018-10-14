@@ -700,24 +700,24 @@ namespace Raven.Server.Documents.Replication
 
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
-            Console.WriteLine($" 1: {_server.NodeTag} - {node.Url} - {Database.Name}");
+            
             var info = GetConnectionInfo(node, external);
             
             if (info == null)
             {
-                Console.WriteLine($" null: {_server.NodeTag} - {node.Url}- {Database.Name}");
+                
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
                 return;
             }
-            Console.WriteLine($" 2: {_server.NodeTag} - {node.Url}- {Database.Name}");
+            
             var outgoingReplication = new OutgoingReplicationHandler(this, Database, node, external, info);
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
-            Console.WriteLine($" 3: {_server.NodeTag} - {node.Url}- {Database.Name}");
+            
             outgoingReplication.Start();
             OutgoingReplicationAdded?.Invoke(outgoingReplication);
-            Console.WriteLine($" 4: {_server.NodeTag} - {node.Url}- {Database.Name}");
+           
 
 
         }
@@ -732,7 +732,7 @@ namespace Raven.Server.Documents.Replication
             _outgoingFailureInfo.TryAdd(node, shutdownInfo);
             try
             {
-                Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 1");
+                
                 if (node is ExternalReplication exNode)
                 {
                     using (var requestExecutor = RequestExecutor.Create(exNode.ConnectionString.TopologyDiscoveryUrls, exNode.ConnectionString.Database, _server.Server.Certificate.Certificate, DocumentConventions.Default))
@@ -746,14 +746,15 @@ namespace Raven.Server.Documents.Replication
                         return cmd.Result;
                     }
                 }
-                Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 2");
+                
                 if (node is InternalReplication internalNode)
                 {
-                    Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 3");
+                    
                     using (var cts = new CancellationTokenSource((_server.Engine.TcpConnectionTimeout)*10))
                     {
+                        var x = ReplicationUtils.GetTcpInfo(internalNode.Url, internalNode.Database, "Replication", _server.Server.Certificate.Certificate, cts.Token);
                         Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 4");
-                        return ReplicationUtils.GetTcpInfo(internalNode.Url, internalNode.Database, "Replication", _server.Server.Certificate.Certificate, cts.Token);
+                        return x;
                     }
                     
                 }
@@ -767,7 +768,7 @@ namespace Raven.Server.Documents.Replication
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
                 _reconnectQueue.TryAdd(shutdownInfo);
-                return null;
+                
             }
             return null;
         }
