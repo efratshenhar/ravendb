@@ -761,7 +761,7 @@ namespace Raven.Server.Documents.Replication
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{_server.NodeTag} :Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
+                Console.WriteLine($"{_server.NodeTag} :Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later. {e}");
                 // will try to fetch it again later
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
