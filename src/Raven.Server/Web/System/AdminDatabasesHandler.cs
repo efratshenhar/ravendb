@@ -261,6 +261,7 @@ namespace Raven.Server.Web.System
 
         private void RecreateIndexes(DatabaseRecord databaseRecord)
         {
+            Console.WriteLine("In RecreateIndexes");
             var databaseConfiguration = ServerStore.DatabasesLandlord.CreateDatabaseConfiguration(databaseRecord.DatabaseName, true, true, true, databaseRecord);
             if (databaseConfiguration.Indexing.RunInMemory ||
                 Directory.Exists(databaseConfiguration.Indexing.StoragePath.FullPath) == false)

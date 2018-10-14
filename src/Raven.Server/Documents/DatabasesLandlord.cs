@@ -183,12 +183,14 @@ namespace Raven.Server.Documents
                     RavenConfiguration configuration;
                     try
                     {
+                        Console.WriteLine("In DeleteDatabase 1");
                         configuration = CreateDatabaseConfiguration(dbName, ignoreDisabledDatabase: true, ignoreBeenDeleted: true, ignoreNotRelevant: true,
                             databaseRecord: record);
                     }
                     catch (Exception ex)
                     {
                         configuration = null;
+                        Console.WriteLine("In DeleteDatabase 2");
                         if (_logger.IsInfoEnabled)
                             _logger.Info("Could not create database configuration", ex);
                     }
@@ -572,7 +574,7 @@ namespace Raven.Server.Documents
                             $"The database {databaseName.Value} is encrypted, and must be accessed only via HTTPS, but the web url used is {_serverStore.Server.WebUrl}");
                     }
                 }
-
+                Console.WriteLine("In CreateDatabaseConfiguration");
                 return CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase, ignoreBeenDeleted, ignoreNotRelevant, databaseRecord);
             }
         }
