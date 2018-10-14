@@ -1047,7 +1047,7 @@ namespace Raven.Server
                     // when binding to multiple interfaces and the port is 0, use
                     // the same port across all interfaces
                     port = listenerLocalEndpoint.Port;
-                    for (int i = 0; i < 4; i++)
+                    for (int i = 0; i < 20; i++)
                     {
                         ListenToNewTcpConnection(listener);
                     }
