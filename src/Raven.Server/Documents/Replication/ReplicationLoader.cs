@@ -614,7 +614,7 @@ namespace Raven.Server.Documents.Replication
 
                 DropOutgoingConnections(removed, instancesToDispose);
             }
-            Console.WriteLine($" 1: HandleInternalReplication {_server.NodeTag} - {internalConnections.AddedDestinations.Count}");
+            
             if (internalConnections.AddedDestinations.Count > 0)
             {
                 var added = internalConnections.AddedDestinations.Select(r => new InternalReplication
@@ -623,10 +623,10 @@ namespace Raven.Server.Documents.Replication
                     Url = r,
                     Database = Database.Name
                 });
-                Console.WriteLine($" 2: HandleInternalReplication {_server.NodeTag} ");
+                
                 StartOutgoingConnections(added.ToList());
             }
-            Console.WriteLine($" 3: HandleInternalReplication {_server.NodeTag}");
+           
             _internalDestinations.Clear();
             foreach (var item in newInternalDestinations)
             {
@@ -642,7 +642,7 @@ namespace Raven.Server.Documents.Replication
 
             if (_log.IsInfoEnabled)
                 _log.Info($"Initializing {connectionsToAdd.Count:#,#} outgoing replications from {Database} on {_server.NodeTag}.");
-
+            Console.WriteLine($" 1: StartOutgoingConnections {_server.NodeTag}");
             foreach (var destination in connectionsToAdd)
             {
                 if (destination.Disabled)
@@ -650,9 +650,11 @@ namespace Raven.Server.Documents.Replication
 
                 if (_log.IsInfoEnabled)
                     _log.Info("Initialized outgoing replication for " + destination.FromString());
+                Console.WriteLine($" 2: StartOutgoingConnections {_server.NodeTag} - {destination.Url}");
                 AddAndStartOutgoingReplication(destination, external);
+                Console.WriteLine($" 3: StartOutgoingConnections {_server.NodeTag} - - {destination.Url}");
             }
-
+            Console.WriteLine($" Finished: StartOutgoingConnections {_server.NodeTag}");
             if (_log.IsInfoEnabled)
                 _log.Info("Finished initialization of outgoing replications..");
         }
