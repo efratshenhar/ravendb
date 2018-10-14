@@ -749,6 +749,7 @@ namespace Raven.Server.Documents.Replication
                     
                     using (var cts = new CancellationTokenSource((_server.Engine.TcpConnectionTimeout)*10))
                     {
+                        Console.WriteLine($"{_server.NodeTag} :{node.FromString()} ");
                         var x = ReplicationUtils.GetTcpInfo(internalNode.Url, internalNode.Database, "Replication", _server.Server.Certificate.Certificate, cts.Token);
                         Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : {x.Port} : {x.Url}");
                         return x;
