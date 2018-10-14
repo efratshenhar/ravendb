@@ -524,7 +524,8 @@ namespace FastTests
             {
                 Server = server,
                 ClientCertificate = serverCertificate,
-                AdminCertificate = serverCertificate
+                AdminCertificate = serverCertificate,
+                CreateDatabase = false
             }))
             {
 
