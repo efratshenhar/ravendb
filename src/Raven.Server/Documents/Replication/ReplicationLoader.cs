@@ -642,7 +642,7 @@ namespace Raven.Server.Documents.Replication
 
             if (_log.IsInfoEnabled)
                 _log.Info($"Initializing {connectionsToAdd.Count:#,#} outgoing replications from {Database} on {_server.NodeTag}.");
-            Console.WriteLine($" 1: StartOutgoingConnections {_server.NodeTag}");
+            
             foreach (var destination in connectionsToAdd)
             {
                 if (destination.Disabled)
@@ -650,11 +650,11 @@ namespace Raven.Server.Documents.Replication
 
                 if (_log.IsInfoEnabled)
                     _log.Info("Initialized outgoing replication for " + destination.FromString());
-                Console.WriteLine($" 2: StartOutgoingConnections {_server.NodeTag} - {destination.Url}");
+                
                 AddAndStartOutgoingReplication(destination, external);
-                Console.WriteLine($" 3: StartOutgoingConnections {_server.NodeTag} - - {destination.Url}");
+                
             }
-            Console.WriteLine($" Finished: StartOutgoingConnections {_server.NodeTag}");
+            
             if (_log.IsInfoEnabled)
                 _log.Info("Finished initialization of outgoing replications..");
         }
@@ -700,20 +700,25 @@ namespace Raven.Server.Documents.Replication
 
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
+            Console.WriteLine($" 1: {_server.NodeTag} - {node} - {Database.Name}");
             var info = GetConnectionInfo(node, external);
             if (info == null)
             {
+                Console.WriteLine($" null: {_server.NodeTag} - {node}- {Database.Name}");
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
                 return;
             }
+            Console.WriteLine($" 2: {_server.NodeTag} - {node}- {Database.Name}");
             var outgoingReplication = new OutgoingReplicationHandler(this, Database, node, external, info);
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
+            Console.WriteLine($" 3: {_server.NodeTag} - {node}- {Database.Name}");
             outgoingReplication.Start();
             OutgoingReplicationAdded?.Invoke(outgoingReplication);
-            
-            
+            Console.WriteLine($" 4: {_server.NodeTag} - {node}- {Database.Name}");
+
+
         }
 
         private TcpConnectionInfo GetConnectionInfo(ReplicationNode node, bool external)
