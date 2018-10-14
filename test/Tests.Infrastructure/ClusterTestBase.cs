@@ -184,7 +184,6 @@ namespace Tests.Infrastructure
             var nodes = topology.AllNodes;
             var servers = new List<ServerStore>();
             var tasks = new Dictionary<string, Task<T>>();
-            
 
                 foreach (var node in nodes)
                 {
@@ -195,21 +194,15 @@ namespace Tests.Infrastructure
 
                 foreach (var server in servers)
                 {
-                    Console.WriteLine("---------1-------");
                     var task = WaitForValueAsync(() => func(server), expected);
-                    
                     tasks.Add(server.NodeTag, task);
                 }
 
                 var res = await Task.WhenAll(tasks.Values);
-            Console.WriteLine("---------2-------");
-            var hasExpectedVals = res.Where(t => t?.Equals(expected) ?? false);
+                var hasExpectedVals = res.Where(t => t?.Equals(expected) ?? false);
 
                 if (hasExpectedVals.Count() == servers.Count)
                     return expected;
-            
-            
-            
 
             var lookup = tasks.ToLookup(key => key.Value.Result, val => val.Key);
 
