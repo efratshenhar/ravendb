@@ -702,6 +702,7 @@ namespace Raven.Server.Documents.Replication
         {
             Console.WriteLine($" 1: {_server.NodeTag} - {node.Url} - {Database.Name}");
             var info = GetConnectionInfo(node, external);
+            
             if (info == null)
             {
                 Console.WriteLine($" null: {_server.NodeTag} - {node.Url}- {Database.Name}");
@@ -756,10 +757,12 @@ namespace Raven.Server.Documents.Replication
             }
             catch (Exception e)
             {
+                Console.WriteLine("ex");
                 // will try to fetch it again later
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
                 _reconnectQueue.TryAdd(shutdownInfo);
+                return null;
             }
             return null;
         }
