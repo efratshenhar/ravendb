@@ -732,6 +732,7 @@ namespace Raven.Server.Documents.Replication
             _outgoingFailureInfo.TryAdd(node, shutdownInfo);
             try
             {
+                Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 1");
                 if (node is ExternalReplication exNode)
                 {
                     using (var requestExecutor = RequestExecutor.Create(exNode.ConnectionString.TopologyDiscoveryUrls, exNode.ConnectionString.Database, _server.Server.Certificate.Certificate, DocumentConventions.Default))
@@ -745,19 +746,23 @@ namespace Raven.Server.Documents.Replication
                         return cmd.Result;
                     }
                 }
+                Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 2");
                 if (node is InternalReplication internalNode)
                 {
+                    Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 3");
                     using (var cts = new CancellationTokenSource((_server.Engine.TcpConnectionTimeout)*10))
                     {
+                        Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : 4");
                         return ReplicationUtils.GetTcpInfo(internalNode.Url, internalNode.Database, "Replication", _server.Server.Certificate.Certificate, cts.Token);
                     }
+                    
                 }
                 throw new InvalidOperationException(
                     $"Unexpected replication node type, Expected to be '{typeof(ExternalReplication)}' or '{typeof(InternalReplication)}', but got '{node.GetType()}'");
             }
             catch (Exception e)
             {
-                Console.WriteLine("ex");
+                Console.WriteLine($"{_server.NodeTag} :Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
                 // will try to fetch it again later
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);
