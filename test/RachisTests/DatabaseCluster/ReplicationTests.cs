@@ -595,17 +595,22 @@ namespace RachisTests.DatabaseCluster
                     var topology = databaseResult.Topology;
                     Assert.Equal(clusterSize, topology.AllNodes.Count());
                     Console.WriteLine("Create DB...");
+                    Console.Out.Flush();
                     await WaitForValueOnGroupAsync(topology, s =>
                         {
                         if (s.Cluster.WaitForIndexNotification(databaseResult.RaftCommandIndex).Wait(TimeSpan.FromSeconds(1)) == false)
                         {
                             Console.WriteLine($"Waited too long for index to apply on {s.NodeTag}");
+                            Console.Out.Flush();
+
                             return 0;
                         }
 
                         if (s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Wait(TimeSpan.FromSeconds(1)) == false)
                         {
                             Console.WriteLine($"Waited for database to load on {s.NodeTag}");
+                            Console.Out.Flush();
+
                             return 0;
                         }
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
@@ -614,6 +619,7 @@ namespace RachisTests.DatabaseCluster
                         return count;
                     }, clusterSize - 1);
                     Console.WriteLine("Finished Creation");
+                    Console.Out.Flush();
                     using (var session = store.OpenAsyncSession())
                     {
                         await session.StoreAsync(new User { Name = "Karmel" }, "users/1");
@@ -622,6 +628,7 @@ namespace RachisTests.DatabaseCluster
                     await Task.Delay(200); // twice the heartbeat
 
                     Console.WriteLine("Wait for replication");
+                    Console.Out.Flush();
                     Assert.True(await WaitForDocumentInClusterAsync<User>(
                         databaseResult.Topology,
                         databaseName,
@@ -631,6 +638,7 @@ namespace RachisTests.DatabaseCluster
                         certificate: adminCertificate));
 
                     Console.WriteLine("All replicated");
+                    Console.Out.Flush();
 
                     topology.RemoveFromTopology(leader.ServerStore.NodeTag);
                     await Task.Delay(200); // twice the heartbeat
@@ -647,6 +655,7 @@ namespace RachisTests.DatabaseCluster
             catch (Exception e)
             {
                 Console.WriteLine("********************EXIT****************");
+                Console.Out.Flush();
                 throw;
             }
             

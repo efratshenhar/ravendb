@@ -750,8 +750,10 @@ namespace Raven.Server.Documents.Replication
                     using (var cts = new CancellationTokenSource((_server.Engine.TcpConnectionTimeout)))
                     {
                         Console.WriteLine($"{_server.NodeTag} :{node.FromString()} ");
+                        Console.Out.Flush();
                         var x = ReplicationUtils.GetTcpInfo(internalNode.Url, internalNode.Database, "Replication", _server.Server.Certificate.Certificate, cts.Token);
                         Console.WriteLine($"{_server.NodeTag} :{node.FromString()} : {x.Port} : {x.Url}");
+                        Console.Out.Flush();
                         return x;
                     }
                     
@@ -762,6 +764,7 @@ namespace Raven.Server.Documents.Replication
             catch (Exception e)
             {
                 Console.WriteLine($"{_server.NodeTag} :Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later. {e}");
+                Console.Out.Flush();
                 // will try to fetch it again later
                 if (_log.IsInfoEnabled)
                     _log.Info($"Failed to fetch tcp connection information for the destination '{node.FromString()}' , the connection will be retried later.", e);

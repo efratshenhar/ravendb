@@ -1151,7 +1151,12 @@ namespace Raven.Server
                     Stream stream = tcpClient.GetStream();
                     X509Certificate2 cert;
 
+                    Console.WriteLine($"{ServerStore.NodeTag} accpeted from {tcpClient.Client.RemoteEndPoint} 1");
+                    Console.Out.Flush();
                     (stream, cert) = await AuthenticateAsServerIfSslNeeded(stream);
+                    Console.WriteLine($"{ServerStore.NodeTag} accpeted from {tcpClient.Client.RemoteEndPoint} 2");
+                    Console.Out.Flush();
+
 
                     using (_tcpContextPool.AllocateOperationContext(out JsonOperationContext ctx))
                     using (ctx.GetManagedBuffer(out var buffer))
