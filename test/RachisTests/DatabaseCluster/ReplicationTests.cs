@@ -600,7 +600,6 @@ namespace RachisTests.DatabaseCluster
                         var db = s.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
                         
                         var count = db.ReplicationLoader?.OutgoingConnections.Count();
-                        Console.WriteLine($"{db.ServerStore.NodeTag} - {db.StartTime} - {count}");
                         return count;
                     }, clusterSize - 1);
 

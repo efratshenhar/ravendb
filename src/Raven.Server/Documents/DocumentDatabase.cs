@@ -871,9 +871,9 @@ namespace Raven.Server.Documents
                     EtlLoader?.HandleDatabaseRecordChange(record);
                     OnDatabaseRecordChanged(record);
                     SubscriptionStorage?.HandleDatabaseValueChange(record);
-                    Console.WriteLine($"Finish to process record {index} for {record.DatabaseName}.");
+                    Console.WriteLine($"Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
                     if (_logger.IsInfoEnabled)
-                        _logger.Info($"Finish to process record {index} for {record.DatabaseName}: {_serverStore.NodeTag}-.");
+                        _logger.Info($"Finish to process record {index} for {record.DatabaseName}.");
                 }
                 catch (Exception e)
                 {
