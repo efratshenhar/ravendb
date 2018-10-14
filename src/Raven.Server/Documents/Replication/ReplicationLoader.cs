@@ -416,17 +416,21 @@ namespace Raven.Server.Documents.Replication
                     DisposeConnections(instancesToDispose);
                     return;
                 }
-                Console.WriteLine($"2 : {_server.NodeTag} - {newRecord.DatabaseName}");
+                Console.WriteLine($"1 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 _clusterTopology = GetClusterTopology();
-
+                Console.WriteLine($"2 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 HandleInternalReplication(newRecord, instancesToDispose);
+                Console.WriteLine($"3 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 HandleExternalReplication(newRecord, instancesToDispose);
+                Console.WriteLine($"4 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 var destinations = new List<ReplicationNode>();
                 destinations.AddRange(_internalDestinations);
+                Console.WriteLine($"5 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 destinations.AddRange(_externalDestinations);
                 _destinations = destinations;
+                Console.WriteLine($"6 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 _numberOfSiblings = _destinations.Select(x => x.Url).Intersect(_clusterTopology.AllNodes.Select(x => x.Value)).Count();
-                Console.WriteLine($"3 : {_server.NodeTag} - {newRecord.DatabaseName}");
+                Console.WriteLine($"7 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 DisposeConnections(instancesToDispose);
             }
             catch (Exception e)
