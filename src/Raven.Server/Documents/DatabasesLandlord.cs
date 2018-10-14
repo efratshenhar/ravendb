@@ -397,6 +397,7 @@ namespace Raven.Server.Documents
 
         private Task<DocumentDatabase> CreateDatabase(StringSegment databaseName, bool ignoreDisabledDatabase = false)
         {
+            Console.WriteLine("In CreateDatabase");
             var config = CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase);
             if (config == null)
                 return Task.FromResult<DocumentDatabase>(null);
