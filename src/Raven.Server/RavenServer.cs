@@ -1296,6 +1296,7 @@ namespace Raven.Server
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine($"------------ {e}");
                     if (_tcpLogger.IsInfoEnabled)
                     {
                         _tcpLogger.Info("Failure when processing tcp connection", e);
