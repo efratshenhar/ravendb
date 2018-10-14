@@ -600,7 +600,11 @@ namespace Raven.Server.Documents
                 Console.WriteLine($"{databaseName } NULL");
             if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
                 databaseIsBeenDeleted == false)
+            {
+                Console.WriteLine($"{databaseName} is not relevant for {_serverStore.NodeTag}");
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
+            }
+                
                 
             return CreateConfiguration(databaseRecord);
         }
