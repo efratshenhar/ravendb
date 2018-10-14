@@ -183,14 +183,12 @@ namespace Raven.Server.Documents
                     RavenConfiguration configuration;
                     try
                     {
-                        Console.WriteLine("In DeleteDatabase 1");
                         configuration = CreateDatabaseConfiguration(dbName, ignoreDisabledDatabase: true, ignoreBeenDeleted: true, ignoreNotRelevant: true,
                             databaseRecord: record);
                     }
                     catch (Exception ex)
                     {
                         configuration = null;
-                        Console.WriteLine("In DeleteDatabase 2");
                         if (_logger.IsInfoEnabled)
                             _logger.Info("Could not create database configuration", ex);
                     }
@@ -397,19 +395,19 @@ namespace Raven.Server.Documents
 
         private Task<DocumentDatabase> CreateDatabase(StringSegment databaseName, bool ignoreDisabledDatabase = false)
         {
-            Console.WriteLine($"In CreateDatabase {databaseName}");
+ 
             var config = CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase);
             
             if (config == null)
             {
-                Console.WriteLine($"Config is null");
+                
                 return Task.FromResult<DocumentDatabase>(null);
             }
 
-            Console.WriteLine($"In CreateDatabase 2");
+;
             if (!_databaseSemaphore.Wait(0))
                 return UnlikelyCreateDatabaseUnderContention(databaseName, config);
-            Console.WriteLine($"In CreateDatabase 3");
+
             return CreateDatabaseUnderResourceSemaphore(databaseName, config);
         }
 
@@ -580,7 +578,6 @@ namespace Raven.Server.Documents
                             $"The database {databaseName.Value} is encrypted, and must be accessed only via HTTPS, but the web url used is {_serverStore.Server.WebUrl}");
                     }
                 }
-                Console.WriteLine("In CreateDatabaseConfiguration");
                 return CreateDatabaseConfiguration(databaseName, ignoreDisabledDatabase, ignoreBeenDeleted, ignoreNotRelevant, databaseRecord);
             }
         }
@@ -596,15 +593,9 @@ namespace Raven.Server.Documents
             if (ignoreBeenDeleted == false && databaseIsBeenDeleted)
                 throw new DatabaseDisabledException(databaseName + " is currently being deleted on " + _serverStore.NodeTag);
 
-            if (databaseRecord.Topology == null)
-                Console.WriteLine($"{databaseName } NULL");
             if (ignoreNotRelevant == false && databaseRecord.Topology.RelevantFor(_serverStore.NodeTag) == false &&
                 databaseIsBeenDeleted == false)
-            {
-                Console.WriteLine($"{databaseName} is not relevant for {_serverStore.NodeTag}");
                 throw new DatabaseNotRelevantException(databaseName + " is not relevant for " + _serverStore.NodeTag);
-            }
-                
                 
             return CreateConfiguration(databaseRecord);
         }
