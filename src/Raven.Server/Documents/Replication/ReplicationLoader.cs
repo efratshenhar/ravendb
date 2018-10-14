@@ -700,23 +700,23 @@ namespace Raven.Server.Documents.Replication
 
         private void AddAndStartOutgoingReplication(ReplicationNode node, bool external)
         {
-            Console.WriteLine($" 1: {_server.NodeTag} - {node} - {Database.Name}");
+            Console.WriteLine($" 1: {_server.NodeTag} - {node.Url} - {Database.Name}");
             var info = GetConnectionInfo(node, external);
             if (info == null)
             {
-                Console.WriteLine($" null: {_server.NodeTag} - {node}- {Database.Name}");
+                Console.WriteLine($" null: {_server.NodeTag} - {node.Url}- {Database.Name}");
                 // this means that we were unable to retrieve the tcp connection info and will try it again later
                 return;
             }
-            Console.WriteLine($" 2: {_server.NodeTag} - {node}- {Database.Name}");
+            Console.WriteLine($" 2: {_server.NodeTag} - {node.Url}- {Database.Name}");
             var outgoingReplication = new OutgoingReplicationHandler(this, Database, node, external, info);
             outgoingReplication.Failed += OnOutgoingSendingFailed;
             outgoingReplication.SuccessfulTwoWaysCommunication += OnOutgoingSendingSucceeded;
             _outgoing.TryAdd(outgoingReplication); // can't fail, this is a brand new instance
-            Console.WriteLine($" 3: {_server.NodeTag} - {node}- {Database.Name}");
+            Console.WriteLine($" 3: {_server.NodeTag} - {node.Url}- {Database.Name}");
             outgoingReplication.Start();
             OutgoingReplicationAdded?.Invoke(outgoingReplication);
-            Console.WriteLine($" 4: {_server.NodeTag} - {node}- {Database.Name}");
+            Console.WriteLine($" 4: {_server.NodeTag} - {node.Url}- {Database.Name}");
 
 
         }
