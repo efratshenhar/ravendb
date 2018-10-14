@@ -348,13 +348,13 @@ namespace Raven.Server.Documents.Replication
 
         public void HandleDatabaseRecordChange(DatabaseRecord newRecord)
         {
-            Console.WriteLine($"1 : {_server.NodeTag} - {newRecord.DatabaseName}");
+            
             HandleConflictResolverChange(newRecord);
-            Console.WriteLine($"2 : {_server.NodeTag} - {newRecord.DatabaseName}");
+            
             HandleTopologyChange(newRecord);
-            Console.WriteLine($"3 : {_server.NodeTag} - {newRecord.DatabaseName}");
+            
             UpdateConnectionStrings(newRecord);
-            Console.WriteLine($"4 : {_server.NodeTag} - {newRecord.DatabaseName}");
+            
         }
 
         private void UpdateConnectionStrings(DatabaseRecord newRecord)
@@ -403,28 +403,39 @@ namespace Raven.Server.Documents.Replication
 
         private void HandleTopologyChange(DatabaseRecord newRecord)
         {
-            var instancesToDispose = new List<OutgoingReplicationHandler>();
-            if (newRecord == null || _server.IsPassive())
+            Console.WriteLine($"1 : {_server.NodeTag} - {newRecord.DatabaseName}");
+            try
             {
-                DropOutgoingConnections(Destinations, instancesToDispose);
-                _internalDestinations.Clear();
-                _externalDestinations.Clear();
-                _destinations.Clear();
+                var instancesToDispose = new List<OutgoingReplicationHandler>();
+                if (newRecord == null || _server.IsPassive())
+                {
+                    DropOutgoingConnections(Destinations, instancesToDispose);
+                    _internalDestinations.Clear();
+                    _externalDestinations.Clear();
+                    _destinations.Clear();
+                    DisposeConnections(instancesToDispose);
+                    return;
+                }
+                Console.WriteLine($"2 : {_server.NodeTag} - {newRecord.DatabaseName}");
+                _clusterTopology = GetClusterTopology();
+
+                HandleInternalReplication(newRecord, instancesToDispose);
+                HandleExternalReplication(newRecord, instancesToDispose);
+                var destinations = new List<ReplicationNode>();
+                destinations.AddRange(_internalDestinations);
+                destinations.AddRange(_externalDestinations);
+                _destinations = destinations;
+                _numberOfSiblings = _destinations.Select(x => x.Url).Intersect(_clusterTopology.AllNodes.Select(x => x.Value)).Count();
+                Console.WriteLine($"3 : {_server.NodeTag} - {newRecord.DatabaseName}");
                 DisposeConnections(instancesToDispose);
-                return;
             }
+            catch (Exception e)
+            {
 
-            _clusterTopology = GetClusterTopology();
-
-            HandleInternalReplication(newRecord, instancesToDispose);
-            HandleExternalReplication(newRecord, instancesToDispose);
-            var destinations = new List<ReplicationNode>();
-            destinations.AddRange(_internalDestinations);
-            destinations.AddRange(_externalDestinations);
-            _destinations = destinations;
-            _numberOfSiblings = _destinations.Select(x => x.Url).Intersect(_clusterTopology.AllNodes.Select(x => x.Value)).Count();
-
-            DisposeConnections(instancesToDispose);
+                Console.WriteLine(e);
+                throw;
+            }
+            
         }
 
         private void DisposeConnections(List<OutgoingReplicationHandler> instancesToDispose)
