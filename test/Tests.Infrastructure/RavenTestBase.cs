@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Raven.Client;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Conventions;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Operations.Backups;
@@ -525,7 +526,11 @@ namespace FastTests
                 Server = server,
                 ClientCertificate = serverCertificate,
                 AdminCertificate = serverCertificate,
-                CreateDatabase = false
+                CreateDatabase = false,
+                ModifyDocumentStore = s=>s.Conventions = new DocumentConventions
+                {
+                    DisableTopologyUpdates = true
+                }
             }))
             {
 
