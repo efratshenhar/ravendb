@@ -591,37 +591,46 @@ namespace Raven.Server.Documents.Replication
 
         private void HandleInternalReplication(DatabaseRecord newRecord, List<OutgoingReplicationHandler> instancesToDispose)
         {
-            Console.WriteLine($"HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
-            var newInternalDestinations =
-                newRecord.Topology?.GetDestinations(_server.NodeTag, Database.Name, newRecord.DeletionInProgress, _clusterTopology, _server.Engine.CurrentState);
-            var internalConnections = DatabaseTopology.FindChanges(_internalDestinations, newInternalDestinations);
+            try
+            {
+                Console.WriteLine($"HandleInternalReplication {_server.NodeTag} - {_destinations.Count}");
+                var newInternalDestinations =
+                    newRecord.Topology?.GetDestinations(_server.NodeTag, Database.Name, newRecord.DeletionInProgress, _clusterTopology, _server.Engine.CurrentState);
+                var internalConnections = DatabaseTopology.FindChanges(_internalDestinations, newInternalDestinations);
 
-            if (internalConnections.RemovedDestiantions.Count > 0)
-            {
-                var removed = internalConnections.RemovedDestiantions.Select(r => new InternalReplication
+                if (internalConnections.RemovedDestiantions.Count > 0)
                 {
-                    NodeTag = _clusterTopology.TryGetNodeTagByUrl(r).NodeTag,
-                    Url = r,
-                    Database = Database.Name
-                });
+                    var removed = internalConnections.RemovedDestiantions.Select(r => new InternalReplication
+                    {
+                        NodeTag = _clusterTopology.TryGetNodeTagByUrl(r).NodeTag,
+                        Url = r,
+                        Database = Database.Name
+                    });
 
-                DropOutgoingConnections(removed, instancesToDispose);
-            }
-            if (internalConnections.AddedDestinations.Count > 0)
-            {
-                var added = internalConnections.AddedDestinations.Select(r => new InternalReplication
+                    DropOutgoingConnections(removed, instancesToDispose);
+                }
+                if (internalConnections.AddedDestinations.Count > 0)
                 {
-                    NodeTag = _clusterTopology.TryGetNodeTagByUrl(r).NodeTag,
-                    Url = r,
-                    Database = Database.Name
-                });
-                StartOutgoingConnections(added.ToList());
+                    var added = internalConnections.AddedDestinations.Select(r => new InternalReplication
+                    {
+                        NodeTag = _clusterTopology.TryGetNodeTagByUrl(r).NodeTag,
+                        Url = r,
+                        Database = Database.Name
+                    });
+                    StartOutgoingConnections(added.ToList());
+                }
+                _internalDestinations.Clear();
+                foreach (var item in newInternalDestinations)
+                {
+                    _internalDestinations.Add(item);
+                }
             }
-            _internalDestinations.Clear();
-            foreach (var item in newInternalDestinations)
+            catch (Exception e)
             {
-                _internalDestinations.Add(item);
+                Console.WriteLine(e);
+                throw;
             }
+            
         }
 
         private void StartOutgoingConnections(IReadOnlyCollection<ReplicationNode> connectionsToAdd, bool external = false)
