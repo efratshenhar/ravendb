@@ -608,6 +608,7 @@ namespace RachisTests.DatabaseCluster
                         await session.StoreAsync(new User { Name = "Karmel" }, "users/1");
                         await session.SaveChangesAsync();
                     }
+                    await Task.Delay(200); // twice the heartbeat
                     Assert.True(await WaitForDocumentInClusterAsync<User>(
                         databaseResult.Topology,
                         databaseName,
