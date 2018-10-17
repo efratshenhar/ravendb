@@ -56,71 +56,59 @@ namespace Raven.Server.Https
 
         private async Task<IAdaptedConnection> InnerOnConnectionAsync(ConnectionAdapterContext context)
         {
+            
+            var sslStream = new SslStream(context.ConnectionStream,
+                leaveInnerStreamOpen: false,
+                userCertificateValidationCallback: (sender, certificate, chain, sslPolicyErrors) =>
+                {
+                    if (certificate == null)
+                    {
+                        return true; // we handle the error from not having certificate higher in the stack
+                    }
+
+                    var certificate2 = ConvertToX509Certificate2(certificate);
+                    if (certificate2 == null)
+                        return false; // we require to be able to convert it in all cases
+
+                    // Here we are explicitly ignoring trust chain issues for client certificates
+                    // this is because we don't actually require trust, we just use the certificate
+                    // as a way to authenticate. The admin is going to tell us which specific certs
+                    // we can trust anyway, so we can ignore such errors.
+
+                    return sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors ||
+                           sslPolicyErrors == SslPolicyErrors.None;
+                });
+
             try
             {
-                Console.WriteLine("Start");
-                var sslStream = new SslStream(context.ConnectionStream,
-                    leaveInnerStreamOpen: false,
-                    userCertificateValidationCallback: (sender, certificate, chain, sslPolicyErrors) =>
-                    {
-                        if (certificate == null)
-                        {
-                            return true; // we handle the error from not having certificate higher in the stack
-                        }
-
-                        var certificate2 = ConvertToX509Certificate2(certificate);
-                        if (certificate2 == null)
-                            return false; // we require to be able to convert it in all cases
-
-                        // Here we are explicitly ignoring trust chain issues for client certificates
-                        // this is because we don't actually require trust, we just use the certificate
-                        // as a way to authenticate. The admin is going to tell us which specific certs
-                        // we can trust anyway, so we can ignore such errors.
-
-                        return sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors ||
-                               sslPolicyErrors == SslPolicyErrors.None;
-                    });
-
-                try
-                {
-                    await sslStream.AuthenticateAsServerAsync(
-                        _serverCertificate,
-                        clientCertificateRequired: true,
-                        enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls,
-                        checkCertificateRevocation: true);
-                }
-                catch (OperationCanceledException)
-                {
-                    Console.WriteLine("OperationCanceledException");
-                    sslStream.Dispose();
-                    return _closedAdaptedConnection;
-                }
-                catch (IOException ex)
-                {
-                    Console.WriteLine("IOException");
-                    if (_logger.IsInfoEnabled)
-                        _logger.Info("Failed to authenticate client", ex);
-                    sslStream.Dispose();
-                    return _closedAdaptedConnection;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Exception");
-                }
-
-                // Always set the feature even though the cert might be null
-                context.Features.Set<ITlsConnectionFeature>(new TlsConnectionFeature
-                {
-                    ClientCertificate = ConvertToX509Certificate2(sslStream.RemoteCertificate)
-                });
-                Console.WriteLine("End");
-                return new HttpsAdaptedConnection(sslStream);
+                await sslStream.AuthenticateAsServerAsync(
+                    _serverCertificate, 
+                    clientCertificateRequired: true,
+                    enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls, 
+                    checkCertificateRevocation: true);
             }
-            catch (Exception e)
+            catch (OperationCanceledException)
             {
-                Console.WriteLine($"Exception {e}");
-                throw;
+                
+                sslStream.Dispose();
+                return _closedAdaptedConnection;
             }
+            catch (IOException ex)
+            {
+                
+                if (_logger.IsInfoEnabled)
+                    _logger.Info("Failed to authenticate client", ex);
+                sslStream.Dispose();
+                return _closedAdaptedConnection;
+            }
+
+            // Always set the feature even though the cert might be null
+            context.Features.Set<ITlsConnectionFeature>(new TlsConnectionFeature
+            {
+                ClientCertificate = ConvertToX509Certificate2(sslStream.RemoteCertificate)
+            });
+            
+            return new HttpsAdaptedConnection(sslStream);
         }
 
         private static void EnsureCertificateIsAllowedForServerAuth(X509Certificate2 certificate)
