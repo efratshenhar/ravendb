@@ -119,6 +119,7 @@ namespace Raven.Server.Https
             catch (Exception e)
             {
                 Console.WriteLine($"Exception {e}");
+                throw;
             }
         }
 
