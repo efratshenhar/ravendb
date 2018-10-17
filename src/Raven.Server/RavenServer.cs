@@ -417,6 +417,36 @@ namespace Raven.Server
 
         public bool RefreshClusterCertificate(object state)
         {
+            try
+            {
+                var currentCertificate = Certificate;
+                if (currentCertificate.Certificate == null)
+                {
+                    return false; // shouldn't happen, but just in case
+                }
+
+                var forceRenew = state as bool? ?? false;
+
+                var currentRefreshTask = _currentRefreshTask;
+                if (currentRefreshTask.IsCompleted == false)
+                {
+                    _refreshClusterCertificate?.Change(TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
+                    return false;
+                }
+
+                var refreshCertificate = new Task(async () => { await DoActualCertificateRefresh(currentCertificate, forceRenew: forceRenew); });
+                if (Interlocked.CompareExchange(ref _currentRefreshTask, currentRefreshTask, refreshCertificate) != currentRefreshTask)
+                    return false;
+
+                refreshCertificate.Start();
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
             // If the setup mode is anything but SetupMode.LetsEncrypt, we'll
             // check if the certificate changed and if so we'll update it immediately
             // on the local node (only). Admin is responsible for registering the new
@@ -427,28 +457,7 @@ namespace Raven.Server
             // distribute it via the cluster. We'll update the cert only when all nodes
             // confirm they got it (or if there are less than 3 days to spare).
 
-            var currentCertificate = Certificate;
-            if (currentCertificate.Certificate == null)
-            {
-                return false; // shouldn't happen, but just in case
-            }
-
-            var forceRenew = state as bool? ?? false;
-
-            var currentRefreshTask = _currentRefreshTask;
-            if (currentRefreshTask.IsCompleted == false)
-            {
-                _refreshClusterCertificate?.Change(TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
-                return false;
-            }
-
-            var refreshCertificate = new Task(async () => { await DoActualCertificateRefresh(currentCertificate, forceRenew: forceRenew); });
-            if (Interlocked.CompareExchange(ref _currentRefreshTask, currentRefreshTask, refreshCertificate) != currentRefreshTask)
-                return false;
-
-            refreshCertificate.Start();
-
-            return true;
+            
         }
 
         private async Task DoActualCertificateRefresh(CertificateHolder currentCertificate, bool forceRenew = false)
