@@ -56,7 +56,7 @@ namespace Raven.Server.Https
 
         private async Task<IAdaptedConnection> InnerOnConnectionAsync(ConnectionAdapterContext context)
         {
-            Console.WriteLine("Start");
+            //Console.WriteLine("Start");
             var sslStream = new SslStream(context.ConnectionStream,
                 leaveInnerStreamOpen: false,
                 userCertificateValidationCallback: (sender, certificate, chain, sslPolicyErrors) =>
@@ -89,13 +89,13 @@ namespace Raven.Server.Https
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine("OperationCanceledException");
+                //Console.WriteLine("OperationCanceledException");
                 sslStream.Dispose();
                 return _closedAdaptedConnection;
             }
             catch (IOException ex)
             {
-                Console.WriteLine("IOException");
+                //Console.WriteLine("IOException");
                 if (_logger.IsInfoEnabled)
                     _logger.Info("Failed to authenticate client", ex);
                 sslStream.Dispose();
@@ -107,7 +107,7 @@ namespace Raven.Server.Https
             {
                 ClientCertificate = ConvertToX509Certificate2(sslStream.RemoteCertificate)
             });
-            Console.WriteLine("End");
+            //Console.WriteLine("End");
             return new HttpsAdaptedConnection(sslStream);
         }
 
