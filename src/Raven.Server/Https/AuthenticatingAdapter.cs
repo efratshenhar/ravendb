@@ -62,7 +62,7 @@ namespace Raven.Server.Https
             {
                 // here we do protocol sniffing to see if user is trying to access us via
                 // http while we are expecting HTTPS.
-                Console.WriteLine($"{_server.ServerStore.NodeTag} : start");
+                
                 var input = GetInput(rs); // uses a delegate to get the private RawStream._input out
                 // here we take advantage of the fact that Kestrel allow to get the data from the buffer
                 // without actually consuming it
@@ -88,11 +88,11 @@ namespace Raven.Server.Https
                 }
                 finally
                 {
-                    Console.WriteLine($"{_server.ServerStore.NodeTag} : 2");
+                    
                     input.AdvanceTo(result.Buffer.Start, result.Buffer.Start);
                 }
             }
-            Console.WriteLine($"{_server.ServerStore.NodeTag} : 3");
+            
             var connection = await _httpsConnectionAdapter.OnConnectionAsync(context);
             if (connection is HttpsConnectionAdapter.HttpsAdaptedConnection c)
             {
@@ -106,14 +106,14 @@ namespace Raven.Server.Https
                     return c;
                 }
             }
-            Console.WriteLine($"{_server.ServerStore.NodeTag} : 4");
+            
             var tls = context.Features.Get<ITlsConnectionFeature>();
             var certificate = tls?.ClientCertificate;
             var authenticationStatus = _server.AuthenticateConnectionCertificate(certificate);
 
             // build the token
             context.Features.Set<IHttpAuthenticationFeature>(authenticationStatus);
-            Console.WriteLine($"{_server.ServerStore.NodeTag} : 5");
+            
             return connection;
         }
 
