@@ -82,9 +82,9 @@ namespace Raven.Server.Https
             try
             {
                 await sslStream.AuthenticateAsServerAsync(
-                    _serverCertificate, 
+                    _serverCertificate,
                     clientCertificateRequired: true,
-                    enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls, 
+                    enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls,
                     checkCertificateRevocation: true);
             }
             catch (OperationCanceledException)
@@ -101,9 +101,13 @@ namespace Raven.Server.Https
                 sslStream.Dispose();
                 return _closedAdaptedConnection;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception");
+            }
 
             // Always set the feature even though the cert might be null
-            context.Features.Set<ITlsConnectionFeature>(new TlsConnectionFeature
+                context.Features.Set<ITlsConnectionFeature>(new TlsConnectionFeature
             {
                 ClientCertificate = ConvertToX509Certificate2(sslStream.RemoteCertificate)
             });
