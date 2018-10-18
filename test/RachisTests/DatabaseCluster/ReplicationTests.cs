@@ -719,6 +719,7 @@ namespace RachisTests.DatabaseCluster
             {
                 Console.WriteLine("********************EXIT****************");
                 Console.Out.Flush();
+                Environment.Exit(1111);
                 throw;
             }
             
