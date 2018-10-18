@@ -1520,7 +1520,7 @@ namespace Raven.Server
                 Console.WriteLine($"{ServerStore.NodeTag} : 1");
                 try
                 {
-                    await sslStream.AuthenticateAsServerAsync(Certificate.Certificate, true, SslProtocols.Tls12, false);
+                    sslStream.AuthenticateAsServer(Certificate.Certificate, true, SslProtocols.Tls12, false);
                 }
                 catch (Exception e)
                 {

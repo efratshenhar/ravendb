@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FastTests.Server.Documents.Queries.Parser;
 using FastTests.Voron.Backups;
 using FastTests.Voron.Compaction;
+using RachisTests.DatabaseCluster;
 using SlowTests.Authentication;
 using SlowTests.Bugs.MapRedue;
 using SlowTests.Client;
@@ -20,9 +21,9 @@ namespace Tryouts
         {
             try
             {
-                using (var test = new RavenDB_11734())
+                using (var test = new ReplicationTests())
                 {
-                    await test.Index_Queries_Should_Not_Return_Deleted_Documents();
+                    await test.DoNotReplicateBack(true);
                 }
             }
             catch (Exception e)
