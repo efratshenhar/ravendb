@@ -134,7 +134,8 @@ namespace Raven.Client.Util
             {
                 tcpClient = new TcpClient();
             }
-            
+
+            tcpClient.Client.NoDelay = true;
             tcpClient.NoDelay = true;            
             tcpClient.LingerState = new LingerOption(true, 5);
 
