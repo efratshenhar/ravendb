@@ -115,7 +115,7 @@ namespace Raven.Client.Util
             var expectedCert = new X509Certificate2(Convert.FromBase64String(info.Certificate), (string)null, X509KeyStorageFlags.MachineKeySet);
             var sslStream = new SslStream(stream, false, (sender, actualCert, chain, errors) =>
             {
-                Console.WriteLine("Get");
+                Console.WriteLine($"Get { expectedCert.Equals(actualCert)}");
                 return expectedCert.Equals(actualCert);
             });
             await sslStream.AuthenticateAsClientAsync(new Uri(info.Url).Host, new X509CertificateCollection(new X509Certificate[]{storeCertificate}), SslProtocols.Tls12, false).ConfigureAwait(false);
