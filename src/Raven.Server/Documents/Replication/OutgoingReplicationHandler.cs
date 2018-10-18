@@ -136,19 +136,25 @@ namespace Raven.Server.Documents.Replication
                         throw new InvalidOperationException(
                             $"{record.DatabaseName} is encrypted, and require HTTPS for replication, but had endpoint with url {Destination.Url} to database {Destination.Database}");
                 }
-                
+
+                Console.WriteLine($"Try connect {FromToString}");
                 var task = TcpUtils.ConnectSocketAsync(_connectionInfo, (_parent._server.Engine.TcpConnectionTimeout), _log);
+               
                
                 task.Wait(CancellationToken);
                  
                 
                 using (Interlocked.Exchange(ref _tcpClient, task.Result))
                 {
-                    
+                    Console.WriteLine($"Try wrap {FromToString}");
+
                     var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
                    
                     wrapSsl.Wait(CancellationToken);
-                    
+
+                    Console.WriteLine($"Start replicate {FromToString}");
+
+
                     using (_stream = wrapSsl.Result) // note that _stream is being disposed by the interruptible read
                     using (_interruptibleRead = new InterruptibleRead(_database.DocumentsStorage.ContextPool, _stream))
                     using (_buffer = JsonOperationContext.ManagedPinnedBuffer.LongLivedInstance())
