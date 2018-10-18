@@ -113,13 +113,22 @@ namespace Raven.Client.Util
                 return stream;
 
             var expectedCert = new X509Certificate2(Convert.FromBase64String(info.Certificate), (string)null, X509KeyStorageFlags.MachineKeySet);
-            Console.WriteLine("*********************************************************");
+            Console.WriteLine("********************************************************* " + tcpClient.Client.RemoteEndPoint);
             var sslStream = new SslStream(stream, false, (sender, actualCert, chain, errors) =>
             {
                 Console.WriteLine($"Get {expectedCert.Equals(actualCert)}");
                 return expectedCert.Equals(actualCert);
             });
-            await sslStream.AuthenticateAsClientAsync(new Uri(info.Url).Host, new X509CertificateCollection(new X509Certificate[]{storeCertificate}), SslProtocols.Tls12, false).ConfigureAwait(false);
+            try
+            {
+                await sslStream.AuthenticateAsClientAsync(new Uri(info.Url).Host, new X509CertificateCollection(new X509Certificate[]{storeCertificate}), SslProtocols.Tls12, false).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed " + tcpClient.Client.RemoteEndPoint);
+                Console.WriteLine(e);
+                throw;
+            }
             stream = sslStream;
             return stream;
         }
