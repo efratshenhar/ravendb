@@ -425,6 +425,9 @@ namespace Raven.Server
                     return false; // shouldn't happen, but just in case
                 }
 
+
+
+
                 var forceRenew = state as bool? ?? false;
 
                 var currentRefreshTask = _currentRefreshTask;
