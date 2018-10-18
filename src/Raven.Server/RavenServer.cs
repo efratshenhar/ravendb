@@ -1517,9 +1517,9 @@ namespace Raven.Server
                         // SSL, because that generate a nicer error for the user to read then just aborted
                         // connection because SSL negotation failed.
                         true);
-
+                Console.WriteLine($"{ServerStore.NodeTag} : 1");
                 await sslStream.AuthenticateAsServerAsync(Certificate.Certificate, true, SslProtocols.Tls12, false);
-
+                Console.WriteLine($"{ServerStore.NodeTag} : 2");
                 return (sslStream, HttpsConnectionAdapter.ConvertToX509Certificate2(sslStream.RemoteCertificate));
             }
 
