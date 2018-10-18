@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Raven.Client.Documents.Changes;
 using Raven.Client.Documents.Operations.Replication;
 using Raven.Client.Documents.Replication;
@@ -148,10 +149,21 @@ namespace Raven.Server.Documents.Replication
                 {
                     Console.WriteLine($"Try wrap {FromToString}");
 
-                    var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
-                   
-                    wrapSsl.Wait(CancellationToken);
+                    Task<Stream> wrapSsl;
+                    try
+                    {
+                        wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate, _parent._server.Engine.TcpConnectionTimeout);
 
+                        wrapSsl.Wait(CancellationToken);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("!!!!!!!!!!!!!!");
+                        Console.WriteLine(e);
+                        throw;
+                    }
+                   
                     Console.WriteLine($"Start replicate {FromToString}");
 
 
