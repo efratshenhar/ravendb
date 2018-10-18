@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Adapter.Internal;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Sparrow.Logging;
 
 namespace Raven.Server.Https
@@ -27,6 +29,7 @@ namespace Raven.Server.Https
 
         private X509Certificate2 _serverCertificate;
         private readonly Logger _logger;
+        private readonly HttpsConnectionAdapterOptions _options;
 
         public HttpsConnectionAdapter(X509Certificate2 certificate) : this()
         {
@@ -35,6 +38,10 @@ namespace Raven.Server.Https
 
         public HttpsConnectionAdapter()
         {
+            _options = new HttpsConnectionAdapterOptions
+            {
+                HandshakeTimeout = TimeSpan.FromSeconds(30)
+            };
             _logger = LoggingSource.Instance.GetLogger<HttpsConnectionAdapter>("Server");
         }
 
@@ -56,7 +63,6 @@ namespace Raven.Server.Https
 
         private async Task<IAdaptedConnection> InnerOnConnectionAsync(ConnectionAdapterContext context)
         {
-            
             var sslStream = new SslStream(context.ConnectionStream,
                 leaveInnerStreamOpen: false,
                 userCertificateValidationCallback: (sender, certificate, chain, sslPolicyErrors) =>
@@ -79,27 +85,34 @@ namespace Raven.Server.Https
                            sslPolicyErrors == SslPolicyErrors.None;
                 });
 
+            var timeoutFeature = context.Features.Get<Microsoft.AspNetCore.Server.Kestrel.Core.Features.IConnectionTimeoutFeature>();
+            timeoutFeature.SetTimeout(_options.HandshakeTimeout);
+
             try
             {
                 await sslStream.AuthenticateAsServerAsync(
-                    _serverCertificate, 
+                    _serverCertificate,
                     clientCertificateRequired: true,
-                    enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls, 
+                    enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls,
                     checkCertificateRevocation: true);
             }
             catch (OperationCanceledException)
             {
-                
+
                 sslStream.Dispose();
                 return _closedAdaptedConnection;
             }
             catch (IOException ex)
             {
-                
+
                 if (_logger.IsInfoEnabled)
                     _logger.Info("Failed to authenticate client", ex);
                 sslStream.Dispose();
                 return _closedAdaptedConnection;
+            }
+            finally
+            {
+                timeoutFeature.CancelTimeout();
             }
 
             // Always set the feature even though the cert might be null
