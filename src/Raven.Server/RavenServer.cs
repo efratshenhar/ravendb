@@ -1516,7 +1516,7 @@ namespace Raven.Server
                         // Otherwise, we'll generate an error, but we'll do that at a higher level then
                         // SSL, because that generate a nicer error for the user to read then just aborted
                         // connection because SSL negotation failed.
-                        true);
+                        false);
                 Console.WriteLine($"{ServerStore.NodeTag} : 1");
                 try
                 {

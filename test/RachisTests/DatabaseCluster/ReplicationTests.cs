@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Esprima.Ast;
@@ -13,14 +14,17 @@ using Raven.Client.Documents.Operations.Replication;
 using Raven.Client.Documents.Session;
 using Raven.Client.Exceptions;
 using Raven.Client.Exceptions.Security;
+using Raven.Client.Json.Converters;
 using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations;
 using Raven.Client.ServerWide.Operations.Certificates;
+using Raven.Client.Util;
 using Raven.Server;
 using Raven.Server.ServerWide;
 using Raven.Server.Web;
 using Raven.Server.Web.System;
 using Raven.Tests.Core.Utils.Entities;
+using Sparrow.Json;
 using Tests.Infrastructure;
 using Xunit;
 
@@ -558,6 +562,65 @@ namespace RachisTests.DatabaseCluster
                 await DeleteOngoingTask((DocumentStore)store, watcher.TaskId, OngoingTaskType.Replication);
                 tasks = await GetOngoingTasks(databaseName);
                 Assert.Equal(0, tasks.Count);
+            }
+        }
+
+        [Fact]
+        public async Task EnsureDocumentsReplication2()
+        {
+            var databaseName = GetDatabaseName();
+            var leader = await CreateRaftClusterAndGetLeader(1, false, useSsl: true);
+
+            var adminCertificate = AskServerForClientCertificate(_selfSignedCertFileName, new Dictionary<string, DatabaseAccess>(), SecurityClearance.ClusterAdmin, server: leader);
+
+            using (var store = new DocumentStore
+            {
+                Urls = new[] { leader.WebUrl },
+                Database = databaseName,
+                Certificate = adminCertificate,
+                Conventions =
+                {
+                    DisableTopologyUpdates = true
+                }
+            }.Initialize())
+            {
+                Console.WriteLine($"{leader.WebUrl}/info/tcp");
+                var httpClient = store.GetRequestExecutor().HttpClient;
+                Console.WriteLine("Waiting...");
+
+                for (int j = 0; j < 10; j++)
+                {
+                    Console.WriteLine("- " + j);
+                    var parallel = 50;
+                    var tasks = new Task[parallel];
+                    for (int i = 0; i < parallel; i++)
+                    {
+                        tasks[i] = Task.Run(async () =>
+                        {
+                            using (var context = JsonOperationContext.ShortTermSingleUse())
+                            using (var res = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, $"{leader.WebUrl}/info/tcp"), HttpCompletionOption.ResponseHeadersRead))
+                            using (var stream = await res.Content.ReadAsStreamAsync())
+                            {
+                                var json = await context.ReadForMemoryAsync(stream, "response");
+                                var result = JsonDeserializationClient.TcpConnectionInfo(json);
+
+                                var client = await TcpUtils.ConnectAsync(result.Url, TimeSpan.FromSeconds(5));
+                                var wrapSsl = await TcpUtils.WrapStreamWithSslAsync(client, result, adminCertificate, TimeSpan.FromSeconds(5));
+
+                                //                                await TcpUtils.ConnectAsync($"{result.Url}:{result.Port}");
+                                //                                result.Certificate;
+                            }
+                        });
+                    }
+
+                    await Task.WhenAll(tasks);
+                    foreach (var task in tasks)
+                    {
+                        await task;
+                    }
+
+                }
+                Console.WriteLine("Done");
             }
         }
 
