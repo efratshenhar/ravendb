@@ -109,7 +109,7 @@ namespace Raven.Server.Https
             
             var tls = context.Features.Get<ITlsConnectionFeature>();
             var certificate = tls?.ClientCertificate;
-            Console.WriteLine($"{_server.ServerStore.NodeTag} - certificate.FriendlyName : {certificate.FriendlyName}");
+            Console.WriteLine($"{_server.ServerStore.Server.ServerStore.NodeTag} - certificate.FriendlyName : {certificate.FriendlyName}");
             var authenticationStatus = _server.AuthenticateConnectionCertificate(certificate);
             Console.WriteLine($"{_server.ServerStore.NodeTag} - authenticationStatus : {authenticationStatus.Status.ToString()}");
             // build the token
