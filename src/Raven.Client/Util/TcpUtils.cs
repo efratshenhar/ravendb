@@ -116,10 +116,10 @@ namespace Raven.Client.Util
             Console.WriteLine("*********************************************************");
             var sslStream = new SslStream(stream, false, (sender, actualCert, chain, errors) =>
             {
-                Console.WriteLine($"Get { expectedCert.Equals(actualCert)}");
+                Console.WriteLine($"Get {expectedCert.Equals(actualCert)}");
                 return expectedCert.Equals(actualCert);
             });
-            await sslStream.AuthenticateAsClientAsync(new Uri(info.Url).Host, new X509CertificateCollection(new X509Certificate[]{storeCertificate}), SslProtocols.Tls12, true).ConfigureAwait(false);
+            await sslStream.AuthenticateAsClientAsync(new Uri(info.Url).Host, new X509CertificateCollection(new X509Certificate[]{storeCertificate}), SslProtocols.Tls12, false).ConfigureAwait(false);
             stream = sslStream;
             return stream;
         }
