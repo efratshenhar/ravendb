@@ -625,7 +625,7 @@ namespace RachisTests.DatabaseCluster
         }
 
         [Theory]
-        [InlineData(false)]
+        //[InlineData(false)]
         [InlineData(true)]
         public async Task AddGlobalChangeVectorToNewDocument(bool useSsl)
         {
