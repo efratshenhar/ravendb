@@ -698,7 +698,7 @@ namespace RachisTests.DatabaseCluster
                     await session.StoreAsync(new User { Name = "Indych" }, "users/2");
                     await session.SaveChangesAsync();
                 }
-                await Task.Delay(200);
+                await Task.Delay(600);
                 using (var session = store.OpenAsyncSession())
                 {
                     var user = await session.LoadAsync<User>("users/2");
