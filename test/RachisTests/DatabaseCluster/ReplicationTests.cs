@@ -678,7 +678,7 @@ namespace RachisTests.DatabaseCluster
                     databaseName,
                     "users/1",
                     u => u.Name.Equals("Karmel"),
-                    TimeSpan.FromSeconds(clusterSize + 5),
+                    TimeSpan.FromSeconds(clusterSize + 25),
                     certificate: adminCertificate));
             }
 
