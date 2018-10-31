@@ -629,7 +629,7 @@ namespace RachisTests.DatabaseCluster
         [InlineData(true)]
         public async Task AddGlobalChangeVectorToNewDocument(bool useSsl)
         {
-            var clusterSize = 5;
+            var clusterSize = 3;
             var databaseName = GetDatabaseName();
             var leader = await CreateRaftClusterAndGetLeader(clusterSize, true, 0, useSsl: useSsl);
 
@@ -707,8 +707,6 @@ namespace RachisTests.DatabaseCluster
                     Assert.True(changeVector.Contains("A:1-"));
                     Assert.True(changeVector.Contains("B:2-"));
                     Assert.True(changeVector.Contains("C:1-"));
-                    Assert.True(changeVector.Contains("D:1-"));
-                    Assert.True(changeVector.Contains("E:1-"));
                 }
             }
         }
