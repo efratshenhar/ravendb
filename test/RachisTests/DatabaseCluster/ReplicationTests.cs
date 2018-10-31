@@ -678,7 +678,7 @@ namespace RachisTests.DatabaseCluster
                     databaseName,
                     "users/1",
                     u => u.Name.Equals("Karmel"),
-                    TimeSpan.FromSeconds(clusterSize + 25),
+                    TimeSpan.FromSeconds(clusterSize + 5),
                     certificate: adminCertificate));
             }
 
@@ -698,12 +698,7 @@ namespace RachisTests.DatabaseCluster
                     await session.StoreAsync(new User { Name = "Indych" }, "users/2");
                     await session.SaveChangesAsync();
                 }
-                foreach (var server in Servers)
-                {
-                    var db = server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName).Result;
-                    var c = db.ReplicationLoader?.OutgoingConnections.Count();
-                    Console.WriteLine($"{server.ServerStore.NodeTag} : {c}");
-                }
+                await Task.Delay(1000);
                 using (var session = store.OpenAsyncSession())
                 {
                     var user = await session.LoadAsync<User>("users/2");
