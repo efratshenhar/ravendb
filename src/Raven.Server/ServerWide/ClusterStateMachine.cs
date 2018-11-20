@@ -993,7 +993,6 @@ namespace Raven.Server.ServerWide
                         try
                         {
                             DatabaseChanged?.Invoke(this, (databaseName, index, type, change));
-                            IndexChangedForBackup?.Invoke(this, (databaseName, index, type));
                             _rachisLogIndexNotifications.NotifyListenersAbout(index, null);
                         }
                         catch (Exception e)
@@ -1064,6 +1063,7 @@ namespace Raven.Server.ServerWide
                         return;
                     }
 
+                    UpdateEtagForBackup(databaseRecord, type, index);
                     var updatedDatabaseBlittable = EntityToBlittable.ConvertCommandToBlittable(databaseRecord, context);
                     UpdateValue(index, items, valueNameLowered, valueName, updatedDatabaseBlittable);
                 }
@@ -1072,6 +1072,24 @@ namespace Raven.Server.ServerWide
             {
                 NotifyDatabaseAboutChanged(context, databaseName, index, type, DatabasesLandlord.ClusterDatabaseChangeType.RecordChanged);
             }
+        }
+
+        private void UpdateEtagForBackup(DatabaseRecord databaseRecord, string type, long index)
+        {
+            switch (type)
+            {
+                case nameof(PutIndexCommand):
+                case nameof(PutAutoIndexCommand):
+                case nameof(DeleteIndexCommand):
+                case nameof(SetIndexLockCommand):
+                case nameof(SetIndexPriorityCommand):
+                case nameof(SetIndexStateCommand):
+                case nameof(EditRevisionsConfigurationCommand):
+                case nameof(EditExpirationCommand):
+                    databaseRecord.EtagForBackup = index;
+                    break;
+            }
+
         }
 
         public override bool ShouldSnapshot(Slice slice, RootObjectType type)
@@ -1245,10 +1263,10 @@ namespace Raven.Server.ServerWide
             var compareExchange = (CompareExchangeCommandBase)JsonDeserializationCluster.Commands[type](cmd);
             result = compareExchange.Execute(context, items, index);
             cmd.TryGet(nameof(CompareExchangeCommandBase.Database), out string database);
-            OnTransactionDispose(context, index, database);
+            OnTransactionDispose(context, index);
         }
 
-        private void OnTransactionDispose(TransactionOperationContext context, long index, string databaseName = null)
+        private void OnTransactionDispose(TransactionOperationContext context, long index)
         {
             context.Transaction.InnerTransaction.LowLevelTransaction.OnDispose += transaction =>
             {
@@ -1258,8 +1276,6 @@ namespace Raven.Server.ServerWide
                         try
                         {
                             _rachisLogIndexNotifications.NotifyListenersAbout(index, null);
-                            if (databaseName != null)
-                                IndexChangedForBackup?.Invoke(this, (databaseName, index, nameof(CompareExchangeCommandBase)));
                         }
                         catch (Exception e)
                         {

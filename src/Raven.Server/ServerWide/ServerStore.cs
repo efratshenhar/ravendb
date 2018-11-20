@@ -642,8 +642,6 @@ namespace Raven.Server.ServerWide
             _engine.StateMachine.DatabaseChanged += OnDatabaseChanged;
             _engine.StateMachine.ValueChanged += OnValueChanged;
 
-            _engine.StateMachine.IndexChangedForBackup += OnIndexChangedForBackup;
-
             _engine.TopologyChanged += OnTopologyChanged;
             _engine.StateChanged += OnStateChanged;
 
@@ -754,40 +752,6 @@ namespace Raven.Server.ServerWide
                 NodeTag, _engine.CurrentTerm, _engine.CurrentState, GetNodesStatuses(), LoadLicenseLimits()?.NodeLicenseDetails),
                 DateTime.MinValue);
             // we set the postpone time to the minimum in order to overwrite it and to send this notification every time when a new client connects. 
-        }
-
-        public long GetLastRaftIndex(string databaseName)
-        {
-            if (_lastRaftIndexByDatabase.TryGetValue(databaseName, out long index))
-                return index;
-
-            return LastRaftCommitIndex;
-        }
-
-        public void SetLastRaftIndex(string databaseName, long index)
-        {
-            _lastRaftIndexByDatabase.AddOrUpdate(databaseName, index, (key, oldIndex) => Math.Max(index, oldIndex));
-        }
-
-        private void OnIndexChangedForBackup(object sender, (string DatabaseName, long Index, string Type) t)
-        {
-            switch (t.Type)
-            {
-                case nameof(IncrementClusterIdentityCommand):
-                case nameof(IncrementClusterIdentitiesBatchCommand):
-                case nameof(UpdateClusterIdentityCommand):
-                case nameof(PutIndexCommand):
-                case nameof(PutAutoIndexCommand):
-                case nameof(DeleteIndexCommand):
-                case nameof(SetIndexLockCommand):
-                case nameof(SetIndexPriorityCommand):
-                case nameof(SetIndexStateCommand):
-                case nameof(EditRevisionsConfigurationCommand):
-                case nameof(EditExpirationCommand):
-                case nameof(CompareExchangeCommandBase):
-                    SetLastRaftIndex(t.DatabaseName, t.Index);
-                    break;
-            }
         }
 
         private void OnDatabaseChanged(object sender, (string DatabaseName, long Index, string Type, DatabasesLandlord.ClusterDatabaseChangeType _) t)
