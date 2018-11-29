@@ -31,12 +31,6 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Sodium.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>Sodium.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
@@ -44,5 +38,21 @@
     <PackageReference Include="Raven.CodeAnalysis" Version="1.0.11">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Sodium.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Sodium.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Sodium.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Sodium.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 </Project>

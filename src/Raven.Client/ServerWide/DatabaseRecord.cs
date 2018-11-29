@@ -37,6 +37,10 @@ namespace Raven.Client.ServerWide
 
         public bool Encrypted;
 
+        public byte[] BackupKey;
+
+        public byte[] Header;
+
         public Dictionary<string, DeletionInProgressStatus> DeletionInProgress;
 
         public DatabaseTopology Topology;

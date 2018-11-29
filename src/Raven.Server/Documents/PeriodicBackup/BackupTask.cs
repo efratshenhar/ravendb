@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,8 @@ using Raven.Client;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Operations.Backups;
 using Raven.Client.Documents.Smuggler;
+using Raven.Client.Extensions.Streams;
+using Raven.Client.ServerWide;
 using Raven.Client.Util;
 using Raven.Server.Config.Settings;
 using Raven.Server.Documents.PeriodicBackup.Aws;
@@ -49,7 +52,7 @@ namespace Raven.Server.Documents.PeriodicBackup
         private readonly PathSetting _tempBackupPath;
         private readonly Logger _logger;
         private readonly CancellationToken _databaseShutdownCancellationToken;
-
+        private EncryptedBackup _encryptBackup;
         public readonly OperationCancelToken TaskCancelToken;
         private readonly BackupResult _backupResult;
 
@@ -503,8 +506,44 @@ namespace Raven.Server.Documents.PeriodicBackup
                     token: TaskCancelToken.Token);
 
                 smuggler.Execute();
-                file.Flush(flushToDisk: true);
 
+                //TODO - What the size of file? we have flush in the middle?
+                /*options.Encrypted = true; ////TODO - Delete. need to add an option in studio and api
+                 
+                if (_encryptBackup == null)
+                    _encryptBackup = new EncryptedBackup();//TODO - Move inside if
+
+                var databaseRecord = smugglerSource.GetDatabaseRecord();
+                if (options.Encrypted)
+                {
+                    //TODO - Change file name
+                    //TODO - Add exceptions and error check
+                    using (var encryptedFile = File.Open(backupFilePath + " encrypted", FileMode.CreateNew))
+                    {
+                        
+                        file.Position = 0;
+                        if (databaseRecord.BackupKey == null)
+                        {
+                            _encryptBackup.CreateKey(databaseRecord);
+                        }
+                        _encryptBackup.Encrypt(file, encryptedFile, databaseRecord);
+                        encryptedFile.Flush(flushToDisk: true);
+                    }
+                }
+
+                //file.Flush(flushToDisk: true);
+                //TODO - move to restore and organized
+                using (var file3 = File.Open(backupFilePath + " encrypted", FileMode.Open))
+                {
+                    using (var file4 = File.Open(backupFilePath + "F", FileMode.CreateNew))
+                    {
+                        _encryptBackup.Decrypt(file3, file4, databaseRecord);
+                        file4.Flush(flushToDisk: true);
+                    }
+                    
+                }*/
+
+                file.Flush(flushToDisk: true);
                 return smugglerSource.LastEtag;
             }
         }
@@ -805,6 +844,90 @@ namespace Raven.Server.Documents.PeriodicBackup
                     NotificationSeverity.Error,
                     details: new ExceptionDetails(e)));
             }
+        }
+    }
+
+    public unsafe class EncryptedBackup
+    {
+        //TODO - key and header?? need to be in database record .
+        // what happens when we have more than one backup? need new header every time?
+        //TODO - decide on block size
+
+        private int _blockSize = 100;
+        public void CreateKey(DatabaseRecord databaseRecord)
+        {
+            var _key = new byte[(int)Sodium.crypto_secretstream_xchacha20poly1305_keybytes()];
+            fixed (byte* keyPtr = _key)
+            {
+                Sodium.crypto_secretstream_xchacha20poly1305_keygen(keyPtr);
+                databaseRecord.BackupKey = _key;
+                databaseRecord.Header = new byte[(int)Sodium.crypto_secretstream_xchacha20poly1305_headerbytes()];
+            }
+        }
+
+        public void Encrypt(FileStream file, FileStream encrypedFile, DatabaseRecord databaseRecord)
+        {
+            //TODO - stackalloc or new?
+            //TODO - Add exceptions and error check
+            var state = stackalloc byte[(int)Sodium.crypto_secretstream_xchacha20poly1305_statebytes()];
+            fixed (byte* keyPtr = databaseRecord.BackupKey)
+            {
+                //_header = new byte[(int)Sodium.crypto_secretstream_xchacha20poly1305_headerbytes()];
+
+                fixed (byte* header = databaseRecord.Header)
+                {
+                    var a = Sodium.crypto_secretstream_xchacha20poly1305_init_push(state, header, keyPtr);
+                }
+            }
+            var sizeLeft = file.Length;
+            do
+            {
+                var sizeToRead = (int)Math.Min(_blockSize, sizeLeft);
+                var fileBlock = file.ReadEntireBlock(sizeToRead);
+
+                var ciphertext = new byte[fileBlock.Length + (int)Sodium.crypto_secretstream_xchacha20poly1305_abytes()];
+                fixed (byte* fileBlockPtr = fileBlock)
+                {
+                    fixed (byte* ciphertextPtr = ciphertext)
+                    {
+                        ulong size;
+                        var res = Sodium.crypto_secretstream_xchacha20poly1305_push(state, ciphertextPtr, &size, fileBlockPtr, (ulong)sizeToRead, null, 0, 0);
+                        encrypedFile.Write(ciphertext);
+                    }
+                }
+                sizeLeft -= sizeToRead;
+            } while (sizeLeft > 0);
+
+        }
+
+        public void Decrypt(FileStream encrypedFile, FileStream outputFile, DatabaseRecord databaseRecord)
+        {
+            var state = stackalloc byte[(int)Sodium.crypto_secretstream_xchacha20poly1305_statebytes()];
+            fixed (byte* keyPtr = databaseRecord.BackupKey)
+            {
+                fixed (byte* header = databaseRecord.Header)
+                {
+                    var b = Sodium.crypto_secretstream_xchacha20poly1305_init_pull(state, header, keyPtr);
+                }
+            }
+            var sizeLeft = encrypedFile.Length;
+            do
+            {
+                var sizeToRead = (int)Math.Min(_blockSize + (int)Sodium.crypto_secretstream_xchacha20poly1305_abytes(), sizeLeft);
+                var fileBlock = encrypedFile.ReadEntireBlock(sizeToRead);
+
+                var message = new byte[sizeToRead - (int)Sodium.crypto_secretstream_xchacha20poly1305_abytes()];
+                fixed (byte* block = fileBlock)
+                {
+                    fixed (byte* messagePtr = message)
+                    {
+                        ulong s;
+                        var d = Sodium.crypto_secretstream_xchacha20poly1305_pull(state, messagePtr, &s, null, block, (ulong)sizeToRead, null, 0);
+                        outputFile.Write(message);
+                    }
+                }
+                sizeLeft -= sizeToRead;
+            } while (sizeLeft > 0);
         }
     }
 }
