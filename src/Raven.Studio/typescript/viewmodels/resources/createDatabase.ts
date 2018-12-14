@@ -92,7 +92,7 @@ class createDatabase extends dialogViewModelBase {
                 break;
         }
         
-        this.encryptionSection = new setupEncryptionKey(this.databaseModel.encryption.key, this.databaseModel.encryption.confirmation, this.databaseModel.name);
+        this.encryptionSection = setupEncryptionKey.forDatabase(this.databaseModel.encryption.key, this.databaseModel.encryption.confirmation, this.databaseModel.name);
 
         this.bindToCurrentInstance("showAdvancedConfigurationFor", "toggleSelectAll");
     }
