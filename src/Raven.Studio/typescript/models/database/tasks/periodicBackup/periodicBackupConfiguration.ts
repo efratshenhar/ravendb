@@ -70,7 +70,7 @@ class periodicBackupConfiguration {
         this.glacierSettings(!dto.GlacierSettings ? glacierSettings.empty(serverLimits.AllowedAwsRegions) : new glacierSettings(dto.GlacierSettings, serverLimits.AllowedAwsRegions));
         this.azureSettings(!dto.AzureSettings ? azureSettings.empty() : new azureSettings(dto.AzureSettings));
         this.ftpSettings(!dto.FtpSettings ? ftpSettings.empty() : new ftpSettings(dto.FtpSettings));
-        this.encryptionSettings(new encryptionSettings(encryptedDatabase, this.backupType, dto.EncryptionSettings));
+        this.encryptionSettings(new encryptionSettings(encryptedDatabase, this.backupType, dto.BackupEncryptionSettings));
         
         this.fullBackupHumanReadable = ko.pureComputed(() => {
             return periodicBackupConfiguration.getHumanReadable(
@@ -333,7 +333,7 @@ class periodicBackupConfiguration {
             AzureSettings: this.azureSettings().toDto(),
             FtpSettings: this.ftpSettings().toDto(),
             MentorNode: this.manualChooseMentor() ? this.preferredMentor() : undefined,
-            EncryptionSettings: this.encryptionSettings().toDto()
+            BackupEncryptionSettings: this.encryptionSettings().toDto()
         };
     }
 
@@ -351,7 +351,7 @@ class periodicBackupConfiguration {
             AzureSettings: null,
             FtpSettings: null,
             MentorNode: null,
-            EncryptionSettings: {
+            BackupEncryptionSettings: {
                 Key: "",
                 EncryptionMode: null
             }
