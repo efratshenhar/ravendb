@@ -55,7 +55,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup
                         EncryptionMode = EncryptionMode.UseProvidedKey
                     }
                 };
-
+                
                 var backupTaskId = (await store.Maintenance.SendAsync(new UpdatePeriodicBackupOperation(config))).TaskId;
                 await store.Maintenance.SendAsync(new StartBackupOperation(true, backupTaskId));
                 var operation = new GetPeriodicBackupStatusOperation(backupTaskId);
@@ -389,6 +389,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup
                 {
                     BackupLocation = Directory.GetDirectories(backupPath).First(),
                     DatabaseName = databaseName,
+                    EncryptionKey = key,
                     BackupEncryptionSettings = new BackupEncryptionSettings
                     {
                         Key = key
@@ -459,6 +460,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup
                 {
                     BackupLocation = Directory.GetDirectories(backupPath).First(),
                     DatabaseName = databaseName,
+                    EncryptionKey = key,
                     BackupEncryptionSettings = new BackupEncryptionSettings
                     {
                         Key = key
@@ -529,6 +531,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup
                 {
                     BackupLocation = Directory.GetDirectories(backupPath).First(),
                     DatabaseName = databaseName,
+                    EncryptionKey = key,
                     BackupEncryptionSettings = new BackupEncryptionSettings
                     {
                         Key = key

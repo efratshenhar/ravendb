@@ -91,7 +91,11 @@ namespace Raven.Server.Documents.PeriodicBackup.Restore
                     if (_restoreConfiguration.BackupEncryptionSettings?.Key != null)
                     {
                         _hasEncryptionKey = true;
-                        _restoreConfiguration.EncryptionKey = _restoreConfiguration.BackupEncryptionSettings?.Key;
+                        _serverStore.PutSecretKey(_restoreConfiguration.BackupEncryptionSettings?.Key,
+                            databaseName, overwrite: false);
+                        _restoreConfiguration.BackupEncryptionSettings.Key = null;
+
+
                     }
                     // restore the snapshot
                     restoreSettings = SnapshotRestore(firstFile,
@@ -324,7 +328,7 @@ namespace Raven.Server.Documents.PeriodicBackup.Restore
                         if (entry.Name == RestoreSettings.SmugglerValuesFileName)
                         {
                             using (var input = entry.Open())
-                            using (var inputStream = GetInputStream(input, database.Name))
+                            using (var inputStream = GetInputStream(input, database.Name, true))
                             using (var uncompressed = new GZipStream(inputStream, CompressionMode.Decompress))
                             {
                                 var source = new StreamSource(uncompressed, context, database);
@@ -551,24 +555,25 @@ namespace Raven.Server.Documents.PeriodicBackup.Restore
             }
         }
 
-        private Stream GetInputStream(Stream fileStream, string database)
+        private Stream GetInputStream(Stream fileStream, string database, bool isSnapshot = false)
         {
             using (_serverStore.ContextPool.AllocateOperationContext(out TransactionOperationContext ctx))
             using (ctx.OpenReadTransaction())
             {
-                var key = _serverStore.GetSecretKey(ctx, database);
-                if (key != null)
-                {
-                    return new DecryptingXChaCha20Oly1305Stream(fileStream, key);
-                }
-                if (_restoreConfiguration.EncryptionKey != null)
-                {
-                    return new DecryptingXChaCha20Oly1305Stream(fileStream, Convert.FromBase64String(_restoreConfiguration.EncryptionKey));
-                }
                 if (_restoreConfiguration.BackupEncryptionSettings?.Key != null)
                 {
                     return new DecryptingXChaCha20Oly1305Stream(fileStream, Convert.FromBase64String(_restoreConfiguration.BackupEncryptionSettings.Key));
                 }
+                var key = _serverStore.GetSecretKey(ctx, database);
+                if (key != null && isSnapshot)
+                {
+                    return new DecryptingXChaCha20Oly1305Stream(fileStream, key);
+                }
+                if (_restoreConfiguration.EncryptionKey != null && isSnapshot)
+                {
+                    return new DecryptingXChaCha20Oly1305Stream(fileStream, Convert.FromBase64String(_restoreConfiguration.EncryptionKey));
+                }
+                
             }
             return fileStream;
         }
@@ -601,7 +606,7 @@ namespace Raven.Server.Documents.PeriodicBackup.Restore
                                 using (var entryStream = zipEntry.Open())
                                 using (_serverStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                                 {
-                                    var stream = _hasEncryptionKey ? GetInputStream(entryStream, _restoreConfiguration.DatabaseName) : entryStream; 
+                                    var stream = _hasEncryptionKey ? GetInputStream(entryStream, _restoreConfiguration.DatabaseName, true) : entryStream; 
 
                                     var json = context.Read(stream, "read database settings for restore");
                                     json.BlittableValidation();
