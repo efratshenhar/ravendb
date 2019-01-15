@@ -942,7 +942,6 @@ namespace Raven.Server.Documents
                     using (var outputStream = GetOutputStream(zipStream))
                     using (var writer = new BlittableJsonTextWriter(serverContext, outputStream))
                     {
-
                         writer.WriteStartObject();
 
                         // save the database record
