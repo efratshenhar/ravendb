@@ -569,8 +569,6 @@ namespace Raven.Server.Documents.PeriodicBackup
                 (_configuration.BackupEncryptionSettings?.EncryptionMode == EncryptionMode.None))
                 return fileStream;
 
-            
-
             if ((_database.MasterKey != null) &&
                 (_configuration.BackupEncryptionSettings?.EncryptionMode == EncryptionMode.None))
                 return fileStream;
