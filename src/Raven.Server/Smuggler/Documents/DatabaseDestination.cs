@@ -11,6 +11,7 @@ using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations.Attachments;
 using Raven.Client.Documents.Operations.Counters;
 using Raven.Client.Documents.Smuggler;
+using Raven.Client.Documents.Subscriptions;
 using Raven.Client.ServerWide;
 using Raven.Client.Util;
 using Raven.Server.Documents;
@@ -20,6 +21,7 @@ using Raven.Server.Documents.TransactionCommands;
 using Raven.Server.Routing;
 using Raven.Server.ServerWide.Commands;
 using Raven.Server.ServerWide.Commands.ConnectionStrings;
+using Raven.Server.ServerWide.Commands.Subscriptions;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Smuggler.Documents.Data;
 using Raven.Server.Smuggler.Documents.Processors;
@@ -93,6 +95,11 @@ namespace Raven.Server.Smuggler.Documents
         public ICounterActions Counters()
         {
             return new CounterActions(_database);
+        }
+
+        public ISubscriptionActions Subscriptions()
+        {
+            return new SubscriptionActions(_database);
         }
 
         public IIndexActions Indexes()
@@ -987,6 +994,38 @@ namespace Raven.Server.Smuggler.Documents
                 }
 
                 _cmd = null;
+            }
+        }
+
+        private class SubscriptionActions : ISubscriptionActions
+        {
+            private readonly DocumentDatabase _database;
+            
+            public SubscriptionActions(DocumentDatabase database)
+            {
+                _database = database;
+            }
+
+            public void Dispose()
+            {
+            }
+
+            public void WriteSubscription(SubscriptionState subscriptionState)
+            {
+                var option = new SubscriptionCreationOptions
+                {
+                    Name = subscriptionState.SubscriptionName,
+                    Query = subscriptionState.Query,
+                    MentorNode = subscriptionState.MentorNode,
+                    ChangeVector = subscriptionState.ChangeVectorForNextBatchStartingPoint
+                };
+
+                AsyncHelpers.RunSync(() =>
+                    _database.ServerStore.SendToLeaderAsync(new PutSubscriptionCommand(
+                        _database.Name, subscriptionState.Query, subscriptionState.MentorNode)
+                    {
+                        Disabled = subscriptionState.Disabled,
+                    }));
             }
         }
     }

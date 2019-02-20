@@ -7,6 +7,7 @@ using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations.Attachments;
 using Raven.Client.Documents.Operations.Counters;
 using Raven.Client.Documents.Smuggler;
+using Raven.Client.Documents.Subscriptions;
 using Raven.Client.Properties;
 using Raven.Client.ServerWide;
 using Raven.Client.Util;
@@ -228,6 +229,44 @@ namespace Raven.Server.Smuggler.Documents
             return InternalGetCounterValues();
         }
 
+        public IEnumerable<SubscriptionState> GetSubscriptionValues()
+        {
+            foreach (var reader in ReadArray())
+            {
+                using (reader)
+                {
+                    if (reader.TryGet(nameof(SubscriptionState.SubscriptionName), out string subscriptionName) == false ||
+                        reader.TryGet(nameof(SubscriptionState.Query), out string query) == false ||
+                        reader.TryGet(nameof(SubscriptionState.ChangeVectorForNextBatchStartingPoint), out string changeVectorForNextBatchStartingPoint) == false ||
+                        reader.TryGet(nameof(SubscriptionState.MentorNode), out string mentorNode) == false ||
+                        reader.TryGet(nameof(SubscriptionState.NodeTag), out string nodeTag) == false ||
+                        reader.TryGet(nameof(SubscriptionState.LastBatchAckTime), out DateTime lastBatchAckTime) == false ||
+                        reader.TryGet(nameof(SubscriptionState.LastClientConnectionTime), out DateTime lastClientConnectionTime) == false ||
+                        reader.TryGet(nameof(SubscriptionState.Disabled), out bool disabled) == false ||
+                        reader.TryGet(nameof(SubscriptionState.SubscriptionId), out long subscriptionId) == false)
+                    {
+                        _result.Subscriptions.ErroredCount++;
+                        _result.AddWarning("Could not read subscriptions entry.");
+
+                        continue;
+                    }
+
+                    yield return new SubscriptionState()
+                    {
+                        Query = query,
+                        ChangeVectorForNextBatchStartingPoint = changeVectorForNextBatchStartingPoint,
+                        SubscriptionName = subscriptionName,
+                        SubscriptionId = subscriptionId,
+                        MentorNode = mentorNode,
+                        NodeTag = nodeTag,
+                        LastBatchAckTime = lastBatchAckTime,
+                        LastClientConnectionTime = lastClientConnectionTime,
+                        Disabled = disabled
+                    };
+                }
+            }
+        }
+
         private unsafe void SetBuffer(UnmanagedJsonParser parser, LazyStringValue value)
         {
             parser.SetBuffer(value.Buffer, value.Size);
@@ -309,6 +348,7 @@ namespace Raven.Server.Smuggler.Documents
                 case DatabaseItemType.Indexes:
                 case DatabaseItemType.Identities:
                 case DatabaseItemType.CompareExchange:
+                case DatabaseItemType.Subscriptions:
                 case DatabaseItemType.LegacyDocumentDeletions:
                 case DatabaseItemType.LegacyAttachmentDeletions:
                 case DatabaseItemType.Counters:
@@ -1115,6 +1155,9 @@ namespace Raven.Server.Smuggler.Documents
 
             if (type.Equals(nameof(DatabaseItemType.Identities), StringComparison.OrdinalIgnoreCase))
                 return DatabaseItemType.Identities;
+
+            if (type.Equals(nameof(DatabaseItemType.Subscriptions), StringComparison.OrdinalIgnoreCase))
+                return DatabaseItemType.Subscriptions;
 
             if (type.Equals(nameof(DatabaseItemType.CompareExchange), StringComparison.OrdinalIgnoreCase) ||
                 type.Equals("CmpXchg", StringComparison.OrdinalIgnoreCase)) //support the old name
