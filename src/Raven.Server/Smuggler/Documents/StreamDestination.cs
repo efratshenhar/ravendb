@@ -140,6 +140,7 @@ namespace Raven.Server.Smuggler.Documents
                     _writer.WriteComma();
                     _writer.WritePropertyName(nameof(databaseRecord.ConflictSolverConfig));
                     WriteConflictSolver(databaseRecord.ConflictSolverConfig);
+                    progress.ConflictSolverConfigUpdated = true;
                 }
 
                 if (databaseRecordItemType.Contain(DatabaseRecordItemType.Settings))
@@ -147,6 +148,7 @@ namespace Raven.Server.Smuggler.Documents
                     _writer.WriteComma();
                     _writer.WritePropertyName(nameof(databaseRecord.Settings));
                     WriteSettings(databaseRecord.Settings);
+                    progress.SettingsUpdated = true;
                 }
 
                 if (databaseRecordItemType.Contain(DatabaseRecordItemType.Revisions))
@@ -154,6 +156,7 @@ namespace Raven.Server.Smuggler.Documents
                     _writer.WriteComma();
                     _writer.WritePropertyName(nameof(databaseRecord.Revisions));
                     WriteRevisions(databaseRecord.Revisions);
+                    progress.RevisionsConfigurationUpdated = true;
                 }
 
                 if (databaseRecordItemType.Contain(DatabaseRecordItemType.Expiration))
@@ -161,6 +164,7 @@ namespace Raven.Server.Smuggler.Documents
                     _writer.WriteComma();
                     _writer.WritePropertyName(nameof(databaseRecord.Expiration));
                     WriteExpiration(databaseRecord.Expiration);
+                    progress.ExpirationConfigurationUpdated = true;
                 }
 
                 if (databaseRecordItemType.Contain(DatabaseRecordItemType.Client))
@@ -168,6 +172,7 @@ namespace Raven.Server.Smuggler.Documents
                     _writer.WriteComma();
                     _writer.WritePropertyName(nameof(databaseRecord.Client));
                     WriteClientConfiguration(databaseRecord.Client);
+                    progress.ClientConfigurationUpdated = true;
                 }
 
                 if (databaseRecordItemType.Contain(DatabaseRecordItemType.Sorters))
@@ -175,6 +180,7 @@ namespace Raven.Server.Smuggler.Documents
                     _writer.WriteComma();
                     _writer.WritePropertyName(nameof(databaseRecord.Sorters));
                     WriteSorters(databaseRecord.Sorters);
+                    progress.SortersUpdated = true;
                 }
 
                 switch (authorizationStatus)
@@ -187,6 +193,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.RavenConnectionStrings));
                             WriteRavenConnectionStrings(databaseRecord.RavenConnectionStrings);
+                            progress.RavenConnectionStringsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.SqlConnectionStrings))
@@ -194,6 +201,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.SqlConnectionStrings));
                             WriteSqlConnectionStrings(databaseRecord.SqlConnectionStrings);
+                            progress.SqlConnectionStringsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.PeriodicBackups))
@@ -201,6 +209,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.PeriodicBackups));
                             WritePeriodicBackups(databaseRecord.PeriodicBackups);
+                            progress.PeriodicBackupsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.ExternalReplications))
@@ -208,6 +217,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.ExternalReplications));
                             WriteExternalReplications(databaseRecord.ExternalReplications);
+                            progress.ExternalReplicationsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.RavenEtls))
@@ -215,6 +225,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.RavenEtls));
                             WriteRavenEtls(databaseRecord.RavenEtls);
+                            progress.RavenEtlsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.SqlEtls))
@@ -222,6 +233,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.SqlEtls));
                             WriteSqlEtls(databaseRecord.SqlEtls);
+                            progress.SqlEtlsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.HubPullReplications))
@@ -229,6 +241,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.HubPullReplications));
                             WriteHubPullReplications(databaseRecord.HubPullReplications);
+                            progress.HubPullReplicationsUpdated = true;
                         }
 
                         if (databaseRecordItemType.Contain(DatabaseRecordItemType.SinkPullReplications))
@@ -236,6 +249,7 @@ namespace Raven.Server.Smuggler.Documents
                             _writer.WriteComma();
                             _writer.WritePropertyName(nameof(databaseRecord.SinkPullReplications));
                             WriteSinkPullReplications(databaseRecord.SinkPullReplications);
+                            progress.SinkPullReplicationsUpdated = true;
                         }
 
                         break;

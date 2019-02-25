@@ -209,6 +209,8 @@ namespace Raven.Client.Documents.Smuggler
 
             public bool ClientConfigurationUpdated { get; set; }
 
+            public bool SettingsUpdated { get; set; }
+
             public override DynamicJsonValue ToJson()
             {
                 var json = base.ToJson();
@@ -225,6 +227,7 @@ namespace Raven.Client.Documents.Smuggler
                 json[nameof(SortersUpdated)] = SortersUpdated;
                 json[nameof(SinkPullReplicationsUpdated)] = SinkPullReplicationsUpdated;
                 json[nameof(HubPullReplicationsUpdated)] = HubPullReplicationsUpdated;
+                json[nameof(SettingsUpdated)] = SettingsUpdated;
                 return json;
             }
 
@@ -242,6 +245,7 @@ namespace Raven.Client.Documents.Smuggler
                        $"SortersUpdated: {SortersUpdated}. " +
                        $"SinkPullReplicationsUpdated: {SinkPullReplicationsUpdated}. " +
                        $"HubPullReplicationsUpdated: {HubPullReplicationsUpdated}. " +
+                       $"SettingsUpdated: {SettingsUpdated}. " +
                        $"ClientConfigurationUpdated: {ClientConfigurationUpdated}.";
             }
         }
