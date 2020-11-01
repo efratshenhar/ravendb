@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
-using Raven.Client.Documents.Operations.Backups;
 using Raven.Client.Documents.Replication;
 using Raven.Client.Http;
+using Raven.Client.Json;
 using Sparrow;
 using Sparrow.Json.Parsing;
 
@@ -171,15 +171,22 @@ $"NodeTag of 'InternalReplication' can't be modified after 'GetHashCode' was inv
         public Dictionary<string, string> PredefinedMentors = new Dictionary<string, string>();
         public Dictionary<string, string> DemotionReasons = new Dictionary<string, string>();
         public Dictionary<string, DatabasePromotionStatus> PromotablesStatus = new Dictionary<string, DatabasePromotionStatus>();
-
+        
         public LeaderStamp Stamp;
         public bool DynamicNodesDistribution;
         public int ReplicationFactor = 1;
         public List<string> PriorityOrder;
 
-        internal void ReorderMembers()
+        internal void ReorderMembers(Dictionary<int, HashSet<string>> indexErrorStatus)
         {
-            Members.Shuffle();
+            var tempList = new List<string>();
+             foreach (var memberList in indexErrorStatus)
+             {
+                 memberList.Value.ToList().Shuffle();
+                 tempList.AddRange(memberList.Value);
+             }
+
+            Members = tempList;
 
             if (PriorityOrder == null || PriorityOrder.Count == 0)
                 return;
@@ -203,13 +210,13 @@ $"NodeTag of 'InternalReplication' can't be modified after 'GetHashCode' was inv
         }
 
 
-        internal bool TryUpdateByPriorityOrder()
+        internal bool TryUpdateByPriorityOrder(Dictionary<int, HashSet<string>> indexErrorStatus)
         {
             if (IsReorderNeeded() == false)
                 return false;
 
             var originalOrder = new List<string>(Members);
-            ReorderMembers();
+            ReorderMembers(indexErrorStatus);
 
             if (originalOrder.SequenceEqual(Members))
                 return false; // members hasn't changed after the reorder
