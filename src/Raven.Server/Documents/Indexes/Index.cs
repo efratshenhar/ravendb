@@ -1897,11 +1897,14 @@ namespace Raven.Server.Documents.Indexes
 
                     if (_logger.IsInfoEnabled)
                         _logger.Info(message);
+                    if (State == IndexState.Error)
+                        Interlocked.Decrement(ref DocumentDatabase.IndexStore.ErrorIndex);
                 }
                 else
                 {
                     if (_logger.IsOperationsEnabled)
                         _logger.Operations(message + $" Error state reason: {_errorStateReason}");
+                    Interlocked.Increment(ref DocumentDatabase.IndexStore.ErrorIndex);
                 }
 
                 var oldState = State;

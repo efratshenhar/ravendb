@@ -584,6 +584,7 @@ namespace Raven.Server.ServerWide.Maintenance
             var dbName = state.Name;
             var clusterTopology = state.ClusterTopology;
             var deletionInProgress = state.ReadDeletionInProgress();
+            var indexErrorStatus = new Dictionary<int, HashSet<string>>();
 
             var someNodesRequireMoreTime = false;
             var rotatePreferredNode = false;
@@ -708,7 +709,7 @@ namespace Raven.Server.ServerWide.Maintenance
             }
 
             if (someNodesRequireMoreTime == false &&
-                databaseTopology.TryUpdateByPriorityOrder())
+                databaseTopology.TryUpdateByPriorityOrder(indexErrorStatus))
                 return "Reordering the member nodes to ensure the priority order.";
 
             var shouldUpdateTopologyStatus = false;
@@ -763,18 +764,19 @@ namespace Raven.Server.ServerWide.Maintenance
                     deletions.Add(deletionCmd);
                     return $"The promotable {promotable} is not responsive, replace it with a node {node}";
                 }
-
+                
                 if (TryGetMentorNode(dbName, databaseTopology, clusterTopology, promotable, out var mentorNode) == false)
                     continue;
 
                 var tryPromote = TryPromote(dbName, databaseTopology, current, previous, mentorNode, promotable);
                 if (tryPromote.Promote)
                 {
+                    FillIndexStatus(databaseTopology, current, dbName, indexErrorStatus, promotable);
                     databaseTopology.Promotables.Remove(promotable);
                     databaseTopology.Members.Add(promotable);
                     databaseTopology.PredefinedMentors.Remove(promotable);
                     RemoveOtherNodesIfNeeded(state, ref deletions);
-                    databaseTopology.ReorderMembers();
+                    databaseTopology.ReorderMembers(indexErrorStatus);
 
                     return $"Promoting node {promotable} to member";
                 }
@@ -833,11 +835,11 @@ namespace Raven.Server.ServerWide.Maintenance
                         if (tryPromote.Promote)
                         {
                             LogMessage($"The database {dbName} on {rehab} is reachable and up to date, so we promote it back to member.", database: dbName);
-
+                            FillIndexStatus(databaseTopology, current, dbName, indexErrorStatus, rehab);
                             databaseTopology.Members.Add(rehab);
                             databaseTopology.Rehabs.Remove(rehab);
                             RemoveOtherNodesIfNeeded(state, ref deletions);
-                            databaseTopology.ReorderMembers();
+                            databaseTopology.ReorderMembers(indexErrorStatus);
 
                             return $"Node {rehab} was recovered from rehabilitation and promoted back to member";
                         }
@@ -857,6 +859,29 @@ namespace Raven.Server.ServerWide.Maintenance
             }
 
             return null;
+        }
+
+        private static void FillIndexStatus(DatabaseTopology databaseTopology, Dictionary<string, ClusterNodeStatusReport> current, string dbName, Dictionary<int, HashSet<string>> indexErrorStatus, string promotable)
+        {
+            foreach (var member in databaseTopology.Members)
+            {
+                if (current.TryGetValue(member, out var currentStatus) && currentStatus.Report.TryGetValue(dbName, out var databaseStatusReport))
+                    FillIndexErrorCountInformation(indexErrorStatus, databaseStatusReport, member);
+            }
+
+            if (current.TryGetValue(promotable, out var currentStatus2) && currentStatus2.Report.TryGetValue(dbName, out var databaseStatusReport2))
+                FillIndexErrorCountInformation(indexErrorStatus, databaseStatusReport2, promotable);
+        }
+
+        private static void FillIndexErrorCountInformation(Dictionary<int, HashSet<string>> indexErrorStatus, DatabaseStatusReport dbStats, string member)
+        {
+            if (indexErrorStatus.TryGetValue(dbStats.NumberOfErrorIndexes, out var membersList) == false)
+            {
+                indexErrorStatus.Add(dbStats.NumberOfErrorIndexes, new HashSet<string>() { member });
+                return;
+            }
+
+            membersList.Add(member);
         }
 
         private bool ShouldGiveMoreTimeBeforeMovingToRehab(DateTime lastSuccessfulUpdate, TimeSpan? databaseUpTime)
@@ -1112,7 +1137,6 @@ namespace Raven.Server.ServerWide.Maintenance
             if (indexesCatchedUp)
             {
                 LogMessage($"We try to promote the database '{dbName}' on {promotable} to be a full member", database: dbName);
-
                 topology.PromotablesStatus.Remove(promotable);
                 topology.DemotionReasons.Remove(promotable);
 

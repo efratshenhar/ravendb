@@ -57,6 +57,8 @@ namespace Raven.Server.Documents.Indexes
 
         public readonly IndexIdentities Identities = new IndexIdentities();
 
+        public int ErrorIndex;
+
         public readonly Logger Logger;
 
         public SemaphoreSlim StoppedConcurrentIndexBatches { get; }
@@ -77,7 +79,7 @@ namespace Raven.Server.Documents.Indexes
             _documentDatabase = documentDatabase;
             _serverStore = serverStore;
             Logger = LoggingSource.Instance.GetLogger<IndexStore>(_documentDatabase.Name);
-
+            ErrorIndex = 0;
             var stoppedConcurrentIndexBatches = _documentDatabase.Configuration.Indexing.NumberOfConcurrentStoppedBatchesIfRunningLowOnMemory;
             StoppedConcurrentIndexBatches = new SemaphoreSlim(stoppedConcurrentIndexBatches);
         }

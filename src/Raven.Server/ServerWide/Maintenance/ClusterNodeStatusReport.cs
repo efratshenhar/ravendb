@@ -76,6 +76,7 @@ namespace Raven.Server.ServerWide.Maintenance
         public long NumberOfConflicts;
         public long NumberOfDocuments;
         public long LastCompletedClusterTransaction;
+        public int NumberOfErrorIndexes;
 
         public DatabaseStatus Status;
         public string Error;
@@ -99,7 +100,8 @@ namespace Raven.Server.ServerWide.Maintenance
                 [nameof(LastCompletedClusterTransaction)] = LastCompletedClusterTransaction,
                 [nameof(LastSentEtag)] = DynamicJsonValue.Convert(LastSentEtag),
                 [nameof(Error)] = Error,
-                [nameof(UpTime)] = UpTime
+                [nameof(UpTime)] = UpTime,
+                [nameof(NumberOfErrorIndexes)] = NumberOfErrorIndexes
             };
             var indexStats = new DynamicJsonValue();
             foreach (var stat in LastIndexStats)

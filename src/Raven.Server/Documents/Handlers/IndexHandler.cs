@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Jint.Native;
 using Jint.Native.Object;
@@ -363,6 +364,7 @@ namespace Raven.Server.Documents.Handlers
                                                 Logger.Operations($"Failed to change state of '{x.Name}' index to error after encountering exception when getting its stats.",
                                                     ex);
                                         }
+                                        Interlocked.Increment(ref Database.IndexStore.ErrorIndex);
                                     }
 
                                     return new IndexStats

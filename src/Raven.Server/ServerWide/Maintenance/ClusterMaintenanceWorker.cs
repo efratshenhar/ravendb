@@ -330,6 +330,7 @@ namespace Raven.Server.ServerWide.Maintenance
                 report.NumberOfConflicts = prevDatabaseReport.NumberOfConflicts;
                 report.NumberOfDocuments = prevDatabaseReport.NumberOfDocuments;
                 report.DatabaseChangeVector = prevDatabaseReport.DatabaseChangeVector;
+                report.NumberOfErrorIndexes = prevDatabaseReport.NumberOfErrorIndexes;
             }
             else
             {
@@ -340,6 +341,7 @@ namespace Raven.Server.ServerWide.Maintenance
                     report.NumberOfConflicts = documentsStorage.ConflictsStorage.ConflictsCount;
                     report.NumberOfDocuments = documentsStorage.GetNumberOfDocuments(context);
                     report.DatabaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                    report.NumberOfErrorIndexes = dbInstance.IndexStore.ErrorIndex;
                 }
             }
         }
