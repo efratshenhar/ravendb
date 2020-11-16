@@ -41,7 +41,7 @@ namespace SlowTests.Issues
                 var definition = new AutoMapIndexDefinition("Users", new[] { new AutoIndexField { Name = "Name", Storage = FieldStorage.No }, });
                 string indexName = definition.Name;
                 AsyncHelpers.RunSync(() => documentDatabase.IndexStore.CreateIndex(definition, Guid.NewGuid().ToString()));
-
+                WaitForIndexingInTheCluster(store);
                 foreach (var server in Servers)
                 {
                     documentDatabase = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(database);
