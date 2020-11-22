@@ -1374,6 +1374,9 @@ namespace Raven.Server.ServerWide.Maintenance
                 if (mentorIndexStats.State == IndexState.Error && currentIndexStats.State == IndexState.Error)
                     continue;
 
+                if (currentIndexStats.State == IndexState.Disabled)
+                    continue;
+
                 var lastIndexEtag = currentIndexStats.LastIndexedEtag;
                 if (lastPrevEtag > lastIndexEtag)
                 {

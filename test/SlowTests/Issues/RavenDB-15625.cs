@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
+using Raven.Client.Documents.Operations.Indexes;
 using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations;
-using Raven.Client.Util;
-using Raven.Server.Config;
-using Raven.Server.Documents.Indexes;
-using Raven.Server.Documents.Indexes.Auto;
+using Raven.Server.ServerWide.Context;
 using SlowTests.Core.Utils.Entities;
 using Tests.Infrastructure;
 using Xunit;
@@ -25,11 +22,7 @@ namespace SlowTests.Issues
         [Fact]
         public async Task NotInRehabWithDisabledIndexes1()
         {
-            var settings = new Dictionary<string, string>()
-            {
-                [RavenConfiguration.GetKey(x => x.Cluster.MoveToRehabGraceTime)] = "5"
-            };
-            var leader = await CreateRaftClusterAndGetLeader(3, customSettings:settings);
+            var (node, leader) = await CreateRaftCluster(3, watcherCluster: true);
             var database = GetDatabaseName();
             await CreateDatabaseInClusterInner(new DatabaseRecord(database), 3, leader.WebUrl, null);
             using (var store = new DocumentStore
@@ -39,14 +32,17 @@ namespace SlowTests.Issues
             }.Initialize())
             {
                 var documentDatabase = await Servers[2].ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(database);
-                var definition = new AutoMapIndexDefinition("Users", new[] { new AutoIndexField { Name = "Name", Storage = FieldStorage.No }, });
-                string indexName = definition.Name;
-                AsyncHelpers.RunSync(() => documentDatabase.IndexStore.CreateIndex(definition, Guid.NewGuid().ToString()));
-                WaitForIndexingInTheCluster(store);
+                var result = store.Maintenance.Send(new PutIndexesOperation(new[] {new IndexDefinition
+                {
+                    Maps = { "from user in docs.Users select new { user.Name }" },
+                    Name = "MyIndex"
+                }}));
+                var indexResult = result[0];
+                await WaitForRaftIndexToBeAppliedInCluster(indexResult.RaftCommandIndex, TimeSpan.FromSeconds(15));
                 foreach (var server in Servers)
                 { 
                     documentDatabase = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(database);
-                    var index = documentDatabase.IndexStore.GetIndex(indexName);
+                    var index = documentDatabase.IndexStore.GetIndex("MyIndex");
                     index.SetState(IndexState.Disabled);
                 }
 
@@ -61,8 +57,6 @@ namespace SlowTests.Issues
                 var val = await WaitForValueAsync(async () => await GetMembersCount(store, database), 2);
                 Assert.Equal(2, val);
 
-                await Task.Delay(TimeSpan.FromSeconds(10));
-
                 val = await WaitForValueAsync(async () => await GetMembersCount(store, store.Database), 3);
                 Assert.Equal(3, val);
 
@@ -74,11 +68,7 @@ namespace SlowTests.Issues
         [Fact]
         public async Task NotInRehabWithDisabledIndexes2()
         {
-            var settings = new Dictionary<string, string>()
-            {
-                [RavenConfiguration.GetKey(x => x.Cluster.MoveToRehabGraceTime)] = "5"
-            };
-            var leader = await CreateRaftClusterAndGetLeader(3, customSettings: settings);
+            var (node, leader) = await CreateRaftCluster(3, watcherCluster: true);
             var database = GetDatabaseName();
             await CreateDatabaseInClusterInner(new DatabaseRecord(database), 3, leader.WebUrl, null);
             using (var store = new DocumentStore
@@ -88,10 +78,14 @@ namespace SlowTests.Issues
             }.Initialize())
             {
                 var documentDatabase = await Servers[2].ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(database);
-                var definition = new AutoMapIndexDefinition("Users", new[] { new AutoIndexField { Name = "Name", Storage = FieldStorage.No }, });
-                string indexName = definition.Name;
-                AsyncHelpers.RunSync(() => documentDatabase.IndexStore.CreateIndex(definition, Guid.NewGuid().ToString()));
-                var index = documentDatabase.IndexStore.GetIndex(indexName);
+                var result = store.Maintenance.Send(new PutIndexesOperation(new[] {new IndexDefinition
+                {
+                    Maps = { "from user in docs.Users select new { user.Name }" },
+                    Name = "MyIndex"
+                }}));
+                var indexResult = result[0];
+                await WaitForRaftIndexToBeAppliedInCluster(indexResult.RaftCommandIndex, TimeSpan.FromSeconds(15));
+                var index = documentDatabase.IndexStore.GetIndex("MyIndex");
                 index.SetState(IndexState.Disabled);
 
                 var record = await store.Maintenance.Server.SendAsync(new GetDatabaseRecordOperation(store.Database));
@@ -116,11 +110,7 @@ namespace SlowTests.Issues
         [Fact]
         public async Task NotInRehabWithDisabledIndexes3()
         {
-            var settings = new Dictionary<string, string>()
-            {
-                [RavenConfiguration.GetKey(x => x.Cluster.MoveToRehabGraceTime)] = "5"
-            };
-            var leader = await CreateRaftClusterAndGetLeader(3, customSettings: settings);
+            var (node, leader) = await CreateRaftCluster(3, watcherCluster: true);
             var database = GetDatabaseName();
             await CreateDatabaseInClusterInner(new DatabaseRecord(database), 3, leader.WebUrl, null);
             using (var store = new DocumentStore
@@ -130,17 +120,30 @@ namespace SlowTests.Issues
             }.Initialize())
             {
                 var documentDatabase = await Servers[2].ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(database);
-                var definition = new AutoMapIndexDefinition("Users", new[] { new AutoIndexField { Name = "Name", Storage = FieldStorage.No }, });
-                string indexName = definition.Name;
-                AsyncHelpers.RunSync(() => documentDatabase.IndexStore.CreateIndex(definition, Guid.NewGuid().ToString()));
-                var index = documentDatabase.IndexStore.GetIndex(indexName);
-                index.SetState(IndexState.Disabled);
+                var result = store.Maintenance.Send(new PutIndexesOperation(new[] {new IndexDefinition
+                {
+                    Maps = { "from user in docs.Users select new { user.Name }" },
+                    Name = "MyIndex"
+                }}));
+                var indexResult = result[0];
+                await WaitForRaftIndexToBeAppliedInCluster(indexResult.RaftCommandIndex, TimeSpan.FromSeconds(15));
+                var index = documentDatabase.IndexStore.GetIndex("MyIndex");
+                index.SetState(IndexState.Error);
 
                 using (var session = store.OpenSession())
                 {
                     session.Store(new User(){Name = "Toli"}, "user/1");
                     session.SaveChanges();
 
+                }
+
+                index.SetState(IndexState.Disabled);
+
+                using (documentDatabase.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
+                using (context.OpenReadTransaction())
+                {
+                    var (isStale, lastEtag) = index.GetIndexStats(context);
+                    Assert.Equal(0, lastEtag);
                 }
                 
                 var record = await store.Maintenance.Server.SendAsync(new GetDatabaseRecordOperation(store.Database));
@@ -161,7 +164,6 @@ namespace SlowTests.Issues
                 Assert.Equal(0, rehabs);
             }
         }
-
 
         private static async Task<int> GetMembersCount(IDocumentStore store, string databaseName)
         {
