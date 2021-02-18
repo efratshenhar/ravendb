@@ -82,37 +82,84 @@ namespace StressTests.Client.TimeSeries
 
                 var debug = new Dictionary<string, (long Count, DateTime Start, DateTime End)>();
                 var check = true;
-                while (check)
+                try
                 {
-                    Assert.True(sp.Elapsed < ((TimeSpan)retention).Add((TimeSpan)retention / 5),
-                        $"too long has passed {sp.Elapsed}, retention is {retention} {Environment.NewLine}" +
-                        $"debug: {string.Join(',', debug.Select(kvp => $"{kvp.Key}: ({kvp.Value.Count},{kvp.Value.Start},{kvp.Value.End})"))}");
-
-                    await Task.Delay(100);
-                    check = false;
-                    foreach (var server in Servers)
+                    while (check)
                     {
-                        var database = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
-                        using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext ctx))
-                        using (ctx.OpenReadTransaction())
+
+                        Assert.True(sp.Elapsed < ((TimeSpan)retention).Add((TimeSpan)retention / 5),
+                            $"too long has passed {sp.Elapsed}, retention is {retention} {Environment.NewLine}" +
+                            $"debug: {string.Join(',', debug.Select(kvp => $"{kvp.Key}: ({kvp.Value.Count},{kvp.Value.Start},{kvp.Value.End})"))}");
+
+                        await Task.Delay(100);
+                        check = false;
+                        foreach (var server in Servers)
                         {
-                            var tss = database.DocumentsStorage.TimeSeriesStorage;
-                            var stats = tss.Stats.GetStats(ctx, "users/karmel", "Heartrate");
-                            var reader = tss.GetReader(ctx, "users/karmel", "Heartrate", DateTime.MinValue, DateTime.MaxValue);
-
-                            if (stats.Count == 0)
+                            var database = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                            using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext ctx))
+                            using (ctx.OpenReadTransaction())
                             {
-                                debug.Remove(server.ServerStore.NodeTag);
-                                continue;
-                            }
+                                var tss = database.DocumentsStorage.TimeSeriesStorage;
+                                var stats = tss.Stats.GetStats(ctx, "users/karmel", "Heartrate");
+                                var reader = tss.GetReader(ctx, "users/karmel", "Heartrate", DateTime.MinValue, DateTime.MaxValue);
 
-                            check = true;
-                            Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
-                            Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
-                            debug[server.ServerStore.NodeTag] = stats;
+                                if (stats.Count == 0)
+                                {
+                                    debug.Remove(server.ServerStore.NodeTag);
+                                    continue;
+                                }
+
+                                check = true;
+                                Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                debug[server.ServerStore.NodeTag] = stats;
+                            }
                         }
                     }
                 }
+                catch (Exception e)
+                {
+                    while (check)
+                    {
+                        
+                        Assert.True(sp.Elapsed < ((TimeSpan)retention).Add((TimeSpan)retention),
+                            $"too long has passed {sp.Elapsed}, retention is {retention} {Environment.NewLine}" +
+                            $"debug: {string.Join(',', debug.Select(kvp => $"{kvp.Key}: ({kvp.Value.Count},{kvp.Value.Start},{kvp.Value.End})"))}");
+
+                        await Task.Delay(100);
+                        check = false;
+                        foreach (var server in Servers)
+                        {
+                            var database = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                            using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext ctx))
+                            using (ctx.OpenReadTransaction())
+                            {
+                                var tss = database.DocumentsStorage.TimeSeriesStorage;
+                                var stats = tss.Stats.GetStats(ctx, "users/karmel", "Heartrate");
+                                var reader = tss.GetReader(ctx, "users/karmel", "Heartrate", DateTime.MinValue, DateTime.MaxValue);
+
+                                if (stats.Count == 0)
+                                {
+                                    debug.Remove(server.ServerStore.NodeTag);
+                                    continue;
+                                }
+
+                                check = true;
+                                Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                debug[server.ServerStore.NodeTag] = stats;
+                            }
+                        }
+
+                        Console.WriteLine($"{sp.Elapsed} : debug: {string.Join(',', debug.Select(kvp => $"{kvp.Key}: ({kvp.Value.Count},{kvp.Value.Start},{kvp.Value.End})"))}");
+                        
+                    }
+
+                    throw;
+
+                }
+
+           
 
                 Assert.Empty(debug);
                 Assert.True(sp.Elapsed < (TimeSpan)retention + (TimeSpan)retention / 5);
