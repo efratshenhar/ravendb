@@ -193,12 +193,10 @@ namespace StressTests.Client.TimeSeries
                 var sp = Stopwatch.StartNew();
                 await Task.Delay(retention / 2);
 
-                WaitForUserToContinueTheTest(store);
-
                 var check = true;
                 while (check)
                 {
-                    Assert.True(sp.Elapsed < retention.Add(retention / 10), $"too long has passed {sp.Elapsed}, retention is {retention}");
+                    Assert.True(sp.Elapsed < retention.Add(retention / 2), $"too long has passed {sp.Elapsed}, retention is {retention}");
                     await Task.Delay(100);
                     check = false;
                     foreach (var server in Servers)

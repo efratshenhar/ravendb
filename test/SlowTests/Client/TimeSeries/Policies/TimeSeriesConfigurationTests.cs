@@ -1382,7 +1382,7 @@ namespace SlowTests.Client.TimeSeries.Policies
                 }
 
                 await store.Maintenance.SendAsync(new ConfigureTimeSeriesOperation(config));
-                await Task.Delay((TimeSpan)(p4.RetentionTime + TimeValue.FromSeconds(30)));
+                await Task.Delay((TimeSpan)(p4.RetentionTime + TimeValue.FromSeconds(10)));
                 // nothing should be left
 
                 foreach (var node in cluster.Nodes)
@@ -1402,7 +1402,8 @@ namespace SlowTests.Client.TimeSeries.Policies
                         using (var session = nodeStore.OpenSession())
                         {
                             var user = session.Load<User>("users/karmel");
-                            Assert.Equal(0,session.Advanced.GetTimeSeriesFor(user)?.Count ?? 0);
+                            Assert.Equal(await WaitForValueAsync(async () => session.Advanced.GetTimeSeriesFor(user)?.Count ?? 0, 0, timeout: 30000), 0);
+
                             var db = await node.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
                             await TimeSeriesReplicationTests.AssertNoLeftOvers(db);
                         }

@@ -297,7 +297,7 @@ namespace Raven.Server.Documents.TimeSeries
         {
             deletionRangeRequest.From = EnsureMillisecondsPrecision(deletionRangeRequest.From);
             deletionRangeRequest.To = EnsureMillisecondsPrecision(deletionRangeRequest.To);
-
+            Console.WriteLine($"{_documentDatabase.ServerStore.NodeTag} -  delete from : {deletionRangeRequest.From} to : {deletionRangeRequest.To}");
             InsertDeletedRange(context, deletionRangeRequest, remoteChangeVector);
 
             var collection = deletionRangeRequest.Collection;
@@ -346,7 +346,7 @@ namespace Raven.Server.Documents.TimeSeries
 
                 if (deleted == 0)
                     return null; // nothing happened, the deletion request was out of date
-
+                Console.WriteLine($"{_documentDatabase.ServerStore.NodeTag} - Deleted : {deleted}");
                 context.Transaction.AddAfterCommitNotification(new TimeSeriesChange
                 {
                     ChangeVector = changeVector,
