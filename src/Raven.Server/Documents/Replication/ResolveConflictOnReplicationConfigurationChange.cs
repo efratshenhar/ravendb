@@ -247,6 +247,7 @@ namespace Raven.Server.Documents.Replication
            bool resolvedToLatest,
            DocumentConflict incoming = null)
         {
+            Console.WriteLine($"{_database.ServerStore.NodeTag} : From PutResolvedDocument 1");
             resolved.Flags = resolved.Flags.Strip(DocumentFlags.FromClusterTransaction);
 
             SaveConflictedDocumentsAsRevisions(context, resolved.Id, incoming);
@@ -290,6 +291,7 @@ namespace Raven.Server.Documents.Replication
                 // we always want to merge the counters and attachments, even if the user specified a script
                 var nonPersistentFlags = NonPersistentDocumentFlags.ResolveCountersConflict | NonPersistentDocumentFlags.ResolveAttachmentsConflict |
                                          NonPersistentDocumentFlags.FromResolver | NonPersistentDocumentFlags.Resolved;
+                Console.WriteLine($"{_database.ServerStore.NodeTag} : From PutResolvedDocument 2: {nonPersistentFlags}");
                 _database.DocumentsStorage.Put(context, resolved.Id, null, clone, null, changeVector, resolved.Flags | DocumentFlags.Resolved, nonPersistentFlags: nonPersistentFlags);
             }
         }
@@ -298,7 +300,7 @@ namespace Raven.Server.Documents.Replication
         {
             if (incoming == null)
                 return;
-
+            Console.WriteLine($"{_database.ServerStore.NodeTag} : From SaveConflictedDocumentsAsRevisions");
             // we resolved the conflict on the fly, so we save the remote document as revisions
             if (incoming.Doc != null)
             {
@@ -323,6 +325,7 @@ namespace Raven.Server.Documents.Replication
 
         public void SaveLocalAsRevision(DocumentsOperationContext context, string id)
         {
+            Console.WriteLine($"{_database.ServerStore.NodeTag} : From SaveLocalAsRevision");
             var existing = _database.DocumentsStorage.GetDocumentOrTombstone(context, id, throwOnConflict: false);
             if (existing.Document != null)
             {

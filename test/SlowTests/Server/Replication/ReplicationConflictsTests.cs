@@ -1326,7 +1326,7 @@ namespace SlowTests.Server.Replication
 
             var config = new RevisionsConfiguration {Default = new RevisionsCollectionConfiguration()};
             await RevisionsHelper.SetupRevisions(store, leader.ServerStore, config);
-
+            Console.WriteLine($"Leader = {leader.ServerStore.NodeTag}");
             var entity = new User();
             using (var session = store.OpenAsyncSession())
             {
@@ -1346,7 +1346,7 @@ namespace SlowTests.Server.Replication
                 var res = await store.Maintenance.Server.SendAsync(new GetDatabaseRecordOperation(store.Database));
                 return res != null && res.Topology.Count == 2;
             }, true);
-
+            
             await WaitForValueAsync(async () =>
             {
                 await store.Maintenance.Server.SendAsync(new AddDatabaseNodeOperation(store.Database, nodeTagToRemove));
@@ -1358,7 +1358,7 @@ namespace SlowTests.Server.Replication
                 var res = await store.Maintenance.Server.SendAsync(new GetDatabaseRecordOperation(store.Database));
                 return res != null && res.Topology.Members.Count == 3;
             }, true);
-            
+            ;
             using var storeA = new DocumentStore
             {
                 Database = store.Database,
@@ -1375,12 +1375,23 @@ namespace SlowTests.Server.Replication
             await Task.Delay(15 * 1000);
             var conflicts = await store.Commands().GetConflictsForAsync(entity.Id);
             Assert.Empty(conflicts);
+            
             using (var session = store.OpenAsyncSession())
             {
                 var loaded = await session.LoadAsync<User>(entity.Id);
                 var metadata = session.Advanced.GetMetadataFor(loaded);
                 var flags = metadata.GetString(Constants.Documents.Metadata.Flags);
-                Assert.DoesNotContain(DocumentFlags.Resolved.ToString(), flags);
+                try
+                {
+                    Assert.DoesNotContain(DocumentFlags.Resolved.ToString(), flags);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Flags:  {flags}");
+                    
+                    throw;
+                }
+                
             }
         }
 

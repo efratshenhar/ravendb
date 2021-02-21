@@ -191,6 +191,8 @@ namespace Raven.Server.Documents.Replication
                 var merged = ChangeVectorUtils.MergeVectors(conflicts.Select(c => c.ChangeVector).ToList());
                 mergedChangeVector = ChangeVectorUtils.MergeVectors(merged, changeVector);
             }
+            
+            Console.WriteLine($"{_database.ServerStore.NodeTag} :From HandleHiloConflict");
             _database.DocumentsStorage.Put(context, id, null, resolvedHiLoDoc, changeVector: mergedChangeVector, nonPersistentFlags: NonPersistentDocumentFlags.FromResolver);
         }
 
@@ -208,7 +210,7 @@ namespace Raven.Server.Documents.Replication
             var existing = _database.DocumentsStorage.GetDocumentOrTombstone(context, id, throwOnConflict: false);
             var existingDoc = existing.Document;
             var existingTombstone = existing.Tombstone;
-
+            Console.WriteLine($"{_database.ServerStore.NodeTag} : from TryResolveIdenticalDocument 1 - {id}");
             if (existingDoc != null)
             {
                 var compareResult = DocumentCompare.IsEqualTo(existingDoc.Data, incomingDoc, DocumentCompare.DocumentCompareOptions.MergeMetadata);
@@ -225,7 +227,7 @@ namespace Raven.Server.Documents.Replication
 
                 if (compareResult.HasFlag(DocumentCompareResult.CountersNotEqual))
                     nonPersistentFlags |= NonPersistentDocumentFlags.ResolveCountersConflict;
-
+                Console.WriteLine($" {_database.ServerStore.NodeTag} :from TryResolveIdenticalDocument 2 : {nonPersistentFlags} - {id}");
                 _database.DocumentsStorage.Put(context, id, null, incomingDoc, lastModifiedTicks, mergedChangeVector, nonPersistentFlags: nonPersistentFlags);
                 return true;
             }

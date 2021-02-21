@@ -1423,7 +1423,7 @@ namespace Raven.Server.Documents.Replication
                                             // when hasLocalClusterTx and hasRemoteClusterTx both 'true'
                                             // it is a case of a conflict between documents which were modified in a cluster transaction
                                             // in two _different clusters_, so we will treat it as a "normal" conflict
-
+                                            Console.WriteLine($"{_replicationInfo.SourceDatabaseId} --> {database.ServerStore.NodeTag}. {rcvdChangeVector}");
                                             IsIncomingReplication = false;
                                             _replicationInfo.ConflictManager.HandleConflictForDocument(context, item.Id, item.Collection, item.LastModifiedTicks,
                                                 document, rcvdChangeVector, item.Flags);

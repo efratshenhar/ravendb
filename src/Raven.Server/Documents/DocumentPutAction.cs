@@ -44,6 +44,7 @@ namespace Raven.Server.Documents
                 return default; // never hit
             }
 
+            Console.WriteLine($"1: {_documentDatabase.ServerStore.NodeTag} : {nonPersistentFlags}- {id}");
             var documentDebugHash = 0UL;
             ValidateDocument(id, document, ref documentDebugHash);
 
@@ -122,10 +123,10 @@ namespace Raven.Server.Documents
                 var result = BuildChangeVectorAndResolveConflicts(context, id, lowerId, newEtag, document, changeVector, expectedChangeVector, flags, oldValue);
 
                 nonPersistentFlags |= result.NonPersistentFlags;
-
+                Console.WriteLine($"2: {_documentDatabase.ServerStore.NodeTag} : {nonPersistentFlags}- {id}");
                 if (UpdateLastDatabaseChangeVector(context, result.ChangeVector, flags, nonPersistentFlags))
                     changeVector = result.ChangeVector;
-
+                Console.WriteLine($"3: {_documentDatabase.ServerStore.NodeTag} : {nonPersistentFlags}- {id}");
                 if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.Resolved))
                 {
                     flags |= DocumentFlags.Resolved;
