@@ -68,7 +68,7 @@ namespace Raven.Server.NotificationCenter.BackgroundWork
                     CountOfStaleIndexes = staleIndexes,
                     CountOfIndexingErrors = countOfIndexingErrors,
                     LastEtag = DocumentsStorage.ReadLastEtag(context.Transaction.InnerTransaction),
-                    GlobalChangeVector = DocumentsStorage.GetDatabaseChangeVector(context)
+                    GlobalChangeVector = _database.DocumentsStorage.GetDatabaseChangeVector(context)
                 };
                 current.Collections = _database.DocumentsStorage.GetCollections(context)
                     .ToDictionary(x => x.Name, x => new DatabaseStatsChanged.ModifiedCollection(x.Name, x.Count, _database.DocumentsStorage.GetLastDocumentChangeVector(context.Transaction.InnerTransaction, context, x.Name)));

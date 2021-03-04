@@ -895,7 +895,7 @@ namespace Raven.Server.Smuggler.Documents
                     _log.Info($"Importing {Documents.Count:#,#0} documents");
 
                 var idsOfDocumentsToUpdateAfterAttachmentDeletion = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var databaseChangeVector = context.LastDatabaseChangeVector ?? DocumentsStorage.GetDatabaseChangeVector(context);
+                var databaseChangeVector = context.LastDatabaseChangeVector ?? _database.DocumentsStorage.GetDatabaseChangeVector(context);
 
                 foreach (var documentType in Documents)
                 {

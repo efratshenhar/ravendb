@@ -323,7 +323,7 @@ namespace Raven.Server.Documents.Replication
                             using (documentsContext.OpenReadTransaction())
                             {
                                 lastEtag = DocumentsStorage.GetLastReplicatedEtagFrom(documentsContext, ConnectionInfo.SourceDatabaseId);
-                                lastChangeVector = DocumentsStorage.GetDatabaseChangeVector(documentsContext);
+                                lastChangeVector = _database.DocumentsStorage.GetDatabaseChangeVector(documentsContext);
                             }
 
                             var status = ChangeVectorUtils.GetConflictStatus(changeVector, lastChangeVector);
@@ -691,7 +691,7 @@ namespace Raven.Server.Documents.Replication
                 // is the same or higher then ours, and if so, we'll update the change vector on the sibling to reflect
                 // our own latest etag. This allows us to have effective synchronization points, since each change will
                 // be able to tell (roughly) where it is at on the entire cluster. 
-                databaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(documentsContext);
+                databaseChangeVector = _database.DocumentsStorage.GetDatabaseChangeVector(documentsContext);
                 currentLastEtagMatchingChangeVector = DocumentsStorage.ReadLastEtag(documentsContext.Transaction.InnerTransaction);
             }
             if (_log.IsInfoEnabled)
@@ -1212,7 +1212,7 @@ namespace Raven.Server.Documents.Replication
                     operationsCount++;
                 }
 
-                var current = context.LastDatabaseChangeVector ?? DocumentsStorage.GetDatabaseChangeVector(context);
+                var current = context.LastDatabaseChangeVector ?? context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context);
                 var conflictStatus = ChangeVectorUtils.GetConflictStatus(_changeVector, current);
                 if (conflictStatus != ConflictStatus.Update)
                     return operationsCount;
@@ -1267,7 +1267,7 @@ namespace Raven.Server.Documents.Replication
                     var database = _replicationInfo.DocumentDatabase;
                     var lastTransactionMarker = 0;
                     var handledAttachmentStreams = new HashSet<Slice>(SliceComparer.Instance);
-                    context.LastDatabaseChangeVector = context.LastDatabaseChangeVector ?? DocumentsStorage.GetDatabaseChangeVector(context);
+                    context.LastDatabaseChangeVector = context.LastDatabaseChangeVector ?? context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context);
                     foreach (var item in _replicationInfo.ReplicatedItems)
                     {
                         if (lastTransactionMarker != item.TransactionMarker)

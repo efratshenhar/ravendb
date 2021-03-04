@@ -1284,7 +1284,7 @@ namespace Raven.Server.Documents
                     counterValues is LazyStringValue)
                     yield break;
 
-                var dbCv = context.LastDatabaseChangeVector ?? GetDatabaseChangeVector(context);
+                var dbCv = context.LastDatabaseChangeVector ?? _documentsStorage.GetDatabaseChangeVector(context);
 
                 var blob = counterValues as BlittableJsonReaderObject.RawBlob;
                 var existingCount = blob?.Length / SizeOfCounterValues ?? 0;

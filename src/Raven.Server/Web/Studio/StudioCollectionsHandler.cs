@@ -48,7 +48,7 @@ namespace Raven.Server.Web.Studio
 
                 if (string.IsNullOrEmpty(collection))
                 {
-                    changeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                    changeVector = Database.DocumentsStorage.GetDatabaseChangeVector(context);
                     totalResults = Database.DocumentsStorage.GetNumberOfDocuments(context);
                     etag = $"{changeVector}/{totalResults}";
                 }

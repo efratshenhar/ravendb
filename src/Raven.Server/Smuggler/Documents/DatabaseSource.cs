@@ -78,7 +78,7 @@ namespace Raven.Server.Smuggler.Documents
                 _returnContext = _database.DocumentsStorage.ContextPool.AllocateOperationContext(out _context);
                 _disposeTransaction = _context.OpenReadTransaction();
                 LastEtag = DocumentsStorage.ReadLastEtag(_disposeTransaction.InnerTransaction);
-                LastDatabaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(_disposeTransaction.InnerTransaction);
+                LastDatabaseChangeVector = _database.DocumentsStorage.GetDatabaseChangeVector(_context);
             }
 
             if (options.OperateOnTypes.HasFlag(DatabaseItemType.CompareExchange) ||

@@ -343,7 +343,7 @@ namespace Raven.Server.ServerWide.Maintenance
                     report.LastTombstoneEtag = DocumentsStorage.ReadLastTombstoneEtag(tx.InnerTransaction);
                     report.NumberOfConflicts = documentsStorage.ConflictsStorage.ConflictsCount;
                     report.NumberOfDocuments = documentsStorage.GetNumberOfDocuments(context);
-                    report.DatabaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                    report.DatabaseChangeVector = documentsStorage.GetDatabaseChangeVector(context);
                 }
             }
         }

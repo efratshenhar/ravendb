@@ -115,7 +115,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup.Restore
                     using (restoredDatabase.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext ctx))
                     using (ctx.OpenReadTransaction())
                     {
-                        var databaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(ctx);
+                        var databaseChangeVector = originalDatabase.DocumentsStorage.GetDatabaseChangeVector(ctx);
                         Assert.Contains($"A:7-{originalDatabase.DbBase64Id}", databaseChangeVector);
                         Assert.Contains($"A:8-{restoredDatabase.DbBase64Id}", databaseChangeVector);
                     }
@@ -232,7 +232,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup.Restore
                     using (restoredDatabase.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext ctx))
                     using (ctx.OpenReadTransaction())
                     {
-                        var databaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(ctx);
+                        var databaseChangeVector = originalDatabase.DocumentsStorage.GetDatabaseChangeVector(ctx);
                         Assert.Contains($"A:8-{originalDatabase.DbBase64Id}", databaseChangeVector);
                         Assert.Contains($"A:10-{restoredDatabase.DbBase64Id}", databaseChangeVector);
                     }

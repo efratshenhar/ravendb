@@ -308,7 +308,7 @@ namespace Raven.Server.Documents.Replication
                         // the last etag they have from us on the other side
                         _parent._lastSentDocumentEtag = _lastEtag;
                         _parent._lastDocumentSentTime = DateTime.UtcNow;
-                        var changeVector = wasInterrupted ? null : DocumentsStorage.GetDatabaseChangeVector(documentsContext);
+                        var changeVector = wasInterrupted ? null : documentsContext.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(documentsContext);
                         _parent.SendHeartbeat(changeVector);
                         return hasModification;
                     }

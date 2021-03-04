@@ -367,8 +367,12 @@ namespace Raven.Server.Documents.Replication
                 using (documentsOperationContext.OpenReadTransaction())
                 using (configurationContext.OpenReadTransaction())
                 {
-                    var changeVector = DocumentsStorage.GetDatabaseChangeVector(documentsOperationContext);
-
+                    var changeVector = Database.DocumentsStorage.GetFullDatabaseChangeVector(documentsOperationContext);
+                    Console.WriteLine($"Incoming handshake {connectionInfo.SourceTag}:{connectionInfo.SourceDatabaseId} --> {Database.ServerStore.NodeTag}, CV: {changeVector}");
+                    foreach (var db in Database.DocumentsStorage.UnusedDatabaseIds)
+                    {
+                        Console.WriteLine($"Incoming handshake {Database.ServerStore.NodeTag}, unused: {db}");
+                    }
                     var lastEtagFromSrc = DocumentsStorage.GetLastReplicatedEtagFrom(
                         documentsOperationContext, getLatestEtagMessage.SourceDatabaseId);
                     if (_log.IsInfoEnabled)

@@ -82,7 +82,7 @@ namespace SlowTests.Issues
                         }
                     }
 
-                    var lastChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                    var lastChangeVector = documentsStorage.GetDatabaseChangeVector(context);
 
                     var lastCvAttachmentConflictStatus = ChangeVectorUtils.GetConflictStatus(lastAttachmentChangeVector, lastChangeVector);
                     Assert.Equal(ConflictStatus.AlreadyMerged, lastCvAttachmentConflictStatus);

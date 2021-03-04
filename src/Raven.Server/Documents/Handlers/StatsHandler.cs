@@ -68,7 +68,7 @@ namespace Raven.Server.Documents.Handlers
 
                 stats.LastDocEtag = DocumentsStorage.ReadLastDocumentEtag(context.Transaction.InnerTransaction);
                 stats.LastDatabaseEtag = DocumentsStorage.ReadLastEtag(context.Transaction.InnerTransaction);
-                stats.DatabaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                stats.DatabaseChangeVector = Database.DocumentsStorage.GetDatabaseChangeVector(context);
                     
                 stats.CountOfDocuments = Database.DocumentsStorage.GetNumberOfDocuments(context);
                 stats.CountOfRevisionDocuments = Database.DocumentsStorage.RevisionsStorage.GetNumberOfRevisionDocuments(context);

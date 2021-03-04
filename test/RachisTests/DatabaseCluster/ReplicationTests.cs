@@ -695,7 +695,7 @@ namespace RachisTests.DatabaseCluster
                         using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
                         using (context.OpenReadTransaction())
                         {
-                            var cv = DocumentsStorage.GetDatabaseChangeVector(context);
+                            var cv = database.DocumentsStorage.GetDatabaseChangeVector(context);
 
                             return cv != null && cv.Contains("A:1-") && cv.Contains("B:1-") && cv.Contains("C:1-");
                         }
@@ -711,7 +711,7 @@ namespace RachisTests.DatabaseCluster
                         using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
                         using (context.OpenReadTransaction())
                         {
-                            var cv = DocumentsStorage.GetDatabaseChangeVector(context);
+                            var cv = database.DocumentsStorage.GetDatabaseChangeVector(context);
 
                             error += $" {node}: {cv}.";
                         }

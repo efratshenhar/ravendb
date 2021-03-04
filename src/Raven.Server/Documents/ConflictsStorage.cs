@@ -555,7 +555,7 @@ namespace Raven.Server.Documents
             var changeVectorList = new List<string>
             {
                 documentChangeVector,
-                context.LastDatabaseChangeVector ?? GetDatabaseChangeVector(context),
+                context.LastDatabaseChangeVector ?? _documentsStorage.GetDatabaseChangeVector(context),
                 ChangeVectorUtils.NewChangeVector(_documentDatabase, newEtag)
             };
             changeVectorList.AddRange(result.ChangeVectors);
@@ -841,11 +841,13 @@ namespace Raven.Server.Documents
             //tombstones also can be a conflict entry
             var conflicts = context.DocumentDatabase.DocumentsStorage.ConflictsStorage.GetConflictsFor(context, id);
             ConflictStatus status;
+           
             if (conflicts.Count > 0)
             {
                 foreach (var existingConflict in conflicts)
                 {
                     status = ChangeVectorUtils.GetConflictStatus(changeVector, existingConflict.ChangeVector);
+                    
                     if (status == ConflictStatus.Conflict)
                     {
                         ConflictManager.AssertChangeVectorNotNull(existingConflict.ChangeVector);
@@ -874,7 +876,7 @@ namespace Raven.Server.Documents
 
             status = context.DocumentDatabase.DocumentsStorage.GetConflictStatus(changeVector, local, out var skipValidation);
             context.SkipChangeVectorValidation |= skipValidation;
-
+            Console.WriteLine($"2. {id}:{local} VS {changeVector}= > {status}");
             if (status == ConflictStatus.Conflict)
             {
                 ConflictManager.AssertChangeVectorNotNull(local);

@@ -452,7 +452,7 @@ namespace Raven.Server.Documents.Replication
                         var etag = DocumentsStorage.ReadLastEtag(tx.InnerTransaction);
                         if (etag == _lastSentDocumentEtag)
                         {
-                            SendHeartbeat(DocumentsStorage.GetDatabaseChangeVector(ctx));
+                            SendHeartbeat(_database.DocumentsStorage.GetDatabaseChangeVector(ctx));
                             _parent.CompleteDeletionIfNeeded(_cts);
                         }
                         else if (NextReplicateTicks > DateTime.UtcNow.Ticks)
@@ -462,7 +462,7 @@ namespace Raven.Server.Documents.Replication
                         else
                         {
                             //Send a heartbeat first so we will get an updated CV of the destination
-                            var currentChangeVector = DocumentsStorage.GetDatabaseChangeVector(ctx);
+                            var currentChangeVector = _database.DocumentsStorage.GetDatabaseChangeVector(ctx);
                             SendHeartbeat(null);
                             //If our previous CV is already merged to the destination wait a bit more 
                             if (ChangeVectorUtils.GetConflictStatus(LastAcceptedChangeVector, currentChangeVector) ==
@@ -519,6 +519,7 @@ namespace Raven.Server.Documents.Replication
                     //The first time we start replication we need to register the destination current CV
                     case ReplicationMessageReply.ReplyType.Ok:
                         LastAcceptedChangeVector = response.Reply.DatabaseChangeVector;
+                        Console.WriteLine($"initial handshake : {LastAcceptedChangeVector}");
                         break;
                     case ReplicationMessageReply.ReplyType.Error:
                         var exception = new InvalidOperationException(response.Reply.Exception);
@@ -788,7 +789,7 @@ namespace Raven.Server.Documents.Replication
 
             internal bool DryRun(DocumentsOperationContext context)
             {
-                var changeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                var changeVector = context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context);
 
                 var status = ChangeVectorUtils.GetConflictStatus(_replicationBatchReply.DatabaseChangeVector,
                     changeVector);
@@ -803,7 +804,7 @@ namespace Raven.Server.Documents.Replication
             protected override long ExecuteCmd(DocumentsOperationContext context)
             {
                 if (string.IsNullOrEmpty(context.LastDatabaseChangeVector))
-                    context.LastDatabaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                    context.LastDatabaseChangeVector = context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context);
 
                 var status = ChangeVectorUtils.GetConflictStatus(_replicationBatchReply.DatabaseChangeVector,
                     context.LastDatabaseChangeVector);

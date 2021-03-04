@@ -152,7 +152,7 @@ namespace Raven.Server.Documents.Handlers
             var sw = Stopwatch.StartNew();
 
             // everything here operates on all docs
-            var databaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+            var databaseChangeVector = context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context);
 
             if (GetStringFromHeaders("If-None-Match") == databaseChangeVector)
             {

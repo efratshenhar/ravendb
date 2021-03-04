@@ -281,7 +281,7 @@ namespace Raven.Server.Documents
             if (fromReplication == false)
             {
                 if (context.LastDatabaseChangeVector == null)
-                    context.LastDatabaseChangeVector = GetDatabaseChangeVector(context);
+                    context.LastDatabaseChangeVector = _documentsStorage.GetDatabaseChangeVector(context);
                 oldChangeVector = context.LastDatabaseChangeVector;
             }
             else
@@ -298,14 +298,14 @@ namespace Raven.Server.Documents
             // this is raft created document, so it must contain only the RAFT element 
             if (flags.Contain(DocumentFlags.FromClusterTransaction))
             {
-                context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(context.LastDatabaseChangeVector ?? GetDatabaseChangeVector(context), changeVector);
+                context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(context.LastDatabaseChangeVector ?? context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context), changeVector);
                 return false;
             }
 
             // the resolved document must preserve the original change vector (without the global change vector) to avoid ping-pong replication.
             if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.FromResolver))
             {
-                context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(context.LastDatabaseChangeVector ?? GetDatabaseChangeVector(context), changeVector);
+                context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(context.LastDatabaseChangeVector ?? context.DocumentDatabase.DocumentsStorage.GetDatabaseChangeVector(context), changeVector);
                 return false;
             }
 

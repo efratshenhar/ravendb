@@ -318,8 +318,8 @@ namespace SlowTests.Server.Replication
                 using (ctx1.OpenReadTransaction())
                 using (ctx2.OpenReadTransaction())
                 {
-                    var cv1 = DocumentsStorage.GetDatabaseChangeVector(ctx1);
-                    var cv2 = DocumentsStorage.GetDatabaseChangeVector(ctx2);
+                    var cv1 = db1.DocumentsStorage.GetDatabaseChangeVector(ctx1);
+                    var cv2 = db2.DocumentsStorage.GetDatabaseChangeVector(ctx2);
                     Assert.True(cv1.SequenceEqual(cv2));
                 }
             }
@@ -1340,13 +1340,14 @@ namespace SlowTests.Server.Replication
                 }
             }
 
+            Console.WriteLine($"Delete B");
             await store.Maintenance.Server.SendAsync(new DeleteDatabasesOperation(store.Database, true, nodeTagToRemove, TimeSpan.FromSeconds(30)));
             await WaitForValueAsync(async () =>
             {
                 var res = await store.Maintenance.Server.SendAsync(new GetDatabaseRecordOperation(store.Database));
                 return res != null && res.Topology.Count == 2;
             }, true);
-
+            Console.WriteLine($"Add B");
             await WaitForValueAsync(async () =>
             {
                 await store.Maintenance.Server.SendAsync(new AddDatabaseNodeOperation(store.Database, nodeTagToRemove));
@@ -1364,7 +1365,7 @@ namespace SlowTests.Server.Replication
                 Database = store.Database,
                 Urls = new []{nodeA.WebUrl}
             }.Initialize();
-            
+            Console.WriteLine($"Change after adding again node B");
             using (var session = store.OpenAsyncSession())
             {
                 entity.Name = "Change after adding again node B";

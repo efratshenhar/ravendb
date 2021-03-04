@@ -318,11 +318,10 @@ namespace Raven.Server.Documents
 
                     InitializeLastEtag(tx);
                     _collectionsCache = ReadCollections(tx);
-
                     var cv = GetDatabaseChangeVector(tx);
+                    TryRemoveUnusedIds(ref cv);
                     var lastEtagInChangeVector = ChangeVectorUtils.GetEtagById(cv, DocumentDatabase.DbBase64Id);
                     _lastEtag = Math.Max(_lastEtag, lastEtagInChangeVector);
-
                     tx.Commit();
                 }
             }
@@ -410,7 +409,16 @@ namespace Raven.Server.Documents
                 throw new InvalidOperationException("No active transaction found in the context, and at least read transaction is needed");
         }
 
-        public static string GetDatabaseChangeVector(DocumentsOperationContext context)
+        public string GetDatabaseChangeVector(DocumentsOperationContext context)
+        {
+            var changeVector = GetDatabaseChangeVector(context.Transaction.InnerTransaction);
+            //if ( == false)
+            //ThrowOnNotUpdatedChangeVector(context, changeVector);
+            TryRemoveUnusedIds(ref changeVector);
+            return changeVector;
+        }
+
+        public string GetFullDatabaseChangeVector(DocumentsOperationContext context)
         {
             return GetDatabaseChangeVector(context.Transaction.InnerTransaction);
         }
@@ -505,9 +513,6 @@ namespace Raven.Server.Documents
 
         public void SetDatabaseChangeVector(DocumentsOperationContext context, string changeVector)
         {
-            if (TryRemoveUnusedIds(ref changeVector) == false)
-                ThrowOnNotUpdatedChangeVector(context, changeVector);
-
             var tree = context.Transaction.InnerTransaction.ReadTree(GlobalTreeSlice);
             using (Slice.From(context.Allocator, changeVector, out var slice))
             {
@@ -516,7 +521,7 @@ namespace Raven.Server.Documents
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowOnNotUpdatedChangeVector(DocumentsOperationContext context, string changeVector)
+        private void ThrowOnNotUpdatedChangeVector(DocumentsOperationContext context, string changeVector)
         {
             if (context.SkipChangeVectorValidation)
                 return;

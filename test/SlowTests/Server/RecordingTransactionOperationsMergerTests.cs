@@ -677,7 +677,7 @@ namespace SlowTests.Server
                 using (context.OpenReadTransaction())
                 {
                     //Assert
-                    var actualChangeVector = DocumentsStorage.GetDatabaseChangeVector(context);
+                    var actualChangeVector = database.DocumentsStorage.GetDatabaseChangeVector(context);
                     Assert.Equal(expectedChangeVector, actualChangeVector);
                 }
             }

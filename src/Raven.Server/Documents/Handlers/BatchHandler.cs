@@ -506,7 +506,7 @@ namespace Raven.Server.Documents.Handlers
             protected override long ExecuteCmd(DocumentsOperationContext context)
             {
                 var global = context.LastDatabaseChangeVector ??
-                             (context.LastDatabaseChangeVector = DocumentsStorage.GetDatabaseChangeVector(context));
+                             (context.LastDatabaseChangeVector = Database.DocumentsStorage.GetDatabaseChangeVector(context));
                 var dbGrpId = Database.DatabaseGroupId;
                 var current = ChangeVectorUtils.GetEtagById(global, dbGrpId);
 
