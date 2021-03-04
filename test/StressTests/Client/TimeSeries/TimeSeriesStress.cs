@@ -166,7 +166,7 @@ namespace StressTests.Client.TimeSeries
                     var now = DateTime.UtcNow;
                     var baseline = now.Add(-retention * 2);
                     var total = (int)retention.TotalSeconds * 2;
-
+                    Console.WriteLine($"Now = {now}, baseline = {baseline}");
                     using (var session = store.OpenSession())
                     {
                         var id = "users/karmel/" + j;
@@ -192,14 +192,56 @@ namespace StressTests.Client.TimeSeries
                 var sp = Stopwatch.StartNew();
                 await Task.Delay(retention / 2);
 
-                WaitForUserToContinueTheTest(store);
+                
 
                 var check = true;
-                while (check)
+                try
                 {
-                    Assert.True(sp.Elapsed < retention.Add(retention / 10), $"too long has passed {sp.Elapsed}, retention is {retention}");
+                    while (check)
+                    {
+                        Assert.True(sp.Elapsed < retention.Add(retention*12), $"too long has passed {sp.Elapsed}, retention is {retention}");
+                        await Task.Delay(100);
+                        check = false;
+                        foreach (var server in Servers)
+                        {
+                            var database = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                            var tss = database.DocumentsStorage.TimeSeriesStorage;
+
+                            for (int j = 0; j < 1024; j++)
+                            {
+                                using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext ctx))
+                                using (ctx.OpenReadTransaction())
+                                {
+                                    var id = $"users/karmel/{j}";
+                                    var stats = tss.Stats.GetStats(ctx, id, "Heartrate");
+
+                                    TimeSeriesReader reader;
+                                    if (stats == default || stats.Count == 0)
+                                    {
+                                        var name = config.Collections["Users"].Policies[0].GetTimeSeriesName("Heartrate");
+                                        stats = tss.Stats.GetStats(ctx, id, name);
+                                        reader = tss.GetReader(ctx, id, name, DateTime.MinValue, DateTime.MaxValue);
+
+                                        Assert.True(stats.Count > 0);
+                                        Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                        Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                        continue;
+                                    }
+
+                                    check = true;
+                                    reader = tss.GetReader(ctx, id, "Heartrate", DateTime.MinValue, DateTime.MaxValue);
+                                    Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                    Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                }
+                            }
+                        }
+                    }
+
+                }
+                catch (Exception e)
+                {
                     await Task.Delay(100);
-                    check = false;
+                    
                     foreach (var server in Servers)
                     {
                         var database = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
@@ -213,28 +255,16 @@ namespace StressTests.Client.TimeSeries
                                 var id = $"users/karmel/{j}";
                                 var stats = tss.Stats.GetStats(ctx, id, "Heartrate");
 
-                                TimeSeriesReader reader;
-                                if (stats == default || stats.Count == 0)
-                                {
-                                    var name = config.Collections["Users"].Policies[0].GetTimeSeriesName("Heartrate");
-                                    stats = tss.Stats.GetStats(ctx, id, name);
-                                    reader = tss.GetReader(ctx, id, name, DateTime.MinValue, DateTime.MaxValue);
-
-                                    Assert.True(stats.Count > 0);
-                                    Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
-                                    Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
-                                    continue;
-                                }
-
-                                check = true;
-                                reader = tss.GetReader(ctx, id, "Heartrate", DateTime.MinValue, DateTime.MaxValue);
-                                Assert.Equal(stats.Start, reader.First().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
-                                Assert.Equal(stats.End, reader.Last().Timestamp, RavenTestHelper.DateTimeComparer.Instance);
+                                Console.WriteLine($"3: {server.ServerStore.NodeTag} : {j} ==> {stats.Count}");
                             }
                         }
                     }
-                }
 
+                    throw;
+                }
+                
+
+                Console.WriteLine($"Done: {sp.Elapsed}");
                 await EnsureNoReplicationLoop(Servers[0], store.Database);
                 await EnsureNoReplicationLoop(Servers[1], store.Database);
                 await EnsureNoReplicationLoop(Servers[2], store.Database);
