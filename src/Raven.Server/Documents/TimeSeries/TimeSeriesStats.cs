@@ -200,6 +200,7 @@ namespace Raven.Server.Documents.TimeSeries
                     tvb.Add(end);
                     tvb.Add(count);
                     tvb.Add(name);
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: UpdateStats, Key: {slicer.StatsKey}, Start: {start}, End: {end}");
 
                     table.Set(tvb);
                 }

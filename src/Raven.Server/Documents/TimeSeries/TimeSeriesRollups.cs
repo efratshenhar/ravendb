@@ -121,6 +121,7 @@ namespace Raven.Server.Documents.TimeSeries
                     tvb.Add(policyToApply);
                     tvb.Add(etag);
                     tvb.Add(changeVectorSlice);
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: MarkForPolicy, DocID: {slicerHolder.DocId}, Name: {slicerHolder.Name}, CV: {changeVectorSlice}, Policy: {policyToApply}, Next rollup:{new DateTime(nextRollup)}");
 
                     table.Set(tvb);
                 }
@@ -507,36 +508,44 @@ namespace Raven.Server.Documents.TimeSeries
                     var rollupStartTicks = Math.Max(rollupStart.Ticks, next.Ticks);
                     rollupStart = new DateTime(rollupStartTicks);
                 }
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: info, DocID: {item.DocId}, Name: {item.Name}, key: {item.Key}, intoTimeSEries: {intoTimeSeries}, Rollup Start: {rollupStart}, CV: {item.ChangeVector}, Policy: {item.RollupPolicy}, Next rollup: {item.NextRollup}");
 
                 var intoReader = tss.GetReader(context, item.DocId, intoTimeSeries, rollupStart, DateTime.MaxValue);
-                var previouslyAggregated = intoReader.AllValues().Any();
+                var lastAggregated = intoReader.Last();
+                var previouslyAggregated = lastAggregated != null;
+                DateTime rollupEnd;
                 if (previouslyAggregated)
                 {
                     var changeVector = intoReader.GetCurrentSegmentChangeVector();
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: previously Aggregated, {ChangeVectorUtils.GetConflictStatus(item.ChangeVector, changeVector)}, DocID: {item.DocId}, Name: {item.Name}, CV: {item.ChangeVector} VS {changeVector}, Policy: {item.RollupPolicy}, NextRollup: {item.NextRollup}");
+
                     if (ChangeVectorUtils.GetConflictStatus(item.ChangeVector, changeVector) == ConflictStatus.AlreadyMerged)
                     {
                         // this rollup is already done
-                        table.DeleteByKey(item.Key);
+                        rollupEnd = new DateTime(NextRollup(lastAggregated.Timestamp, policy)).AddMilliseconds(-1);
+                        Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: MarkForNextPolicyAfterRollup, DocID: {item.DocId}, rollupEnd = {rollupEnd}");
+                        MarkForNextPolicyAfterRollup(context, table, item, policy, tss, rollupEnd);
                         return;
                     }
                 }
 
                 if (_isFirstInTopology == false)
                     return;
-
-                var rollupEnd = new DateTime(NextRollup(_now, policy)).Add(-policy.AggregationTime).AddMilliseconds(-1);
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: first to rollup, DocID: {item.DocId}, Name: {item.Name}, CV: {item.ChangeVector}, Policy: {item.RollupPolicy}, NextRollup: {item.NextRollup}");
+                rollupEnd = new DateTime(NextRollup(_now, policy)).Add(-policy.AggregationTime).AddMilliseconds(-1);
                 var reader = tss.GetReader(context, item.DocId, item.Name, rollupStart, rollupEnd);
 
                 if (previouslyAggregated)
                 {
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: first node previouslyAggregated, DocID: {item.DocId}, rollupEnd = {rollupEnd}");
                     var hasPriorValues = tss.GetReader(context, item.DocId, item.Name, DateTime.MinValue, rollupStart).AllValues().Any();
                     if (hasPriorValues == false)
                     {
                         table.DeleteByKey(item.Key);
                         var first = tss.GetReader(context, item.DocId, item.Name, rollupStart, DateTime.MaxValue).First();
+
                         if (first == default)
                             return;
-
                         if (first.Timestamp > item.NextRollup)
                         {
                             // if the 'source' time-series doesn't have any values it is retained.
@@ -545,7 +554,6 @@ namespace Raven.Server.Documents.TimeSeries
                             {
                                 tss.Rollups.MarkForPolicy(context, slicer, policy, first.Timestamp);
                             }
-
                             return;
                         }
                     }
@@ -583,7 +591,6 @@ namespace Raven.Server.Documents.TimeSeries
                         From = rollupStart,
                         To = DateTime.MaxValue,
                     };
-
                     tss.DeleteTimestampRange(context, removeRequest);
                 }
 
@@ -591,20 +598,30 @@ namespace Raven.Server.Documents.TimeSeries
                 var after = tss.AppendTimestamp(context, item.DocId, item.Collection, intoTimeSeries, values, verifyName: false);
                 if (before != after)
                     RolledUp++;
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: Mark, {item.DocId}, {item.Name}, {item.ChangeVector}, {item.RollupPolicy}, {item.NextRollup}");
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: after roll, {item.DocId}, endrollup = {rollupEnd}, ");
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: new end, {item.DocId}, new = {new DateTime(NextRollup(_now, policy)).Add(-policy.AggregationTime).AddMilliseconds(-1)}, ");
+                MarkForNextPolicyAfterRollup(context, table, item, policy, tss, rollupEnd);
+            }
 
+            private static void MarkForNextPolicyAfterRollup(DocumentsOperationContext context, Table table, RollupState item, TimeSeriesPolicy policy, TimeSeriesStorage tss,
+                DateTime rollupEnd)
+            {
                 table.DeleteByKey(item.Key);
+                (long Count, DateTime Start, DateTime End) stats = tss.Stats.GetStats(context, item.DocId, item.Name);
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: stats.End ?> rollupEnd, {item.DocId}, {stats.End}, {rollupEnd}");
 
-                var stats = tss.Stats.GetStats(context, item.DocId, item.Name);
                 if (stats.End > rollupEnd)
                 {
                     // we know that we have values after the current rollup and we need to mark them
                     var nextRollup = rollupEnd.AddMilliseconds(1);
-                    intoReader = tss.GetReader(context, item.DocId, item.Name, nextRollup, DateTime.MaxValue);
+                    TimeSeriesReader intoReader = tss.GetReader(context, item.DocId, item.Name, nextRollup, DateTime.MaxValue);
                     if (intoReader.Init() == false)
                     {
                         Debug.Assert(false, "We have values but no segment?");
                         return;
                     }
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: Mark 3, {item.DocId}, {item.Name}, {item.ChangeVector}, {item.RollupPolicy}, {item.NextRollup}");
 
                     using (var slicer = new TimeSeriesSliceHolder(context, item.DocId, item.Name, item.Collection))
                     {

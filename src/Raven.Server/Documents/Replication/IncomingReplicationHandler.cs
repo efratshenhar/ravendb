@@ -1049,6 +1049,7 @@ namespace Raven.Server.Documents.Replication
                                     From = deletedRange.From,
                                     To = deletedRange.To
                                 };
+                                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: incoming, delete seg : DocID: {docId}, Name: {name}, {deletedRange.From}-->{deletedRange.To}, CV: {deletedRange.ChangeVector}");
                                 var removedChangeVector = tss.DeleteTimestampRange(context, deletionRangeRequest, rcvdChangeVector);
                                 if (removedChangeVector != null)
                                     context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(removedChangeVector, rcvdChangeVector);
@@ -1058,14 +1059,16 @@ namespace Raven.Server.Documents.Replication
                                 tss = database.DocumentsStorage.TimeSeriesStorage;
                                 TimeSeriesValuesSegment.ParseTimeSeriesKey(segment.Key, context, out docId, out _, out var baseline);
                                 UpdateTimeSeriesNameIfNeeded(context, docId, segment, tss);
+                                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: incoming, segment : DocID: {docId}, Name:{segment.Name}, Baseline: {baseline}, CV: {segment.ChangeVector}");
 
                                 if (tss.TryAppendEntireSegment(context, segment, docId, segment.Name, baseline))
                                 {
+                                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryAppendEntireSegment == true : DocID: {docId}, Name:{segment.Name}, Baseline: {baseline}, CV:{segment.ChangeVector}");
                                     var databaseChangeVector = context.LastDatabaseChangeVector ?? DocumentsStorage.GetDatabaseChangeVector(context);
                                     context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(databaseChangeVector, segment.ChangeVector);
                                     continue;
                                 }
-
+                                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryAppendEntireSegment == false : DocID: {docId}, Name: {segment.Name}, Baseline: {baseline}, CV: {segment.ChangeVector}");
                                 var values = segment.Segment.YieldAllValues(context, context.Allocator, baseline);
                                 var changeVector = tss.AppendTimestamp(context, docId, segment.Collection, segment.Name, values, segment.ChangeVector, verifyName: false);
                                 context.LastDatabaseChangeVector = ChangeVectorUtils.MergeVectors(changeVector, segment.ChangeVector);

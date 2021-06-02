@@ -12,9 +12,11 @@ using Raven.Client.Documents.Replication.Messages;
 using Raven.Client.Exceptions;
 using Raven.Server.Documents.Replication.ReplicationItems;
 using Raven.Server.Documents.TcpHandlers;
+using Raven.Server.Documents.TimeSeries;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Utils;
 using Sparrow;
+using Sparrow.Json;
 using Sparrow.Json.Parsing;
 using Sparrow.Logging;
 using Voron;
@@ -228,6 +230,20 @@ namespace Raven.Server.Documents.Replication
                     {
                         foreach (var item in GetReplicationItems(_parent._database, documentsContext, _lastEtag, _stats, _parent.SupportedFeatures.Replication.CaseInsensitiveCounters))
                         {
+                            if (item.Type == ReplicationBatchItem.ReplicationItemType.DeletedTimeSeriesRange)
+                            {
+                                var i = (TimeSeriesDeletedRangeItem)item;
+                                TimeSeriesValuesSegment.ParseTimeSeriesKey(i.Key, documentsContext, out var docId, out LazyStringValue name);
+                                Console.WriteLine($"{_parent.FromToString} : send, delete range : DocId: {docId}, Name: {name}, {i.From}-->{i.To}, CV: {item.ChangeVector},");
+                            }
+
+                            if (item.Type == ReplicationBatchItem.ReplicationItemType.TimeSeriesSegment)
+                            {
+                                var i = (TimeSeriesReplicationItem)item;
+                                TimeSeriesValuesSegment.ParseTimeSeriesKey(i.Key, documentsContext, out var docId, out LazyStringValue name, out var baseline);
+                                Console.WriteLine($"{_parent.FromToString} : send, segment : DocId: {docId},Name: {name}, {baseline}--> {i.Segment.GetLastTimestamp(baseline)}, CV: {item.ChangeVector}");
+                            }
+
                             _parent.CancellationToken.ThrowIfCancellationRequested();
 
                             if (replicationState.LastTransactionMarker != item.TransactionMarker)
@@ -563,7 +579,6 @@ namespace Raven.Server.Documents.Replication
 
                 skippedReplicationItemsInfo.Reset();
             }
-
             if (item is AttachmentReplicationItem attachment)
                 _replicaAttachmentStreams[attachment.Base64Hash] = attachment;
 

@@ -142,7 +142,6 @@ namespace Raven.Server.Documents.TimeSeries
             var collectionName = _documentsStorage.GetCollection(collection, throwIfDoesNotExist: false);
             if (collectionName == null)
                 return 0;
-
             var deletedSegments = PurgeSegments(upto, context, collectionName, numberOfEntriesToDelete);
             var deletedRanges = PurgeDeletedRanged(upto, context, collectionName, numberOfEntriesToDelete - deletedSegments);
             return deletedRanges + deletedSegments;
@@ -621,7 +620,7 @@ namespace Raven.Server.Documents.TimeSeries
                 var existingChangeVector = DocumentsStorage.TableValueToChangeVector(context, (int)TimeSeriesTable.ChangeVector, ref tvr);
 
                 var status = ChangeVectorUtils.GetConflictStatus(changeVector, existingChangeVector);
-
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryAppendEntireSegment, Status: {status}, DocID: {documentId}, Name: {name}, Baseline: {baseline}, CV: {changeVector}");
                 if (status == ConflictStatus.AlreadyMerged)
                     return true; // nothing to do, we already have this
 
@@ -642,11 +641,12 @@ namespace Raven.Server.Documents.TimeSeries
                     //         return true;
                     //     }
                     // }
-                }
 
+                    //return TryPutSegmentDirectly(context, key, documentId, name, collectionName, changeVector, segment, baseline);
+                }
                 return false;
             }
-
+            Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryAppendEntireSegment, new key in the table : DocID: {documentId}, Name: {name}, Baseline: {baseline}, CV: {changeVector}");
             return TryPutSegmentDirectly(context, key, documentId, name, collectionName, changeVector, segment, baseline);
         }
 
@@ -668,7 +668,10 @@ namespace Raven.Server.Documents.TimeSeries
         {
 
             if (IsOverlapping(context, key, collectionName, segment, baseline))
+            {
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryPutSegmentDirectly, Overlapping : docID: {documentId}, Name: {name}, Baseline: {baseline}, CV: {changeVector}");
                 return false;
+            }
 
             // if this segment isn't overlap with any other we can put it directly
             ValidateSegment(segment);
@@ -680,11 +683,12 @@ namespace Raven.Server.Documents.TimeSeries
 
                 var newEtag = _documentsStorage.GenerateNextEtag();
                 changeVector ??= _documentsStorage.GetNewChangeVector(context, newEtag);
-
                 _documentDatabase.TimeSeriesPolicyRunner?.MarkSegmentForPolicy(context, slicer, baseline, changeVector, segment.NumberOfLiveEntries);
 
                 if (segment.NumberOfLiveEntries == 0)
                 {
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryPutSegmentDirectly, MarkSegmentAsPendingDeletion : {documentId}, {name}, base: {baseline}, {changeVector}");
+
                     MarkSegmentAsPendingDeletion(context, collectionName.Name, newEtag);
                 }
 
@@ -697,6 +701,7 @@ namespace Raven.Server.Documents.TimeSeries
                     tvb.Add(segment.Ptr, segment.NumberOfBytes);
                     tvb.Add(slicer.CollectionSlice);
                     tvb.Add(context.GetTransactionMarker());
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: TryPutSegmentDirectly, insert to table : DocID: {documentId}, Name: {name}, baseline: {baseline}, CV: {changeVector}");
 
                     table.Set(tvb);
                 }
@@ -938,7 +943,7 @@ namespace Raven.Server.Documents.TimeSeries
                     tvb.Add(newValueSegment.Ptr, newValueSegment.NumberOfBytes);
                     tvb.Add(SliceHolder.CollectionSlice);
                     tvb.Add(_context.GetTransactionMarker());
-
+                    Console.WriteLine($"{_context.DocumentDatabase.ServerStore.NodeTag}: AppendExistingSegment, DocID:{SliceHolder.DocId}, Name: {SliceHolder.Name}, CV: {cv}");
                     Table.Set(tvb);
                 }
 
@@ -998,7 +1003,7 @@ namespace Raven.Server.Documents.TimeSeries
                     tvb.Add(newSegment.Ptr, newSegment.NumberOfBytes);
                     tvb.Add(SliceHolder.CollectionSlice);
                     tvb.Add(_context.GetTransactionMarker());
-
+                    Console.WriteLine($"{_context.DocumentDatabase.ServerStore.NodeTag}: AppendToNewSegment, {SliceHolder.DocId}, {SliceHolder.Name}, {cv}");
                     Table.Insert(tvb);
                 }
 
@@ -1202,7 +1207,7 @@ namespace Raven.Server.Documents.TimeSeries
                         retry = false;
                         var current = appendEnumerator.Current;
                         Debug.Assert(current != null);
-
+                        Console.WriteLine($"{_documentDatabase.ServerStore.NodeTag}: AppendTimestamp, DocID: {documentId}, Name: {name}, TimeStamp: {current.Timestamp}");
                         if (changeVectorFromReplication == null)
                         {
                             // not from replication
@@ -1215,6 +1220,7 @@ namespace Raven.Server.Documents.TimeSeries
                             if (segmentHolder.LoadCurrentSegment() == false)
                             {
                                 // no matches for this series at all, need to create new segment
+                                Console.WriteLine($"{_documentDatabase.ServerStore.NodeTag}: Append new segment , DocID: {documentId}, Name: {name}, Timestamp: {current.Timestamp}");
                                 segmentHolder.AppendToNewSegment(current);
                                 break;
                             }
@@ -1236,7 +1242,7 @@ namespace Raven.Server.Documents.TimeSeries
                                 segmentHolder.AppendToNewSegment(appendEnumerator.Current);
                                 break;
                             }
-
+                            Console.WriteLine($"{_documentDatabase.ServerStore.NodeTag}: SplitSegment, docID: {documentId}, Name{name}, CV: {changeVectorFromReplication}, Timestamp: {current.Timestamp}");
                             retry = SplitSegment(context, segmentHolder, appendEnumerator, current);
                         }
                     }

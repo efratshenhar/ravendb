@@ -141,6 +141,9 @@ namespace Raven.Server.Documents.TimeSeries
                 if (_to == DateTime.MaxValue)
                 {
                     last = segment.YieldAllValues(_context, date, includeDead: false).Last();
+                    if (last.Timestamp < _from)
+                        return null;
+
                     last.Type = IsRaw ? SingleResultType.Raw : SingleResultType.RolledUp;
                     return last;
                 }
@@ -153,6 +156,9 @@ namespace Raven.Server.Documents.TimeSeries
                     last = item;
                     last.Type = IsRaw ? SingleResultType.Raw : SingleResultType.RolledUp;
                 }
+
+                if (last?.Timestamp < _from)
+                    return null;
 
                 return last;
             }

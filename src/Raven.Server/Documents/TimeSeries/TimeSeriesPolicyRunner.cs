@@ -116,22 +116,23 @@ namespace Raven.Server.Documents.TimeSeries
             string changeVector,
             int numberOfEntries)
         {
+            Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: MarkSegmentForPolicy : DocID: {slicerHolder.DocId}, Name: {slicerHolder.Name}, CV: {changeVector}");
+
+
             if (Configuration.Collections.TryGetValue(slicerHolder.Collection, out var config) == false)
                 return;
-
             var currentIndex = config.GetPolicyIndexByTimeSeries(slicerHolder.Name);
             if (currentIndex == -1) // policy not found
                 return;
-            
             var nextPolicy = config.GetNextPolicy(currentIndex);
             if (nextPolicy == null)
                 return;
-
             if (ReferenceEquals(nextPolicy, TimeSeriesPolicy.AfterAllPolices))
                 return; // this is the last policy
 
             if (numberOfEntries == 0)
             {
+                Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: MarkSegmentForPolicy, 0 entries: DocID: {slicerHolder.DocId}, Name: {slicerHolder.Name}, CV: {changeVector}");
                 var currentPolicy = config.GetPolicy(currentIndex);
                 var now = context.DocumentDatabase.Time.GetUtcNow();
                 var nextRollup = new DateTime(TimeSeriesRollups.NextRollup(timestamp, nextPolicy));
@@ -139,7 +140,7 @@ namespace Raven.Server.Documents.TimeSeries
                 if (now - startRollup > currentPolicy.RetentionTime)
                     return; // ignore this segment since it is outside our retention frame
             }
-            
+            Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: MarkSegmentForPolicy , Mark : DocID: {slicerHolder.DocId}, Name: {slicerHolder.Name}, CV: {changeVector}");
             _database.DocumentsStorage.TimeSeriesStorage.Rollups.MarkSegmentForPolicy(context, slicerHolder, nextPolicy, timestamp, changeVector);
         }
 
@@ -289,7 +290,6 @@ namespace Raven.Server.Documents.TimeSeries
                         using (context.OpenReadTransaction())
                         {
                             explanations?.Add($"Preparing rollups at '{now.GetDefaultRavenFormat()}' with '{0}' start.");
-
                             _database.DocumentsStorage.TimeSeriesStorage.Rollups.PrepareRollups(context, now, 1024, start, states, out duration);
                             if (states.Count == 0)
                             {
@@ -304,7 +304,10 @@ namespace Raven.Server.Documents.TimeSeries
                         var isFirstInTopology = string.Equals(topology.Members.FirstOrDefault(), _database.ServerStore.NodeTag, StringComparison.OrdinalIgnoreCase);
 
                         explanations?.Add($"RollupTimeSeriesCommand({now.GetDefaultRavenFormat()}, {isFirstInTopology})");
-
+                        foreach (var item in states)
+                        {
+                            Console.WriteLine($"{_database.ServerStore.NodeTag}: include in states for rollup, DocID: {item.DocId}, Name: {item.Name}, Key: {item.Key}, CV: {item.ChangeVector}, NextRollup: {item.NextRollup}, Policy: {item.RollupPolicy}");
+                        }
                         var command = new TimeSeriesRollups.RollupTimeSeriesCommand(Configuration, now, states, isFirstInTopology);
                         await _database.TxMerger.Enqueue(command);
                         
@@ -316,6 +319,7 @@ namespace Raven.Server.Documents.TimeSeries
 
                             if (Logger.IsInfoEnabled)
                                 Logger.Info($"Successfully aggregated {command.RolledUp:#,#;;0} time-series within {duration.ElapsedMilliseconds:#,#;;0} ms.");
+
                         }
 
                         start = states.Last().NextRollup.Ticks + 1;
@@ -331,7 +335,6 @@ namespace Raven.Server.Documents.TimeSeries
             {
                 if (Logger.IsOperationsEnabled)
                     Logger.Operations($"Failed to roll-up time series for '{_database.Name}' which are older than {now}", e);
-
                 if (propagateException)
                     throw;
 
@@ -341,12 +344,15 @@ namespace Raven.Server.Documents.TimeSeries
 
         internal async Task DoRetention(bool propagateException = true)
         {
+
             var topology = _database.ServerStore.LoadDatabaseTopology(_database.Name);
             var isFirstInTopology = string.Equals(topology.Members.FirstOrDefault(), _database.ServerStore.NodeTag, StringComparison.OrdinalIgnoreCase);
+
             if (isFirstInTopology == false)
                 return;
 
             var now = _database.Time.GetUtcNow();
+            Console.WriteLine($"{now}: {_database.ServerStore.NodeTag}: First in DoRetention.  ");
             var configuration = Configuration.Collections;
 
             try
@@ -415,6 +421,7 @@ namespace Raven.Server.Documents.TimeSeries
                 {
                     foreach (var item in tss.Stats.GetTimeSeriesByPolicyFromStartDate(context, collectionName, policy.Name, to, TimeSeriesRollups.TimeSeriesRetentionCommand.BatchSize))
                     {
+
                         if (RequiredForNextPolicy(context, config, policy, item, to)) 
                             continue;
 
@@ -454,12 +461,14 @@ namespace Raven.Server.Documents.TimeSeries
                 var nextStats = tss.Stats.GetStats(context, docId, next.GetTimeSeriesName(raw));
 
                 var nextEnd = nextStats.End.Add(next.AggregationTime).AddMilliseconds(-1);
-                
-                if (nextEnd > currentStats.End)
+                if (nextEnd >= currentStats.End)
                     return false;
 
                 if (nextEnd < to)
+                {
+                    Console.WriteLine($"{context.DocumentDatabase.ServerStore.NodeTag}: RequiredForNextPolicy, DocID: {docId}, To: {to}, Policy: {policy.Name}, Nextpolicy: {next.Name}, NextEnd: {nextEnd}, Now: {DateTime.Now}");
                     return true;
+                }
             }
 
             return false;
