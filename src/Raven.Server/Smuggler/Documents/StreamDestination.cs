@@ -41,13 +41,14 @@ namespace Raven.Server.Smuggler.Documents
     {
         private readonly Stream _stream;
         private GZipStream _gzipStream;
-        private readonly DocumentsOperationContext _context;
-        private readonly DatabaseSource _source;
+        private readonly JsonOperationContext _context;
+        private readonly ISmugglerSource _source;
         private AsyncBlittableJsonTextWriter _writer;
         private DatabaseSmugglerOptionsServerSide _options;
         private Func<LazyStringValue, bool> _filterMetadataProperty;
+        public List<IDisposable> ToDispose;
 
-        public StreamDestination(Stream stream, DocumentsOperationContext context, DatabaseSource source)
+        public StreamDestination(Stream stream, JsonOperationContext context, ISmugglerSource source)
         {
             _stream = stream;
             _context = context;
@@ -163,17 +164,17 @@ namespace Raven.Server.Smuggler.Documents
 
         public ICompareExchangeActions CompareExchange(JsonOperationContext context)
         {
-            return new StreamCompareExchangeActions(_writer, nameof(DatabaseItemType.CompareExchange));
+            return new StreamCompareExchangeActions(_writer, context, nameof(DatabaseItemType.CompareExchange));
         }
 
         public ICompareExchangeActions CompareExchangeTombstones(JsonOperationContext context)
         {
-            return new StreamCompareExchangeActions(_writer, nameof(DatabaseItemType.CompareExchangeTombstones));
+            return new StreamCompareExchangeActions(_writer, context, nameof(DatabaseItemType.CompareExchangeTombstones));
         }
 
         public ICounterActions Counters(SmugglerResult result)
         {
-            return new StreamCounterActions(_writer, _context, nameof(DatabaseItemType.CounterGroups));
+            return new StreamCounterActions(_writer, _context, this, nameof(DatabaseItemType.CounterGroups));
         }
 
         public ISubscriptionActions Subscriptions()
@@ -783,7 +784,8 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamCounterActions : StreamActionsBase, ICounterActions
         {
-            private readonly DocumentsOperationContext _context;
+            private readonly JsonOperationContext _context;
+            private readonly StreamDestination _destination;
 
             public async ValueTask WriteCounterAsync(CounterGroupDetail counterDetail)
             {
@@ -823,15 +825,17 @@ namespace Raven.Server.Smuggler.Documents
 
             public void RegisterForDisposal(IDisposable data)
             {
-                throw new NotSupportedException("RegisterForDisposal is never used in StreamCounterActions. Shouldn't happen.");
+               _destination.ToDispose ??= new List<IDisposable>();
+                _destination.ToDispose.Add(data);
             }
 
-            public StreamCounterActions(AsyncBlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamCounterActions(AsyncBlittableJsonTextWriter writer, JsonOperationContext context, StreamDestination destination, string propertyName) : base(writer, propertyName)
             {
                 _context = context;
+                _destination = destination;
             }
 
-            public DocumentsOperationContext GetContextForNewDocument()
+            public JsonOperationContext GetContextForNewDocument()
             {
                 _context.CachedProperties.NewDocument();
                 return _context;
@@ -845,7 +849,7 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamTimeSeriesActions : StreamActionsBase, ITimeSeriesActions
         {
-            public StreamTimeSeriesActions(AsyncBlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamTimeSeriesActions(AsyncBlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
             }
 
@@ -899,10 +903,10 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamSubscriptionActions : StreamActionsBase, ISubscriptionActions
         {
-            private readonly DocumentsOperationContext _context;
+            private readonly JsonOperationContext _context;
             private readonly AbstractBlittableJsonTextWriter _writer;
 
-            public StreamSubscriptionActions(AsyncBlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamSubscriptionActions(AsyncBlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
                 _context = context;
                 _writer = writer;
@@ -922,10 +926,10 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamReplicationHubCertificateActions : StreamActionsBase, IReplicationHubCertificateActions
         {
-            private readonly DocumentsOperationContext _context;
+            private readonly JsonOperationContext _context;
             private readonly AsyncBlittableJsonTextWriter _writer;
 
-            public StreamReplicationHubCertificateActions(AsyncBlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamReplicationHubCertificateActions(AsyncBlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
                 _context = context;
                 _writer = writer;
@@ -947,13 +951,13 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamDocumentActions : StreamActionsBase, IDocumentActions
         {
-            private readonly DocumentsOperationContext _context;
-            private readonly DatabaseSource _source;
+            private readonly JsonOperationContext _context;
+            private readonly ISmugglerSource _source;
             private readonly DatabaseSmugglerOptionsServerSide _options;
             private readonly Func<LazyStringValue, bool> _filterMetadataProperty;
             private HashSet<string> _attachmentStreamsAlreadyExported;
 
-            public StreamDocumentActions(AsyncBlittableJsonTextWriter writer, DocumentsOperationContext context, DatabaseSource source, DatabaseSmugglerOptionsServerSide options, Func<LazyStringValue, bool> filterMetadataProperty, string propertyName)
+            public StreamDocumentActions(AsyncBlittableJsonTextWriter writer, JsonOperationContext context, ISmugglerSource source, DatabaseSmugglerOptionsServerSide options, Func<LazyStringValue, bool> filterMetadataProperty, string propertyName)
                 : base(writer, propertyName)
             {
                 _context = context;
@@ -964,14 +968,24 @@ namespace Raven.Server.Smuggler.Documents
 
             public async ValueTask WriteDocumentAsync(DocumentItem item, SmugglerProgressBase.CountsWithLastEtagAndAttachments progress)
             {
-                if (item.Attachments != null)
-                    throw new NotSupportedException();
-
                 var document = item.Document;
                 using (document)
                 {
                     if (_options.OperateOnTypes.HasFlag(DatabaseItemType.Attachments))
-                        await WriteUniqueAttachmentStreamsAsync(document, progress);
+                    {
+                        if (item.Attachments != null)
+                        {
+                            foreach (var attachment in item.Attachments)
+                            {
+                                attachment.Stream.Position = 0;
+                                await WriteAttachmentStreamAsync(attachment.Base64Hash.Content.ToString(), attachment.Stream, attachment.Tag.ToString());
+                            }
+                        }
+                        else
+                        {
+                            await WriteUniqueAttachmentStreamsAsync(document, progress);
+                        }
+                    }
 
                     if (First == false)
                         Writer.WriteComma();
@@ -1043,7 +1057,8 @@ namespace Raven.Server.Smuggler.Documents
 
             public Stream GetTempStream()
             {
-                throw new NotSupportedException();
+                var tempFileName = $"{Guid.NewGuid()}.smuggler";
+                return new StreamsTempFile(tempFileName, _options.EncryptionKey != null).StartNewStream();
             }
 
             private async ValueTask WriteUniqueAttachmentStreamsAsync(Document document, SmugglerProgressBase.CountsWithLastEtagAndAttachments progress)
@@ -1082,13 +1097,13 @@ namespace Raven.Server.Smuggler.Documents
                 }
             }
 
-            public DocumentsOperationContext GetContextForNewDocument()
+            public JsonOperationContext GetContextForNewDocument()
             {
                 _context.CachedProperties.NewDocument();
                 return _context;
             }
 
-            private async ValueTask WriteAttachmentStreamAsync(LazyStringValue hash, Stream stream, string tag)
+            private async ValueTask WriteAttachmentStreamAsync(string hash, Stream stream, string tag)
             {
                 if (First == false)
                     Writer.WriteComma();
@@ -1151,9 +1166,11 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamCompareExchangeActions : StreamActionsBase, ICompareExchangeActions
         {
-            public StreamCompareExchangeActions(AsyncBlittableJsonTextWriter writer, string name)
+            private readonly JsonOperationContext _context;
+            public StreamCompareExchangeActions(AsyncBlittableJsonTextWriter writer, JsonOperationContext context, string name)
                 : base(writer, name)
             {
+                _context = context;
             }
 
             public async ValueTask WriteKeyValueAsync(string key, BlittableJsonReaderObject value)
@@ -1192,7 +1209,7 @@ namespace Raven.Server.Smuggler.Documents
 
             public JsonOperationContext GetContextForNewCompareExchangeValue()
             {
-                throw new NotSupportedException();
+                return _context;
             }
         }
 

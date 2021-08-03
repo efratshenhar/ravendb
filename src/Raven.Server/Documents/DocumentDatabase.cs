@@ -1002,6 +1002,7 @@ namespace Raven.Server.Documents
                                 smugglerSource,
                                 smugglerDestination,
                                 Time,
+                                documentsContext,
                                 options: databaseSmugglerOptionsServerSide,
                                 token: cancellationToken);
 

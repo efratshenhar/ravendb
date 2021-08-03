@@ -160,7 +160,7 @@ namespace Raven.Server.Smuggler.Documents
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
-        public async IAsyncEnumerable<DocumentItem> GetDocumentsAsync(List<string> collectionsToExport, INewDocumentActions actions)
+        public async IAsyncEnumerable<DocumentItem> GetDocumentsAsync(List<string> collectionsToExport)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Debug.Assert(_context != null);
@@ -207,7 +207,7 @@ namespace Raven.Server.Smuggler.Documents
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
-        public async IAsyncEnumerable<DocumentItem> GetRevisionDocumentsAsync(List<string> collectionsToExport, INewDocumentActions actions)
+        public async IAsyncEnumerable<DocumentItem> GetRevisionDocumentsAsync(List<string> collectionsToExport)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Debug.Assert(_context != null);
@@ -285,7 +285,7 @@ namespace Raven.Server.Smuggler.Documents
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
-        public async IAsyncEnumerable<Tombstone> GetTombstonesAsync(List<string> collectionsToExport, INewDocumentActions actions)
+        public async IAsyncEnumerable<Tombstone> GetTombstonesAsync(List<string> collectionsToExport)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Debug.Assert(_context != null);
@@ -445,7 +445,7 @@ namespace Raven.Server.Smuggler.Documents
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
-        public async IAsyncEnumerable<CounterGroupDetail> GetCounterValuesAsync(List<string> collectionsToExport, ICounterActions actions)
+        public async IAsyncEnumerable<CounterGroupDetail> GetCounterValuesAsync(List<string> collectionsToExport)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             Debug.Assert(_context != null);

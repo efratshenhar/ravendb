@@ -294,7 +294,7 @@ namespace Raven.Server.Documents.PeriodicBackup
         public override long Position
         {
             get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
+            set => _pos = (int)value;
         }
 
         protected override void Dispose(bool disposing)

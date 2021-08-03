@@ -51,7 +51,7 @@ namespace Raven.Server.Smuggler.Documents
     {
         private readonly DocumentDatabase _database;
         private readonly Stream _stream;
-        private readonly DocumentsOperationContext _context;
+        private readonly JsonOperationContext _context;
         private SmugglerResult _result;
         private DatabaseItemType _currentType;
         private readonly string _collection;
@@ -74,7 +74,7 @@ namespace Raven.Server.Smuggler.Documents
 
         private readonly List<IDisposable> _disposables = new List<IDisposable>();
 
-        public CsvStreamSource(DocumentDatabase database, Stream stream, DocumentsOperationContext context, string collection, CsvImportOptions csvConfig)
+        public CsvStreamSource(DocumentDatabase database, Stream stream, JsonOperationContext context, string collection, CsvImportOptions csvConfig)
         {
             _database = database;
             _stream = stream;
@@ -212,7 +212,7 @@ namespace Raven.Server.Smuggler.Documents
             return Task.FromResult(new DatabaseRecord());
         }
 
-        public async IAsyncEnumerable<DocumentItem> GetDocumentsAsync(List<string> collectionsToExport, INewDocumentActions actions)
+        public async IAsyncEnumerable<DocumentItem> GetDocumentsAsync(List<string> collectionsToExport)
         {
             var line = 0;
             while (await _csvReader.ReadAsync())
@@ -222,7 +222,7 @@ namespace Raven.Server.Smuggler.Documents
                 if (ProcessFieldsIfNeeded())
                     continue;
 
-                var context = actions.GetContextForNewDocument();
+                var context = GetContextForNewDocument();
                 DocumentItem item;
                 try
                 {
@@ -238,7 +238,13 @@ namespace Raven.Server.Smuggler.Documents
             }
         }
 
-        private DocumentItem ConvertRecordToDocumentItem(DocumentsOperationContext context, string[] csvReaderCurrentRecord, string[] csvReaderFieldHeaders, string collection)
+        public JsonOperationContext GetContextForNewDocument()
+        {
+            _context.CachedProperties.NewDocument();
+            return _context;
+        }
+
+        private DocumentItem ConvertRecordToDocumentItem(JsonOperationContext context, string[] csvReaderCurrentRecord, string[] csvReaderFieldHeaders, string collection)
         {
             try
             {
@@ -359,7 +365,7 @@ namespace Raven.Server.Smuggler.Documents
             return s;
         }
 
-        public IAsyncEnumerable<DocumentItem> GetRevisionDocumentsAsync(List<string> collectionsToExport, INewDocumentActions actions)
+        public IAsyncEnumerable<DocumentItem> GetRevisionDocumentsAsync(List<string> collectionsToExport)
         {
             return AsyncEnumerable.Empty<DocumentItem>();
         }
@@ -379,7 +385,7 @@ namespace Raven.Server.Smuggler.Documents
             return AsyncEnumerable.Empty<string>();
         }
 
-        public IAsyncEnumerable<Tombstone> GetTombstonesAsync(List<string> collectionsToExport, INewDocumentActions actions)
+        public IAsyncEnumerable<Tombstone> GetTombstonesAsync(List<string> collectionsToExport)
         {
             return AsyncEnumerable.Empty<Tombstone>();
         }
@@ -409,7 +415,7 @@ namespace Raven.Server.Smuggler.Documents
             return AsyncEnumerable.Empty<(CompareExchangeKey Key, long Index)>();
         }
 
-        public IAsyncEnumerable<CounterGroupDetail> GetCounterValuesAsync(List<string> collectionsToExport, ICounterActions actions)
+        public IAsyncEnumerable<CounterGroupDetail> GetCounterValuesAsync(List<string> collectionsToExport)
         {
             return AsyncEnumerable.Empty<CounterGroupDetail>();
         }
@@ -442,6 +448,11 @@ namespace Raven.Server.Smuggler.Documents
         public SmugglerSourceType GetSourceType()
         {
             return SmugglerSourceType.Import;
+        }
+
+        public Stream GetAttachmentStream(LazyStringValue hash, out string tag)
+        {
+            throw new NotImplementedException();
         }
 
         public void Dispose()
