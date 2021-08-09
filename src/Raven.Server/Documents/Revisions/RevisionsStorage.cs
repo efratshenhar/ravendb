@@ -830,7 +830,7 @@ namespace Raven.Server.Documents.Revisions
                     return;
                 }
 
-                if (configuration.Disabled == false && configuration.PurgeOnDelete)
+                if (configuration.Disabled == false && configuration. PurgeOnDelete)
                 {
                     using (GetKeyPrefix(context, lowerId, out var prefixSlice))
                     {
@@ -1249,6 +1249,11 @@ namespace Raven.Server.Documents.Revisions
                     changeVector, lastModifiedTicks);
 
                 var currentRevisionsCount = GetRevisionsCount(context, id);
+
+                if (currentRevisionsCount == 0)
+                {
+                    _documentsStorage.Delete(context, lowerId, id, null, fromEnforceConfiguration: true);
+                }
                 if (needToDeleteMore && currentRevisionsCount > 0)
                     moreWork = true;
 

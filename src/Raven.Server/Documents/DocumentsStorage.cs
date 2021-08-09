@@ -1451,7 +1451,7 @@ namespace Raven.Server.Documents
         public DeleteOperationResult? Delete(DocumentsOperationContext context, Slice lowerId, string id,
             LazyStringValue expectedChangeVector, long? lastModifiedTicks = null, string changeVector = null,
             CollectionName collectionName = null, NonPersistentDocumentFlags nonPersistentFlags = NonPersistentDocumentFlags.None,
-            DocumentFlags documentFlags = DocumentFlags.None)
+            DocumentFlags documentFlags = DocumentFlags.None, bool fromEnforceConfiguration = false)
         {
             if (ConflictsStorage.ConflictsCount != 0)
             {
@@ -1486,18 +1486,25 @@ namespace Raven.Server.Documents
                     tombstoneTable.Delete(local.Tombstone.StorageId);
                 }
 
-                var localFlags = local.Tombstone.Flags.Strip(DocumentFlags.FromClusterTransaction);
-                var flags = localFlags | documentFlags;
-
-                if (collectionName.IsHiLo == false &&
-                    (flags & DocumentFlags.Artificial) != DocumentFlags.Artificial)
+                DocumentFlags flags;
+                if (fromEnforceConfiguration && local.Tombstone.Flags.Contain(DocumentFlags.HasRevisions))
                 {
-                    var revisionsStorage = DocumentDatabase.DocumentsStorage.RevisionsStorage;
-                    if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.FromReplication) == false &&
-                        (revisionsStorage.Configuration != null || flags.Contain(DocumentFlags.Resolved)))
+                    flags = local.Tombstone.Flags & ~DocumentFlags.HasRevisions;
+                }
+                else
+                {
+                    var localFlags = local.Tombstone.Flags.Strip(DocumentFlags.FromClusterTransaction);
+                    flags = localFlags | documentFlags;
+                    if (collectionName.IsHiLo == false &&
+                        (flags & DocumentFlags.Artificial) != DocumentFlags.Artificial)
                     {
-                        revisionsStorage.Delete(context, id, lowerId, collectionName, changeVector ?? local.Tombstone.ChangeVector,
-                            modifiedTicks, nonPersistentFlags, documentFlags);
+                        var revisionsStorage = DocumentDatabase.DocumentsStorage.RevisionsStorage;
+                        if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.FromReplication) == false &&
+                            (revisionsStorage.Configuration != null || flags.Contain(DocumentFlags.Resolved)))
+                        {
+                            revisionsStorage.Delete(context, id, lowerId, collectionName, changeVector ?? local.Tombstone.ChangeVector,
+                                modifiedTicks, nonPersistentFlags, documentFlags);
+                        }
                     }
                 }
 
