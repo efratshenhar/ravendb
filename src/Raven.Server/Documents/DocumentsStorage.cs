@@ -1486,14 +1486,13 @@ namespace Raven.Server.Documents
                     tombstoneTable.Delete(local.Tombstone.StorageId);
                 }
                 DocumentFlags flags;
-                if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.ByEnforceRevisionConfiguration) &&
-                    local.Tombstone.Flags.Contain(DocumentFlags.HasRevisions))
+                var localFlags = local.Tombstone.Flags.Strip(DocumentFlags.FromClusterTransaction);
+                if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.ByEnforceRevisionConfiguration))
                 {
-                    flags = local.Tombstone.Flags & ~DocumentFlags.HasRevisions;
+                    flags = localFlags.Strip(DocumentFlags.HasRevisions);
                 }
                 else
                 {
-                    var localFlags = local.Tombstone.Flags.Strip(DocumentFlags.FromClusterTransaction);
                     flags = localFlags | documentFlags;
 
                     if (collectionName.IsHiLo == false &&

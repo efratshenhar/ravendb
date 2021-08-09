@@ -1252,12 +1252,8 @@ namespace Raven.Server.Documents.Revisions
 
                 if (currentRevisionsCount == 0)
                 {
-                    var tombstoneTable = context.Transaction.InnerTransaction.OpenTable(TombstonesSchema, collectionName.GetTableName(CollectionTableType.Tombstones));
-                    if (tombstoneTable.ReadByKey(lowerId, out var tvr))
-                    {
-                        var tombstone = TableValueToTombstone(context, ref tvr);
+                    if (_documentsStorage.GetDocumentOrTombstone(context, lowerId, throwOnConflict: false).Tombstone != null)
                         _documentsStorage.Delete(context, lowerId, id, null, nonPersistentFlags: NonPersistentDocumentFlags.ByEnforceRevisionConfiguration);
-                    }
                 }
                 if (needToDeleteMore && currentRevisionsCount > 0)
                     moreWork = true;
