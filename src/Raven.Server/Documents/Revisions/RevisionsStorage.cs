@@ -830,7 +830,7 @@ namespace Raven.Server.Documents.Revisions
                     return;
                 }
 
-                if (configuration.Disabled == false && configuration. PurgeOnDelete)
+                if (configuration.Disabled == false && configuration.PurgeOnDelete)
                 {
                     using (GetKeyPrefix(context, lowerId, out var prefixSlice))
                     {
@@ -1252,7 +1252,12 @@ namespace Raven.Server.Documents.Revisions
 
                 if (currentRevisionsCount == 0)
                 {
-                    _documentsStorage.Delete(context, lowerId, id, null, fromEnforceConfiguration: true);
+                    var tombstoneTable = context.Transaction.InnerTransaction.OpenTable(TombstonesSchema, collectionName.GetTableName(CollectionTableType.Tombstones));
+                    if (tombstoneTable.ReadByKey(lowerId, out var tvr))
+                    {
+                        var tombstone = TableValueToTombstone(context, ref tvr);
+                        _documentsStorage.Delete(context, lowerId, id, null, nonPersistentFlags: NonPersistentDocumentFlags.ByEnforceRevisionConfiguration);
+                    }
                 }
                 if (needToDeleteMore && currentRevisionsCount > 0)
                     moreWork = true;

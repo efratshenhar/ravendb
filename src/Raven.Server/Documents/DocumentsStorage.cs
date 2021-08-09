@@ -1451,7 +1451,7 @@ namespace Raven.Server.Documents
         public DeleteOperationResult? Delete(DocumentsOperationContext context, Slice lowerId, string id,
             LazyStringValue expectedChangeVector, long? lastModifiedTicks = null, string changeVector = null,
             CollectionName collectionName = null, NonPersistentDocumentFlags nonPersistentFlags = NonPersistentDocumentFlags.None,
-            DocumentFlags documentFlags = DocumentFlags.None, bool fromEnforceConfiguration = false)
+            DocumentFlags documentFlags = DocumentFlags.None)
         {
             if (ConflictsStorage.ConflictsCount != 0)
             {
@@ -1485,9 +1485,9 @@ namespace Raven.Server.Documents
                 {
                     tombstoneTable.Delete(local.Tombstone.StorageId);
                 }
-
                 DocumentFlags flags;
-                if (fromEnforceConfiguration && local.Tombstone.Flags.Contain(DocumentFlags.HasRevisions))
+                if (nonPersistentFlags.Contain(NonPersistentDocumentFlags.ByEnforceRevisionConfiguration) &&
+                    local.Tombstone.Flags.Contain(DocumentFlags.HasRevisions))
                 {
                     flags = local.Tombstone.Flags & ~DocumentFlags.HasRevisions;
                 }
@@ -1495,6 +1495,7 @@ namespace Raven.Server.Documents
                 {
                     var localFlags = local.Tombstone.Flags.Strip(DocumentFlags.FromClusterTransaction);
                     flags = localFlags | documentFlags;
+
                     if (collectionName.IsHiLo == false &&
                         (flags & DocumentFlags.Artificial) != DocumentFlags.Artificial)
                     {
