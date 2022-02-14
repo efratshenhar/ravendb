@@ -642,12 +642,9 @@ namespace Raven.Server.Smuggler.Documents
 
         private void DisposeSourceInfo()
         {
-            if (_source is StreamSource streamSource)
+            foreach (var iDisposable in ((StreamSource)_source).ToDispose)
             {
-                foreach (var iDisposable in streamSource.ToDispose)
-                {
-                    iDisposable.Dispose();
-                }
+                iDisposable.Dispose();
             }
         }
 
