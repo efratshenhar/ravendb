@@ -548,14 +548,6 @@ namespace Raven.Server.Smuggler.Documents
                     if (result.Counters.ReadCount % 1000 == 0)
                         AddInfoToSmugglerResult(result, $"Read {result.Counters.ReadCount:#,#;;0} counters.");
 
-                    if (_source is StreamSource streamSource)
-                    {
-                        foreach (var iDisposable in streamSource.ToDispose)
-                        {
-                            actions.RegisterForDisposal(iDisposable);
-                        }
-                    }
-
                     await actions.WriteCounterAsync(counterGroup);
 
                     result.Counters.LastEtag = counterGroup.Etag;

@@ -26,10 +26,8 @@ using Raven.Client.ServerWide;
 using Raven.Client.ServerWide.Operations.Integrations.PostgreSQL;
 using Raven.Client.Util;
 using Raven.Server.Config;
-using Raven.Server.Config.Categories;
 using Raven.Server.Documents;
 using Raven.Server.Documents.Indexes;
-using Raven.Server.Documents.PeriodicBackup;
 using Raven.Server.Json;
 using Raven.Server.Routing;
 using Raven.Server.ServerWide.Commands;
@@ -37,7 +35,6 @@ using Raven.Server.Smuggler.Documents.Data;
 using Raven.Server.Web.System;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
-using Sparrow.Server;
 
 namespace Raven.Server.Smuggler.Documents
 {
@@ -50,14 +47,12 @@ namespace Raven.Server.Smuggler.Documents
         private AsyncBlittableJsonTextWriter _writer;
         private DatabaseSmugglerOptionsServerSide _options;
         private Func<LazyStringValue, bool> _filterMetadataProperty;
-        public List<IDisposable> ToDispose;
 
         public StreamDestination(Stream stream, JsonOperationContext context, ISmugglerSource source)
         {
             _stream = stream;
             _context = context;
             _source = source;
-            ToDispose ??= new List<IDisposable>();
         }
 
         public IAsyncDisposable InitializeAsync(DatabaseSmugglerOptionsServerSide options, SmugglerResult result, long buildVersion)
@@ -1189,11 +1184,7 @@ namespace Raven.Server.Smuggler.Documents
 
             public Stream GetTempStream()
             {
-                var tempFileName = $"{Guid.NewGuid()}.smuggler";
-                if (_options.EncryptionKey != null)
-                    return new DecryptingXChaCha20Oly1305Stream(new StreamsTempFile(tempFileName, true).StartNewStream(), Convert.FromBase64String(_options.EncryptionKey));
-
-                return new StreamsTempFile(tempFileName, false).StartNewStream();
+                throw new NotSupportedException();
             }
 
             private async ValueTask WriteUniqueAttachmentStreamsAsync(Document document, SmugglerProgressBase.CountsWithLastEtagAndAttachments progress)
