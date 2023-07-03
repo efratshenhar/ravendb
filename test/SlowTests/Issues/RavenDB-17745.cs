@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using FastTests;
+using Raven.Client.Documents;
 using Raven.Client.Documents.BulkInsert;
 using Raven.Client.Util;
 using SlowTests.Core.Utils.Entities;
@@ -33,7 +34,6 @@ namespace SlowTests.Issues
                 await Task.Delay(StreamWithTimeout.DefaultWriteTimeout + TimeSpan.FromSeconds(5));
                 bulk.Dispose();
 
-                //WaitForUserToContinueTheTest(store);
                 using (var session = store.OpenSession())
                 {
                     var user = session.Load<User>("users/1");
@@ -50,6 +50,7 @@ namespace SlowTests.Issues
                 }
             }
         }
+
         [Fact]
         public async Task StartStoreInTheMiddleOfAnHeartbeat()
         {
@@ -58,7 +59,7 @@ namespace SlowTests.Issues
                 StreamWithTimeout.DefaultWriteTimeout = TimeSpan.FromSeconds(20);
                 var bulk = store.BulkInsert();
 
-                bulk.ForTestingPurposesOnly().startStore = () =>
+                bulk.ForTestingPurposesOnly().StartStore = () =>
                 {
                     bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
                 };
@@ -75,5 +76,62 @@ namespace SlowTests.Issues
                 }
             }
         }
-    }
+
+
+            private WeakReference weakReference;
+            [Fact]
+            public async Task killTimerWithGC()
+            {
+                using (var store = GetDocumentStore())
+                {
+                    StreamWithTimeout.DefaultWriteTimeout = TimeSpan.FromSeconds(1000);
+                    DoBulkInsert(store);
+                }
+                //await Task.Delay(StreamWithTimeout.DefaultWriteTimeout + TimeSpan.FromSeconds(5));
+                await Task.Delay( TimeSpan.FromSeconds(35));
+                Console.WriteLine("Start GC");
+                for (var i = 0; i < 20; i++)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+        
+                    // if (weakReference.Target == null)
+                    //     break;
+                }
+                Console.WriteLine("End GC");
+
+                Console.WriteLine("Start 2nd run");
+            using (var store = GetDocumentStore())
+                {
+                    StreamWithTimeout.DefaultWriteTimeout = TimeSpan.FromSeconds(1000);
+                    DoBulkInsert(store);
+                }
+                //await Task.Delay(StreamWithTimeout.DefaultWriteTimeout + TimeSpan.FromSeconds(5));
+                await Task.Delay(TimeSpan.FromSeconds(35));
+                Console.WriteLine("Start GC");
+                for (var i = 0; i < 20; i++)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+
+                    // if (weakReference.Target == null)
+                    //     break;
+                }
+                Console.WriteLine("End GC");
+
+            // Console.WriteLine("before delay");
+            await Task.Delay(TimeSpan.FromSeconds(35));
+                 Console.WriteLine("End test");
+                //Assert.Null(weakReference.Target);
+        }
+        
+            private void DoBulkInsert(DocumentStore store)
+            {
+                var bulk = store.BulkInsert();
+                
+            }
+        }
+    
 }
