@@ -10,7 +10,7 @@ internal sealed class BulkInsertWriter : BulkInsertWriterBase
 {
     private readonly StreamWriter[] _writers = new StreamWriter[2];
 
-    public BulkInsertWriter(JsonOperationContext ctx, CancellationToken token) : base(ctx, token)
+    public BulkInsertWriter(JsonOperationContext ctx, CancellationToken token, BulkInsertOptions.TestingStuff testingStuff = null) : base(ctx, token, testingStuff)
     {
 
     }

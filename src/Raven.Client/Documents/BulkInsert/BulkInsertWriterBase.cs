@@ -7,6 +7,7 @@ using Raven.Client.Http;
 using Sparrow.Json;
 using Sparrow.Threading;
 using Sparrow.Utils;
+using static Raven.Client.DocumentationUrls.Session;
 
 namespace Raven.Client.Documents.BulkInsert;
 
@@ -24,12 +25,12 @@ internal abstract class BulkInsertWriterBase : IAsyncDisposable
     private JsonOperationContext.MemoryBuffer _backgroundMemoryBuffer;
     private bool _isInitialWrite = true;
     internal DateTime LastFlushToStream { get; private set; }
-
+    private BulkInsertOptions.TestingStuff _testingStuff;
     private Stream _requestBodyStream;
 
     internal readonly BulkInsertOperation.BulkInsertStreamExposerContent StreamExposer;
 
-    protected BulkInsertWriterBase(JsonOperationContext ctx, CancellationToken token)
+    protected BulkInsertWriterBase(JsonOperationContext ctx, CancellationToken token, BulkInsertOptions.TestingStuff testingStuff = null)
     {
         _token = token;
         StreamExposer = new BulkInsertOperation.BulkInsertStreamExposerContent();
@@ -37,7 +38,7 @@ internal abstract class BulkInsertWriterBase : IAsyncDisposable
         _currentWriteStream = new MemoryStream();
         _backgroundWriteStream = new MemoryStream();
         _asyncWrite = Task.CompletedTask;
-
+        _testingStuff = testingStuff;
         var returnMemoryBuffer = ctx.GetMemoryBuffer(out _memoryBuffer);
         var returnBackgroundMemoryBuffer = ctx.GetMemoryBuffer(out _backgroundMemoryBuffer);
         UpdateFlushTime();
@@ -110,6 +111,8 @@ internal abstract class BulkInsertWriterBase : IAsyncDisposable
 
     private void UpdateFlushTime()
     {
+        if (_testingStuff?.Print == true)
+            Console.WriteLine($"{_testingStuff.Name} UpdateFlushTime time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
         LastFlushToStream = DateTime.UtcNow;
     }
 

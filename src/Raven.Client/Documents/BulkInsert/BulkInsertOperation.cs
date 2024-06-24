@@ -152,7 +152,7 @@ namespace Raven.Client.Documents.BulkInsert
             _store = store;
             _requestExecutor = store.GetRequestExecutor(database);
             _resetContext = _requestExecutor.ContextPool.AllocateOperationContext(out _context);
-            _writer = new BulkInsertWriter(_context, _token);
+            _writer = new BulkInsertWriter(_context, _token, _options.ForTestingPurposes);
             _writer.Initialize();
             _countersOperation = new CountersBulkInsertOperation(this);
             _attachmentsOperation = new AttachmentsBulkInsertOperation(this);
@@ -170,9 +170,9 @@ namespace Raven.Client.Documents.BulkInsert
                 _heartbeatCheckInterval = TimeSpan.FromMilliseconds(_options.ForTestingPurposes.OverrideHeartbeatCheckInterval / 3);
 
             _timer = new WeakReferencingTimer(HandleHeartbeat,
-                this,
-                _heartbeatCheckInterval,
-                _heartbeatCheckInterval);
+                 this,
+                 _heartbeatCheckInterval,
+                 _heartbeatCheckInterval);
 
             _disposeOnce = new DisposeOnceAsync<SingleAttempt>(async () =>
             {
@@ -236,19 +236,30 @@ namespace Raven.Client.Documents.BulkInsert
         private static void HandleHeartbeat(object state)
         {
             var bulkInsert = (BulkInsertOperation)state;
-            _ = bulkInsert.SendHeartBeatAsync();
+            //_ = bulkInsert.SendHeartBeatAsync();
+            Task.Run(() => bulkInsert.SendHeartBeatAsync());
         }
 
         private async Task SendHeartBeatAsync()
         {
+
+            if (_options.ForTestingPurposes?.Print == true)
+            {
+                Console.WriteLine($"{_database} send SendHeartBeatAsync time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+            }
+
             if (IsHeartbeatIntervalExceeded() == false)
                 return;
-
+            Console.WriteLine($"{_database} send SendHeartBeatAsync ********* time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+            if (_options.ForTestingPurposes?.Print == true)
+                Console.WriteLine($"{_database} send SendHeartBeatAsync getLock time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
             if (_streamLock.Wait(0) == false)
                 return; // if locked we are already writing
 
             try
             {
+                if (_options.ForTestingPurposes?.Print == true)
+                    Console.WriteLine($"{_database} send SendHeartBeatAsync WriteHeartbeat time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
                 await ExecuteBeforeStore().ConfigureAwait(false);
                 EndPreviousCommandIfNeeded();
                 _options.ForTestingPurposes?.OnSendHeartBeat_DoBulkStore?.Invoke();
@@ -263,7 +274,8 @@ namespace Raven.Client.Documents.BulkInsert
                 _first = false;
                 _inProgressCommand = CommandType.None;
                 _writer.Write("{\"Type\":\"HeartBeat\"}");
-
+                if (_options.ForTestingPurposes?.Print == true)
+                    Console.WriteLine($"{_database} send HeartBeat time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
                 await FlushIfNeeded(force: true).ConfigureAwait(false);
             }
             catch (Exception)
@@ -377,7 +389,8 @@ namespace Raven.Client.Documents.BulkInsert
                 }
 
                 EndPreviousCommandIfNeeded();
-
+                if (_options.ForTestingPurposes?.Print == true)
+                    Console.WriteLine($"{_database} WriteToStreamAsync time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
                 await WriteToStreamAsync(entity, id, metadata, CommandType.PUT).ConfigureAwait(false);
             }
         }
@@ -409,7 +422,6 @@ namespace Raven.Client.Documents.BulkInsert
                 }
 
                 _writer.Write('}');
-
                 await FlushIfNeeded().ConfigureAwait(false);
             }
             catch (Exception e)
@@ -662,6 +674,8 @@ namespace Raven.Client.Documents.BulkInsert
         private async Task FlushIfNeeded(bool force = false)
         {
             force =  force || IsHeartbeatIntervalExceeded();
+            if (_options.ForTestingPurposes?.Print == true)
+                Console.WriteLine($"{_database} FlushIfNeeded time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}, force = {force}");
             await _writer.FlushIfNeeded(force).ConfigureAwait(false);
         }
 

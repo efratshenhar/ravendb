@@ -2158,6 +2158,8 @@ namespace Raven.Server.Documents
             internal ManualResetEvent HealthCheckHold;
 
             internal int BulkInsertStreamReadTimeout;
+            internal string name;
+            internal bool print;
         }
     }
 

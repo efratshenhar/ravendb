@@ -5,9 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using FastTests;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Raven.Client.Documents;
 using Raven.Client.Documents.BulkInsert;
 using Raven.Client.Documents.Conventions;
 using Raven.Server.Config;
+using Raven.Server.Documents;
 using SlowTests.Core.Utils.Entities;
 using Sparrow.Server;
 using Tests.Infrastructure;
@@ -24,6 +26,443 @@ namespace SlowTests.Issues
 
         private readonly int _readTimeout = 500;
         private readonly TimeSpan _delay = TimeSpan.FromSeconds(1);
+        private readonly TimeSpan _monitorInterval;
+        private readonly CancellationToken _cancellationToken;
+
+
+        public async Task StartMonitoringAsync(TimeSpan monitorInterval, CancellationToken cancellationToken)
+        {
+            while (!_cancellationToken.IsCancellationRequested)
+            {
+                ThreadPool.GetAvailableThreads(out int availableWorkerThreads, out int availableCompletionPortThreads);
+                ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
+                ThreadPool.GetMinThreads(out int minWorkerThreads, out int minCompletionPortThreads);
+
+                Console.WriteLine($"Available Worker Threads: {availableWorkerThreads}");
+                Console.WriteLine($"Available Completion Port Threads: {availableCompletionPortThreads}");
+                Console.WriteLine($"Max Worker Threads: {maxWorkerThreads}");
+                Console.WriteLine($"Max Completion Port Threads: {maxCompletionPortThreads}");
+                Console.WriteLine($"Min Worker Threads: {minWorkerThreads}");
+                Console.WriteLine($"Min Completion Port Threads: {minCompletionPortThreads}");
+                //GC.GetGCMemoryInfo()
+                await Task.Delay(_monitorInterval, _cancellationToken);
+            }
+        }
+        
+        [RavenTheory(RavenTestCategory.BulkInsert)]
+        [InlineData(null)]
+        [InlineData(HttpProtocols.Http1)]
+        [InlineData(HttpProtocols.Http2)]
+        public async Task BulkInsertWithDelay1(HttpProtocols? httpProtocols)
+        {
+            Version httpVersion;
+            switch (httpProtocols)
+            {
+                case null:
+                    httpVersion = null;
+                    break;
+                case HttpProtocols.Http1:
+                    httpVersion = new Version(1, 1);
+                    break;
+                case HttpProtocols.Http2:
+                    httpVersion = new Version(2, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(httpProtocols));
+            }
+
+            DocumentConventions serverConventions = httpVersion != null
+                ? new DocumentConventions { HttpVersion = httpVersion, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact }
+                : null;
+
+            Dictionary<string, string> customSettings = httpVersion != null
+                ? new Dictionary<string, string> { { RavenConfiguration.GetKey(x => x.Http.Protocols), httpProtocols.ToString() } }
+                : null;
+
+            var server = GetNewServer(new ServerCreationOptions
+            {
+                Conventions = serverConventions,
+                CustomSettings = customSettings
+            });
+
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = server,
+                ModifyDocumentStore = s =>
+                {
+                    s.Conventions.HttpVersion = httpVersion;
+                    s.Conventions.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                }
+            }))
+            {
+                var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
+                var bulkInsertOptions = new BulkInsertOptions();
+                bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
+                bulkInsertOptions.ForTestingPurposesOnly().Print = true;
+                Console.WriteLine($"{store.Database} Start bulk time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                await using (var bulk = store.BulkInsert(bulkInsertOptions))
+                {
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
+                    await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
+                    Console.WriteLine($"{store.Database} bulk after 2  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
+                    await Task.Delay(_delay);
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var user = session.Load<User>("users/1");
+                    Assert.NotNull(user);
+                    Assert.Equal("Daniel", user.Name);
+
+                    user = session.Load<User>("users/2");
+                    Assert.NotNull(user);
+                    Assert.Equal("Yael", user.Name);
+
+                    user = session.Load<User>("users/3");
+                    Assert.NotNull(user);
+                    Assert.Equal("Ido", user.Name);
+                }
+            }
+        }
+
+        [RavenTheory(RavenTestCategory.BulkInsert)]
+        [InlineData(null)]
+        [InlineData(HttpProtocols.Http1)]
+        [InlineData(HttpProtocols.Http2)]
+        public async Task BulkInsertWithDelay2(HttpProtocols? httpProtocols)
+        {
+            Version httpVersion;
+            switch (httpProtocols)
+            {
+                case null:
+                    httpVersion = null;
+                    break;
+                case HttpProtocols.Http1:
+                    httpVersion = new Version(1, 1);
+                    break;
+                case HttpProtocols.Http2:
+                    httpVersion = new Version(2, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(httpProtocols));
+            }
+
+            DocumentConventions serverConventions = httpVersion != null
+                ? new DocumentConventions { HttpVersion = httpVersion, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact }
+                : null;
+
+            Dictionary<string, string> customSettings = httpVersion != null
+                ? new Dictionary<string, string> { { RavenConfiguration.GetKey(x => x.Http.Protocols), httpProtocols.ToString() } }
+                : null;
+
+            var server = GetNewServer(new ServerCreationOptions
+            {
+                Conventions = serverConventions,
+                CustomSettings = customSettings
+            });
+
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = server,
+                ModifyDocumentStore = s =>
+                {
+                    s.Conventions.HttpVersion = httpVersion;
+                    s.Conventions.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                }
+            }))
+            {
+                
+                var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
+                var bulkInsertOptions = new BulkInsertOptions();
+                bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
+
+                SetPrint(db, store, bulkInsertOptions);
+
+                Console.WriteLine($"{store.Database} Start bulk time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+
+                await using (var bulk = store.BulkInsert(bulkInsertOptions))
+                {
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
+                    await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
+                    Console.WriteLine($"{store.Database} bulk after 2  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await Task.Delay(_delay);
+                    Console.WriteLine($"{store.Database} bulk before 3  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
+                    Console.WriteLine($"{store.Database} bulk after 3  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await Task.Delay(_delay);
+                    Console.WriteLine($"{store.Database} bulk end  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var user = session.Load<User>("users/1");
+                    Assert.NotNull(user);
+                    Assert.Equal("Daniel", user.Name);
+
+                    user = session.Load<User>("users/2");
+                    Assert.NotNull(user);
+                    Assert.Equal("Yael", user.Name);
+
+                    user = session.Load<User>("users/3");
+                    Assert.NotNull(user);
+                    Assert.Equal("Ido", user.Name);
+                }
+            }
+        }
+
+        private static void SetPrint(DocumentDatabase db, DocumentStore store, BulkInsertOptions bulkInsertOptions)
+        {
+            db.ForTestingPurposesOnly().print = true;
+            db.ForTestingPurposesOnly().name = store.Database;
+            bulkInsertOptions.ForTestingPurposesOnly().Print = true;
+            bulkInsertOptions.ForTestingPurposesOnly().Name = store.Database;
+        }
+
+        [RavenTheory(RavenTestCategory.BulkInsert)]
+        [InlineData(null)]
+        [InlineData(HttpProtocols.Http1)]
+        [InlineData(HttpProtocols.Http2)]
+        public async Task BulkInsertWithDelay3(HttpProtocols? httpProtocols)
+        {
+            Version httpVersion;
+            switch (httpProtocols)
+            {
+                case null:
+                    httpVersion = null;
+                    break;
+                case HttpProtocols.Http1:
+                    httpVersion = new Version(1, 1);
+                    break;
+                case HttpProtocols.Http2:
+                    httpVersion = new Version(2, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(httpProtocols));
+            }
+
+            DocumentConventions serverConventions = httpVersion != null
+                ? new DocumentConventions { HttpVersion = httpVersion, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact }
+                : null;
+
+            Dictionary<string, string> customSettings = httpVersion != null
+                ? new Dictionary<string, string> { { RavenConfiguration.GetKey(x => x.Http.Protocols), httpProtocols.ToString() } }
+                : null;
+
+            var server = GetNewServer(new ServerCreationOptions
+            {
+                Conventions = serverConventions,
+                CustomSettings = customSettings
+            });
+
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = server,
+                ModifyDocumentStore = s =>
+                {
+                    s.Conventions.HttpVersion = httpVersion;
+                    s.Conventions.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                }
+            }))
+            {
+                var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
+                var bulkInsertOptions = new BulkInsertOptions();
+                bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
+                SetPrint(db, store, bulkInsertOptions);
+                Console.WriteLine($"{store.Database} Start bulk time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                await using (var bulk = store.BulkInsert(bulkInsertOptions))
+                {
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
+                    await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
+                    Console.WriteLine($"{store.Database} bulk after 2  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
+                    await Task.Delay(_delay);
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var user = session.Load<User>("users/1");
+                    Assert.NotNull(user);
+                    Assert.Equal("Daniel", user.Name);
+
+                    user = session.Load<User>("users/2");
+                    Assert.NotNull(user);
+                    Assert.Equal("Yael", user.Name);
+
+                    user = session.Load<User>("users/3");
+                    Assert.NotNull(user);
+                    Assert.Equal("Ido", user.Name);
+                }
+            }
+        }
+
+        [RavenTheory(RavenTestCategory.BulkInsert)]
+        [InlineData(null)]
+        [InlineData(HttpProtocols.Http1)]
+        [InlineData(HttpProtocols.Http2)]
+        public async Task BulkInsertWithDelay4(HttpProtocols? httpProtocols)
+        {
+            Version httpVersion;
+            switch (httpProtocols)
+            {
+                case null:
+                    httpVersion = null;
+                    break;
+                case HttpProtocols.Http1:
+                    httpVersion = new Version(1, 1);
+                    break;
+                case HttpProtocols.Http2:
+                    httpVersion = new Version(2, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(httpProtocols));
+            }
+
+            DocumentConventions serverConventions = httpVersion != null
+                ? new DocumentConventions { HttpVersion = httpVersion, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact }
+                : null;
+
+            Dictionary<string, string> customSettings = httpVersion != null
+                ? new Dictionary<string, string> { { RavenConfiguration.GetKey(x => x.Http.Protocols), httpProtocols.ToString() } }
+                : null;
+
+            var server = GetNewServer(new ServerCreationOptions
+            {
+                Conventions = serverConventions,
+                CustomSettings = customSettings
+            });
+
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = server,
+                ModifyDocumentStore = s =>
+                {
+                    s.Conventions.HttpVersion = httpVersion;
+                    s.Conventions.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                }
+            }))
+            {
+                var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
+                var bulkInsertOptions = new BulkInsertOptions();
+                bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
+                SetPrint(db, store, bulkInsertOptions);
+                Console.WriteLine($"{store.Database} Start bulk time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                await using (var bulk = store.BulkInsert(bulkInsertOptions))
+                {
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
+                    await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
+                    Console.WriteLine($"{store.Database} bulk after 2  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
+                    await Task.Delay(_delay);
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var user = session.Load<User>("users/1");
+                    Assert.NotNull(user);
+                    Assert.Equal("Daniel", user.Name);
+
+                    user = session.Load<User>("users/2");
+                    Assert.NotNull(user);
+                    Assert.Equal("Yael", user.Name);
+
+                    user = session.Load<User>("users/3");
+                    Assert.NotNull(user);
+                    Assert.Equal("Ido", user.Name);
+                }
+            }
+        }
+
+        [RavenTheory(RavenTestCategory.BulkInsert)]
+        [InlineData(null)]
+        [InlineData(HttpProtocols.Http1)]
+        [InlineData(HttpProtocols.Http2)]
+        public async Task BulkInsertWithDelay5(HttpProtocols? httpProtocols)
+        {
+            Version httpVersion;
+            switch (httpProtocols)
+            {
+                case null:
+                    httpVersion = null;
+                    break;
+                case HttpProtocols.Http1:
+                    httpVersion = new Version(1, 1);
+                    break;
+                case HttpProtocols.Http2:
+                    httpVersion = new Version(2, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(httpProtocols));
+            }
+
+            DocumentConventions serverConventions = httpVersion != null
+                ? new DocumentConventions { HttpVersion = httpVersion, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact }
+                : null;
+
+            Dictionary<string, string> customSettings = httpVersion != null
+                ? new Dictionary<string, string> { { RavenConfiguration.GetKey(x => x.Http.Protocols), httpProtocols.ToString() } }
+                : null;
+
+            var server = GetNewServer(new ServerCreationOptions
+            {
+                Conventions = serverConventions,
+                CustomSettings = customSettings
+            });
+
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = server,
+                ModifyDocumentStore = s =>
+                {
+                    s.Conventions.HttpVersion = httpVersion;
+                    s.Conventions.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                }
+            }))
+            {
+                var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
+                var bulkInsertOptions = new BulkInsertOptions();
+                bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
+                SetPrint(db, store, bulkInsertOptions);
+                Console.WriteLine($"{store.Database} Start bulk time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                await using (var bulk = store.BulkInsert(bulkInsertOptions))
+                {
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
+                    await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
+                    Console.WriteLine($"{store.Database} bulk after 2  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
+                    await Task.Delay(_delay);
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var user = session.Load<User>("users/1");
+                    Assert.NotNull(user);
+                    Assert.Equal("Daniel", user.Name);
+
+                    user = session.Load<User>("users/2");
+                    Assert.NotNull(user);
+                    Assert.Equal("Yael", user.Name);
+
+                    user = session.Load<User>("users/3");
+                    Assert.NotNull(user);
+                    Assert.Equal("Ido", user.Name);
+                }
+            }
+        }
 
         [RavenTheory(RavenTestCategory.BulkInsert)]
         [InlineData(null)]
@@ -71,22 +510,27 @@ namespace SlowTests.Issues
                 }
             }))
             {
+               // CancellationTokenSource cts = new CancellationTokenSource();
+                //Task monitorTask = StartMonitoringAsync(TimeSpan.FromSeconds(1), cts.Token);
+
                 var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
                 db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
                 var bulkInsertOptions = new BulkInsertOptions();
                 bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
-
+                SetPrint(db, store, bulkInsertOptions);
+                Console.WriteLine($"{store.Database} Start bulk time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
                 await using (var bulk = store.BulkInsert(bulkInsertOptions))
                 {
                     await Task.Delay(_delay);
                     await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
                     await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
-
+                    Console.WriteLine($"{store.Database} bulk after 2  time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
                     await Task.Delay(_delay);
                     await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
                     await Task.Delay(_delay);
                 }
-
+                //cts.Cancel();
+               // await monitorTask;
                 using (var session = store.OpenSession())
                 {
                     var user = session.Load<User>("users/1");

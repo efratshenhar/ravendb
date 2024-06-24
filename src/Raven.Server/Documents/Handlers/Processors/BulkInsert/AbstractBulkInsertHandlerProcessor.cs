@@ -106,10 +106,18 @@ internal abstract class AbstractBulkInsertHandlerProcessor<TCommandData, TReques
                         {
                             using (var modifier = new BlittableMetadataModifier(docsCtx))
                             {
+                                if (ForTestingPurposes?.print == true)
+                                {
+                                    Console.WriteLine($"{ForTestingPurposes.name} server bulkHAndler time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                                }
                                 var task = reader.GetCommandAsync(docsCtx, modifier);
                                 if (task == null || task.IsCompleted && task.Result == null)
                                     break;
-
+                                
+                                if (ForTestingPurposes?.print == true)
+                                {
+                                    Console.WriteLine($"{ForTestingPurposes.name} server CTS = {_cts.IsCancellationRequested} time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                                }
                                 _cts.Token.ThrowIfCancellationRequested();
 
                                 // if we are going to wait on the network, flush immediately
@@ -117,6 +125,10 @@ internal abstract class AbstractBulkInsertHandlerProcessor<TCommandData, TReques
                                     // but don't batch too much anyway
                                     totalSize > 16 * Voron.Global.Constants.Size.Megabyte || operationsCount >= 8192)
                                 {
+                                    if (ForTestingPurposes?.print == true)
+                                    {
+                                        Console.WriteLine($"{ForTestingPurposes.name} server task.Wait time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                                    }
                                     await ExecuteCommands(task, numberOfCommands, array, totalSize);
 
                                     ClearAttachmentStreamsTempFiles();
@@ -137,6 +149,10 @@ internal abstract class AbstractBulkInsertHandlerProcessor<TCommandData, TReques
                                 }
 
                                 var commandData = await task;
+                                if (ForTestingPurposes?.print == true)
+                                {
+                                    Console.WriteLine($"{ForTestingPurposes.name} command = { commandData.Type} time = {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
+                                }
                                 if (commandData.Type == CommandType.None)
                                     break;
 
@@ -297,5 +313,7 @@ internal abstract class AbstractBulkInsertHandlerProcessor<TCommandData, TReques
     internal sealed class TestingStuff
     {
         internal int BulkInsertStreamReadTimeout;
+        internal string name;
+        internal bool print;
     }
 }
