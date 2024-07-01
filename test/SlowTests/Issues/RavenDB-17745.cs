@@ -24,15 +24,15 @@ namespace SlowTests.Issues
         {
         }
 
-        private readonly int _readTimeout = 500;
-        private readonly TimeSpan _delay = TimeSpan.FromSeconds(1);
+        private readonly int _readTimeout = 5000;
+        private readonly TimeSpan _delay = TimeSpan.FromSeconds(10);
         private readonly TimeSpan _monitorInterval;
         private readonly CancellationToken _cancellationToken;
 
 
         public async Task StartMonitoringAsync(TimeSpan monitorInterval, CancellationToken cancellationToken)
         {
-            while (!_cancellationToken.IsCancellationRequested)
+            while (_cancellationToken.IsCancellationRequested == false)
             {
                 ThreadPool.GetAvailableThreads(out int availableWorkerThreads, out int availableCompletionPortThreads);
                 ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
@@ -44,7 +44,7 @@ namespace SlowTests.Issues
                 Console.WriteLine($"Max Completion Port Threads: {maxCompletionPortThreads}");
                 Console.WriteLine($"Min Worker Threads: {minWorkerThreads}");
                 Console.WriteLine($"Min Completion Port Threads: {minCompletionPortThreads}");
-                //GC.GetGCMemoryInfo()
+                //GC.GetGCMemoryInfo(gc)
                 await Task.Delay(_monitorInterval, _cancellationToken);
             }
         }
@@ -510,8 +510,31 @@ namespace SlowTests.Issues
                 }
             }))
             {
-               // CancellationTokenSource cts = new CancellationTokenSource();
+                //CancellationTokenSource cts = new CancellationTokenSource();
                 //Task monitorTask = StartMonitoringAsync(TimeSpan.FromSeconds(1), cts.Token);
+                //CancellationTokenSource _cts = new CancellationTokenSource();
+                //GC.RegisterForFullGCNotification(10, 10);
+
+                // var t = Task.Run(async () =>
+                // {
+                //     while (true)
+                //     {
+                //         var status = GC.WaitForFullGCApproach(100);
+                //         if (status == GCNotificationStatus.Succeeded)
+                //         {
+                //             Console.WriteLine("GC is about to start");
+                //         }
+                //
+                //         status = GC.WaitForFullGCComplete(100);
+                //         if (status == GCNotificationStatus.Succeeded)
+                //         {
+                //             Console.WriteLine("GC has completed");
+                //         }
+                //
+                //         await Task.Delay(100);
+                //     }
+                // }, _cts.Token);
+
 
                 var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
                 db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
@@ -529,8 +552,10 @@ namespace SlowTests.Issues
                     await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
                     await Task.Delay(_delay);
                 }
+                //_cts.Cancel();
                 //cts.Cancel();
-               // await monitorTask;
+                // await monitorTask;
+                
                 using (var session = store.OpenSession())
                 {
                     var user = session.Load<User>("users/1");

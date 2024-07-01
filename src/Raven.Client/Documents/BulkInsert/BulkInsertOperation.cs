@@ -236,8 +236,7 @@ namespace Raven.Client.Documents.BulkInsert
         private static void HandleHeartbeat(object state)
         {
             var bulkInsert = (BulkInsertOperation)state;
-            //_ = bulkInsert.SendHeartBeatAsync();
-            Task.Run(() => bulkInsert.SendHeartBeatAsync());
+            _ = bulkInsert.SendHeartBeatAsync();
         }
 
         private async Task SendHeartBeatAsync()
@@ -284,6 +283,7 @@ namespace Raven.Client.Documents.BulkInsert
             }
             finally
             {
+                Console.WriteLine($"{_database} _streamLock.Release {DateTime.UtcNow}:{DateTime.UtcNow.Millisecond}");
                 _streamLock.Release();
             }
         }

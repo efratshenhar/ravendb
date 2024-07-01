@@ -149,7 +149,8 @@ namespace FastTests
             }
             else
             {
-                ThreadPool.SetMinThreads(250, 250);
+                ThreadPool.SetMinThreads(200, 200);
+                ThreadPool.SetMaxThreads(250, 250);
             }
 
             RequestExecutor.RemoteCertificateValidationCallback += (sender, cert, chain, errors) => true;

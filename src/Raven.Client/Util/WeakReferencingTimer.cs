@@ -28,7 +28,7 @@ internal class WeakReferencingTimer : IDisposable
         _timer = new Timer(StaticCallback, internalTimerState, infinite, infinite);
 
         internalTimerState.Timer = _timer; // assign timer instance to the state
-        Console.WriteLine($"WeakReferencingTimer . dueTime = {dueTime}:{dueTime.Milliseconds}.period = {period}:{period.Milliseconds} ");
+        
         _timer.Change(dueTime, period); // now let's activate the timer
     }
 
