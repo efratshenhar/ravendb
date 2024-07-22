@@ -11,7 +11,7 @@ namespace Raven.Server.ServerWide.Commands
 {
     public abstract class CommandBase
     {
-        internal const string MinBuildVersion54200 = "5.4.200";
+        internal const string MinBuildVersion54201 = "5.4.201";
 
         public virtual DynamicJsonValue ToJson(JsonOperationContext context)
         {
