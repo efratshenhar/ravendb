@@ -104,6 +104,85 @@ namespace SlowTests.Issues
             }
         }
 
+        [RavenTheory(RavenTestCategory.BulkInsert)]
+        [InlineData(null)]
+        [InlineData(HttpProtocols.Http1)]
+        [InlineData(HttpProtocols.Http2)]
+        public async Task BulkInsertWithDelay2(HttpProtocols? httpProtocols)
+        {
+            Version httpVersion;
+            switch (httpProtocols)
+            {
+                case null:
+                    httpVersion = null;
+                    break;
+                case HttpProtocols.Http1:
+                    httpVersion = new Version(1, 1);
+                    break;
+                case HttpProtocols.Http2:
+                    httpVersion = new Version(2, 0);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(httpProtocols));
+            }
+
+            DocumentConventions serverConventions = httpVersion != null
+                ? new DocumentConventions { HttpVersion = httpVersion, HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact }
+                : null;
+
+            Dictionary<string, string> customSettings = httpVersion != null
+                ? new Dictionary<string, string> { { RavenConfiguration.GetKey(x => x.Http.Protocols), httpProtocols.ToString() } }
+                : null;
+
+            var server = GetNewServer(new ServerCreationOptions
+            {
+                Conventions = serverConventions,
+                CustomSettings = customSettings
+            });
+
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = server,
+                ModifyDocumentStore = s =>
+                {
+                    s.Conventions.HttpVersion = httpVersion;
+                    s.Conventions.HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+                }
+            }))
+            {
+                var db = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                db.ForTestingPurposesOnly().BulkInsertStreamReadTimeout = _readTimeout;
+                var bulkInsertOptions = new BulkInsertOptions();
+                bulkInsertOptions.ForTestingPurposesOnly().OverrideHeartbeatCheckInterval = _readTimeout;
+
+                await using (var bulk = store.BulkInsert(bulkInsertOptions))
+                {
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Daniel" }, "users/1");
+                    await bulk.StoreAsync(new User { Name = "Yael" }, "users/2");
+
+                    await Task.Delay(_delay);
+                    await bulk.StoreAsync(new User { Name = "Ido" }, "users/3");
+                    await Task.Delay(_delay);
+                }
+
+                using (var session = store.OpenSession())
+                {
+                    var user = session.Load<User>("users/1");
+                    Assert.NotNull(user);
+                    Assert.Equal("Daniel", user.Name);
+
+                    user = session.Load<User>("users/2");
+                    Assert.NotNull(user);
+                    Assert.Equal("Yael", user.Name);
+
+                    user = session.Load<User>("users/3");
+                    Assert.NotNull(user);
+                    Assert.Equal("Ido", user.Name);
+                }
+            }
+        }
+
         [RavenFact(RavenTestCategory.BulkInsert)]
         public async Task StartStoreInTheMiddleOfAnHeartbeat()
         {
