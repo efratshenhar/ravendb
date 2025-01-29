@@ -286,11 +286,13 @@ namespace SlowTests.Issues
                 }, false);
 
                 Assert.NotEqual(tag1, tag2);
-
-                Backup.WaitForResponsibleNodeUpdateInCluster(store, nodes, taskId);
-
+                foreach (var server in nodes)
+                {
+                    if (server.ServerStore.NodeTag == tag1)
+                        continue;
+                    Backup.WaitForResponsibleNodeUpdate(server.ServerStore, store.Database, taskId, tag1);
+                }
                 CheckDecisionLog(leaderServer, new CurrentResponsibleNodeRemovedFromTopology(tag2, config.Name, tag1).ReasonForDecisionLog);
-
             }
         }
 
