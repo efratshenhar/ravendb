@@ -68,11 +68,12 @@ namespace Raven.Server.NotificationCenter
 
                 if (Logger.IsInfoEnabled)
                     Logger.Info($"Saving notification '{notification.Id}'.");
-
+                Console.WriteLine($"Saving notification {notification.Message}");
                 using (var json = context.ReadObject(notification.ToJson(), "notification", BlittableJsonDocumentBuilder.UsageMode.ToDisk))
                 {
                     var command = new StoreNotificationCommand(context.GetLazyString(notification.Id), notification.CreatedAt, postponeUntil, json, this);
                     serverStore.Engine.TxMerger.EnqueueSync(command);
+                    Console.WriteLine($"Done store");
                 }
             }
 
@@ -83,14 +84,15 @@ namespace Raven.Server.NotificationCenter
 
         internal void Store(LazyStringValue id, DateTime createdAt, DateTime? postponedUntil, BlittableJsonReaderObject action, RavenTransaction tx)
         {
+            
             var table = tx.InnerTransaction.OpenTable(Documents.Schemas.Notifications.Current, _tableName);
-
+            
             var createdAtTicks = Bits.SwapBytes(createdAt.Ticks);
 
             var postponedUntilTicks = postponedUntil != null
                 ? Bits.SwapBytes(postponedUntil.Value.Ticks)
                 : _postponeDateNotSpecified;
-
+            Console.WriteLine($"insert to {Documents.Schemas.Notifications.Current} table. id = {id}. ");
             using (table.Allocate(out TableValueBuilder tvb))
             {
                 tvb.Add(id.Buffer, id.Size);
@@ -228,6 +230,7 @@ namespace Raven.Server.NotificationCenter
                 var command = new DeleteNotificationCommand(id, this);
                 serverStore.Engine.TxMerger.EnqueueSync(command);
                 deleteResult = command.Deleted;
+                Console.WriteLine($"Done delete");
             }
 
             if (deleteResult && Logger.IsInfoEnabled)
@@ -237,6 +240,7 @@ namespace Raven.Server.NotificationCenter
 
         public bool DeleteFromTable(string id, RavenTransaction tx)
         {
+            Console.WriteLine($"delete from table");
             var table = tx.InnerTransaction.OpenTable(Documents.Schemas.Notifications.Current, _tableName);
 
             using (Slice.From(tx.InnerTransaction.Allocator, id, out Slice alertSlice))
@@ -345,6 +349,7 @@ namespace Raven.Server.NotificationCenter
 
                     var command = new StoreNotificationCommand(context.GetLazyString(id), item.CreatedAt, postponeUntil, new BlittableJsonReaderObject(itemCopy.Address, item.Json.Size, context), this);
                     serverStore.Engine.TxMerger.EnqueueSync(command);
+                    Console.WriteLine($"Done store 2");
                 }
             }
         }

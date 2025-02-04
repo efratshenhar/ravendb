@@ -11,6 +11,7 @@ namespace Raven.Server.Rachis.Commands
 
         protected override long ExecuteCmd(ClusterOperationContext context)
         {
+            Console.WriteLine($"start delete");
             Deleted = storage.DeleteFromTable(notificationId, context.Transaction);
             return Deleted ? 1 : 0;
         }

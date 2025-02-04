@@ -218,11 +218,12 @@ namespace Raven.Server.Commercial
         public void ReloadLicense(bool firstRun = false)
         {
             var license = _serverStore.LoadLicense();
+            
             if (license == null)
             {
                 // license is not active
                 ResetLicense(error: null);
-
+                Console.WriteLine($"LIcense error");
                 CreateAgplAlert();
 
                 return;
@@ -230,6 +231,7 @@ namespace Raven.Server.Commercial
 
             try
             {
+                Console.WriteLine($"Set LIcense");
                 SetLicense(GetLicenseStatus(license));
                 _serverStore.Configuration.UpdateLicenseType(LicenseStatus.Type);
             }

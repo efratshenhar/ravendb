@@ -186,10 +186,11 @@ public abstract class AbstractNotificationCenter : NotificationsBase
 
     public void Dismiss(string id, RavenTransaction existingTransaction = null, bool sendNotificationEvenIfDoesntExist = true)
     {
+        Console.WriteLine($"Dismiss Start");
         var deleted = Exists(id) && Storage.Delete(id, existingTransaction);
         if (deleted == false && sendNotificationEvenIfDoesntExist == false)
             return;
-
+        Console.WriteLine($"Dismiss Add");
         // send this notification even when notification doesn't exist
         // we don't persist all notifications
         Add(NotificationUpdated.Create(id, NotificationUpdateType.Dismissed));

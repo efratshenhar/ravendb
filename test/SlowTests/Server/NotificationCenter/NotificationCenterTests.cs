@@ -560,10 +560,10 @@ namespace SlowTests.Server.NotificationCenter
             };
 
             UseNewLocalServer(customSettings);
-
+            
             using var dis = Server.ServerStore.NotificationCenter.GetStored(out var alerts, postponed: false);
             var alertsList = alerts.ToList();
-
+            Console.WriteLine($"get alerts. count = {alertsList.Count}");
             var isLowSwapSizeRaised = alertsList.Any(a => a.Json[nameof(AlertRaised.AlertType)].ToString() == AlertType.LowSwapSize.ToString());
             Assert.True(isLowSwapSizeRaised, $"Actual swap {memoryInfoResult.TotalSwapSize}, min swap config {minSwapConfig}, total memory {memoryInfoResult.TotalPhysicalMemory}");
         }
