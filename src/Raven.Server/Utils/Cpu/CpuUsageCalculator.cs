@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -128,6 +128,18 @@ namespace Raven.Server.Utils.Cpu
 
     internal sealed class WindowsCpuUsageCalculator : CpuUsageCalculator<WindowsInfo>
     {
+        private static readonly Lazy<bool> HasMultipleProcessorGroups = new Lazy<bool>(() =>
+        {
+            try
+            {
+                return GetActiveProcessorGroupCount() > 1;
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
         protected override (double MachineCpuUsage, double? MachineIoWait) CalculateMachineCpuUsage(WindowsInfo windowsInfo)
         {
             var systemIdleDiff = windowsInfo.SystemIdleTime - PreviousInfo.SystemIdleTime;
@@ -145,6 +157,32 @@ namespace Raven.Server.Utils.Cpu
         }
 
         protected override WindowsInfo GetProcessInfo()
+        {
+            var legacyInfo = GetProcessInfoLegacy();
+            var multiGroupInfo = GetProcessInfoForMultipleGroups();
+
+            if (PreviousInfo != null && legacyInfo != null && multiGroupInfo != null)
+            {
+                var legacyCpu = CalculateCpuUsage(legacyInfo, PreviousInfo);
+                var multiGroupCpu = CalculateCpuUsage(multiGroupInfo, PreviousInfo);
+
+                Console.WriteLine($"Legacy CPU: {legacyCpu:F2}% | MultiGroup CPU: {multiGroupCpu:F2}%");
+            }
+
+            return HasMultipleProcessorGroups.Value ? multiGroupInfo : legacyInfo;
+        }
+
+        private double CalculateCpuUsage(WindowsInfo current, WindowsInfo previous)
+        {
+            var systemIdleDiff = current.SystemIdleTime - previous.SystemIdleTime;
+            var systemKernelDiff = current.SystemKernelTime - previous.SystemKernelTime;
+            var systemUserDiff = current.SystemUserTime - previous.SystemUserTime;
+            var sysTotal = systemKernelDiff + systemUserDiff;
+
+            return sysTotal > 0 ? (sysTotal - systemIdleDiff) * 100.00 / sysTotal : 0;
+        }
+
+        private WindowsInfo GetProcessInfoLegacy()
         {
             var systemIdleTime = new FileTime();
             var systemKernelTime = new FileTime();
@@ -164,12 +202,75 @@ namespace Raven.Server.Utils.Cpu
             };
         }
 
-        [return: MarshalAs(UnmanagedType.Bool)]
+        private WindowsInfo GetProcessInfoForMultipleGroups()
+        {
+            try
+            {
+                uint returnLength = 0;
+                var processorCount = Environment.ProcessorCount;
+                var requiredSize = (uint)(processorCount * 48);
+                var buffer = new byte[requiredSize];
+
+                var status = NtQuerySystemInformation(SystemProcessorPerformanceInformation, buffer, (uint)buffer.Length, ref returnLength);
+                if (status == unchecked((int)0xC0000004)) // STATUS_INFO_LENGTH_MISMATCH
+                {
+                    buffer = new byte[returnLength];
+                    status = NtQuerySystemInformation(SystemProcessorPerformanceInformation, buffer, returnLength, ref returnLength);
+                }
+
+                if (status != 0)
+                {
+                    //return GetProcessInfoLegacy();
+                }
+
+                ulong totalIdleTime = 0;
+                ulong totalKernelTime = 0;
+                ulong totalUserTime = 0;
+
+                var structSize = 48;
+
+                for (int i = 0; i < processorCount && (i * structSize + 24) <= returnLength; i++)
+                {
+                    var offset = i * structSize;
+
+                    var idleTime = BitConverter.ToUInt64(buffer, offset);
+                    var kernelTime = BitConverter.ToUInt64(buffer, offset + 8);
+                    var userTime = BitConverter.ToUInt64(buffer, offset + 16);
+
+                    totalIdleTime += idleTime;
+                    totalKernelTime += kernelTime;
+                    totalUserTime += userTime;
+                }
+
+                return new WindowsInfo
+                {
+                    SystemIdleTime = totalIdleTime,
+                    SystemKernelTime = totalKernelTime,
+                    SystemUserTime = totalUserTime
+                };
+            }
+            catch
+            {
+                //return GetProcessInfoLegacy();
+            }
+            return null;
+        }
+    
+
+    [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool GetSystemTimes(
             ref FileTime lpIdleTime,
             ref FileTime lpKernelTime,
             ref FileTime lpUserTime);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern ushort GetActiveProcessorGroupCount();
+
+        [DllImport("ntdll.dll", SetLastError = true)]
+        internal static extern int NtQuerySystemInformation(int SystemInformationClass, byte[] SystemInformation, uint SystemInformationLength, ref uint ReturnLength);
+
+        private const int SystemProcessorPerformanceInformation = 8;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static ulong GetTime(FileTime fileTime)
