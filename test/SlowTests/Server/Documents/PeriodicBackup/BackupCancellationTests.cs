@@ -20,19 +20,6 @@ using static Raven.Server.ServerWide.Backups.ServerBackupRunner;
 
 namespace SlowTests.Server.Documents.PeriodicBackup
 {
-    /// <summary>
-    /// Covers cancellation of an in-flight backup when its task is disabled, the task is deleted, or its
-    /// database is deleted (RavenDB-24994). See docs/cancellation-paths-investigation.md for the design.
-    ///
-    /// Mechanism under test: <see cref="DatabaseBackupState.CancelRunningBackup"/> cancels the live
-    /// <see cref="DatabaseBackupState.RunningCancel"/> token after the trigger raises Stale, and records a
-    /// [CANCELLED:&lt;reason&gt;] entry in the decision log.
-    ///
-    /// Each test pins a backup mid-run using the existing
-    /// <see cref="TestingStuffInternal.OnBackupTaskRunHoldBackupExecution"/> hook (awaited at
-    /// BackupTask.Run right after RunningTask is set), fires the trigger, then releases the pin and
-    /// observes the outcome.
-    /// </summary>
     public class BackupCancellationTests : RavenTestBase
     {
         public BackupCancellationTests(ITestOutputHelper output) : base(output)
