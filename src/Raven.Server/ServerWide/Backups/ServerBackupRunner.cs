@@ -140,6 +140,11 @@ public class ServerBackupRunner : IDisposable
     /// Registers a new backup task state in the in-memory dictionary and enqueues it for polling.
     /// If a state for the same database already exists, uses the existing inner dictionary.
     /// </summary>
+    public void EnsureDatabaseRegistered(string databaseName)
+    {
+        BackupsPerDatabasePerTaskId.GetOrAdd(databaseName, static _ => new ConcurrentDictionary<long, DatabaseBackupState>());
+    }
+
     private void RegisterNewBackup(DatabaseBackupState backupState)
     {
         if (BackupsPerDatabasePerTaskId.TryGetValue(backupState.DatabaseName, out var backupsPerDatabasePerTaskId) == false)
