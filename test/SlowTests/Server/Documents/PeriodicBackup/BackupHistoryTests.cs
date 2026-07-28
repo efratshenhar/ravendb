@@ -13,6 +13,7 @@ using Raven.Server.Documents;
 using Raven.Server.Documents.PeriodicBackup;
 using Raven.Server.Documents.PeriodicBackup.BackupHistory;
 using Raven.Server.Json;
+using Raven.Server.ServerWide.Backups;
 using Raven.Server.ServerWide.Context;
 using SlowTests.Core.Utils.Entities;
 using Sparrow.Json;
@@ -145,7 +146,8 @@ public class BackupHistoryTests : ClusterTestBase
         await Cluster.WaitForRaftIndexToBeAppliedOnClusterNodesAsync(taskId, nodes: [Server]);
 
         var documentDatabase = await Server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database).ConfigureAwait(false);
-        documentDatabase.PeriodicBackupRunner.ForTestingPurposesOnly().SimulateFailedBackup = true;
+        var testingStuff = new ServerBackupRunner.TestingStuffInternal { SimulateFailedBackup = true };
+        documentDatabase.ServerStore.BackupRunner.ForTestingPurposesOnly().DatabaseTestingStuffInternals[documentDatabase.Name] = testingStuff;
 
         await Backup.RunBackupAsync(Server, taskId, store, isFullBackup: true, OperationStatus.Faulted);
 
@@ -182,7 +184,7 @@ public class BackupHistoryTests : ClusterTestBase
         Assert.Equal(BackupType.Backup, fullBackup.BackupType);
 
         // Error field assertion
-        var expectedError = new Exception(nameof(DocumentDatabase.PeriodicBackupRunner._forTestingPurposes.SimulateFailedBackup)).ToString();
+        var expectedError = new Exception(nameof(ServerBackupRunner.TestingStuffInternal.SimulateFailedBackup)).ToString();
         Assert.True(fullBackup.Error.Contains(expectedError));
 
         // FullBackupResult existence assertion
