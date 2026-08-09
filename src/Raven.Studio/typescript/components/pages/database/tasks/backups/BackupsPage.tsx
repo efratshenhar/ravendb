@@ -15,7 +15,14 @@ import moment from "moment";
 import Spinner from "react-bootstrap/Spinner";
 import Button from "react-bootstrap/Button";
 import { HrHeader } from "components/common/HrHeader";
-import { RichPanel, RichPanelDetailItem, RichPanelDetails, RichPanelHeader } from "components/common/RichPanel";
+import {
+    RichPanel,
+    RichPanelDetailItem,
+    RichPanelDetails,
+    RichPanelHeader,
+    RichPanelInfo,
+    RichPanelName,
+} from "components/common/RichPanel";
 import { FlexGrow } from "components/common/FlexGrow";
 import { EmptySet } from "components/common/EmptySet";
 import { Icon } from "components/common/Icon";
@@ -140,6 +147,97 @@ function ManualBackup(props: ManualBackupProps) {
     );
 }
 
+type BackupGroup = Raven.Server.Documents.PeriodicBackup.BackupHistory.BackupGroup;
+type BackupHistoryEntry = Raven.Server.Documents.PeriodicBackup.BackupHistory.BackupHistoryEntry;
+
+function BackupHistoryEntryItem(props: { entry: BackupHistoryEntry; label: string }) {
+    const { entry, label } = props;
+
+    const createdAt = genUtils.formatUtcDateAsLocal(entry.CreatedAt);
+    const duration = entry.DurationInMs == null ? "N/A" : genUtils.formatMillis(entry.DurationInMs);
+
+    return (
+        <RichPanelDetails>
+            <RichPanelDetailItem label={label} title={createdAt}>
+                {createdAt}
+            </RichPanelDetailItem>
+            <RichPanelDetailItem label="Type">{entry.BackupType}</RichPanelDetailItem>
+            <RichPanelDetailItem label="Duration">{duration}</RichPanelDetailItem>
+            <RichPanelDetailItem label="Node">
+                <Icon icon="cluster-node" />
+                {entry.NodeTag}
+            </RichPanelDetailItem>
+            <RichPanelDetailItem label="Status">
+                {entry.Error ? (
+                    <span className="text-danger" title={entry.Error}>
+                        <Icon icon="warning" /> Failed
+                    </span>
+                ) : (
+                    <span className="text-success">
+                        <Icon icon="check" /> Success
+                    </span>
+                )}
+            </RichPanelDetailItem>
+        </RichPanelDetails>
+    );
+}
+
+function BackupHistoryGroup(props: { group: BackupGroup }) {
+    const { group } = props;
+
+    return (
+        <RichPanel className="mb-3">
+            <RichPanelHeader>
+                <RichPanelInfo>
+                    <RichPanelName>
+                        <Icon icon="backup" /> {group.TaskName ?? `Task ${group.TaskId}`}
+                    </RichPanelName>
+                </RichPanelInfo>
+                <FlexGrow />
+                <div className="p-2 small-label">
+                    {group.IncrementalBackupsCount} incremental backup{group.IncrementalBackupsCount === 1 ? "" : "s"}
+                </div>
+            </RichPanelHeader>
+
+            {group.FullBackup && <BackupHistoryEntryItem entry={group.FullBackup} label="Full Backup" />}
+
+            {(group.IncrementalBackups ?? []).map((incremental) => (
+                <BackupHistoryEntryItem key={incremental.CreatedAt} entry={incremental} label="Incremental Backup" />
+            ))}
+        </RichPanel>
+    );
+}
+
+function BackupHistory(props: { model: loadableData<BackupGroup[]> }) {
+    const { model } = props;
+
+    if (model.status === "failure") {
+        return <div className="bg-danger">Unable to load the backup history: {model.error.responseJSON?.Message}</div>;
+    }
+
+    if (model.status === "loading" || model.status === "idle") {
+        return (
+            <div className="d-flex justify-content-center">
+                <Spinner className="spinner-gradient" />
+            </div>
+        );
+    }
+
+    const groups = model.data ?? [];
+
+    if (groups.length === 0) {
+        return <EmptySet>No backup history</EmptySet>;
+    }
+
+    return (
+        <div>
+            {groups.map((group) => (
+                <BackupHistoryGroup key={`${group.TaskId}-${group.FullBackup?.CreatedAt}`} group={group} />
+            ))}
+        </div>
+    );
+}
+
 export function BackupsPage() {
     const isClusterAdminOrClusterNode = useAppSelector(accessManagerSelectors.isClusterAdminOrClusterNode);
     const hasDatabaseAdminAccess = useAppSelector(accessManagerSelectors.getHasDatabaseAdminAccess)();
@@ -147,6 +245,11 @@ export function BackupsPage() {
 
     const { tasksService } = useServices();
     const [manualBackup, setManualBackup] = useState<loadableData<manualBackupListModel>>({
+        status: "idle",
+        data: null,
+    });
+
+    const [backupHistory, setBackupHistory] = useState<loadableData<BackupGroup[]>>({
         status: "idle",
         data: null,
     });
@@ -203,11 +306,42 @@ export function BackupsPage() {
         [db.name, tasksService]
     );
 
+    const fetchBackupHistory = useCallback(
+        async (silent = false) => {
+            if (!silent) {
+                setBackupHistory({
+                    data: null,
+                    status: "loading",
+                });
+            }
+
+            try {
+                const result = await tasksService.getBackupHistory(db.name);
+                const groups = [...(result.BackupHistory?.Groups ?? [])].sort((a, b) =>
+                    (b.FullBackup?.CreatedAt ?? "").localeCompare(a.FullBackup?.CreatedAt ?? "")
+                );
+
+                setBackupHistory({
+                    data: groups,
+                    status: "success",
+                });
+            } catch (e) {
+                setBackupHistory({
+                    data: null,
+                    error: e,
+                    status: "failure",
+                });
+            }
+        },
+        [db.name, tasksService]
+    );
+
     const reload = useCallback(async () => {
         const loadTasks = tasks.locations.map((location) => fetchTasks(location));
         const loadManualBackup = fetchManualBackup(true);
-        await Promise.all(loadTasks.concat(loadManualBackup));
-    }, [tasks, fetchTasks, fetchManualBackup]);
+        const loadBackupHistory = fetchBackupHistory(true);
+        await Promise.all([...loadTasks, loadManualBackup, loadBackupHistory]);
+    }, [tasks, fetchTasks, fetchManualBackup, fetchBackupHistory]);
 
     useInterval(reload, 10_000);
 
@@ -237,7 +371,10 @@ export function BackupsPage() {
 
         // noinspection JSIgnoredPromiseFromCall
         fetchManualBackup();
-    }, [fetchManualBackup, fetchTasks, initialLocation.nodeTag, initialLocation.shardNumber]);
+
+        // noinspection JSIgnoredPromiseFromCall
+        fetchBackupHistory();
+    }, [fetchManualBackup, fetchBackupHistory, fetchTasks, initialLocation.nodeTag, initialLocation.shardNumber]);
 
     const canNavigateToServerWideTasks = isClusterAdminOrClusterNode;
     const serverWideTasksUrl = appUrl.forServerWideTasks();
@@ -397,6 +534,15 @@ export function BackupsPage() {
                         </div>
 
                         {backups.length === 0 && <EmptySet>No periodic backup tasks created</EmptySet>}
+
+                        <div className="flex-shrink-0">
+                            <HrHeader>
+                                <Icon icon="backup-history" />
+                                <span>Backup History</span>
+                            </HrHeader>
+                        </div>
+
+                        <BackupHistory model={backupHistory} />
                     </div>
                 </div>
             </div>

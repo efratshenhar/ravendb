@@ -521,6 +521,9 @@ namespace TypingsGenerator
             scripter.AddType(typeof(BackupProgress));
             scripter.AddType(typeof(StartBackupOperationResult));
             scripter.AddType(typeof(GetPeriodicBackupStatusOperationResult));
+            scripter.AddType(typeof(Raven.Server.Documents.PeriodicBackup.BackupHistory.BackupHistory));
+            scripter.AddType(typeof(Raven.Server.Documents.PeriodicBackup.BackupHistory.BackupGroup));
+            scripter.AddType(typeof(Raven.Server.Documents.PeriodicBackup.BackupHistory.BackupHistoryEntry));
 
             // ongoing tasks - subscription
             scripter.AddType(typeof(OngoingTaskSubscription));

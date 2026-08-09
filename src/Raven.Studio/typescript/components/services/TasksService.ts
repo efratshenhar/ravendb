@@ -7,6 +7,7 @@ import etlProgressCommand from "commands/database/tasks/etlProgressCommand";
 import { OngoingTaskSharedInfo } from "../models/tasks";
 import TaskUtils from "../utils/TaskUtils";
 import getManualBackupCommand from "commands/database/tasks/getManualBackupCommand";
+import getBackupHistoryCommand from "commands/database/tasks/getBackupHistoryCommand";
 import getOngoingTaskInfoCommand from "commands/database/tasks/getOngoingTaskInfoCommand";
 import getSubscriptionConnectionDetailsCommand from "commands/database/tasks/getSubscriptionConnectionDetailsCommand";
 import dropSubscriptionConnectionCommand from "commands/database/tasks/dropSubscriptionConnectionCommand";
@@ -89,6 +90,10 @@ export default class TasksService {
 
     async getManualBackup(databaseName: string) {
         return new getManualBackupCommand(databaseName).execute();
+    }
+
+    async getBackupHistory(databaseName: string) {
+        return new getBackupHistoryCommand(databaseName).execute();
     }
 
     async getSampleDataClasses(databaseName: string): Promise<string> {
