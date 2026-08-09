@@ -1471,31 +1471,17 @@ namespace Raven.Server.Documents
                                 break;
                             }
 
-                            var startDatabaseForBackup = _serverStore.ConcurrentBackupsCounter.TryStartDatabaseForBackup();
-                            if (startDatabaseForBackup == null)
-                            {
-                                // reached max concurrent loading of databases for backup
-                                var delayInMs = RescheduleDatabaseWakeup();
-                                if (_logger.IsInfoEnabled)
-                                    _logger.Info($"Delaying the start of the database '{databaseName}' for running a backup because we reached max concurrent loading of databases " +
-                                                 $"for backup ({_serverStore.ConcurrentBackupsCounter.MaxNumberOfConcurrentBackups}), will retry the wakeup in {delayInMs:#,#;;0}ms");
-                            }
-                            else
-                            {
                             _ = TryGetOrCreateResourceStore(databaseName, nextIdleDatabaseActivity.DateTime).ContinueWith(t =>
                             {
-                                    startDatabaseForBackup.Dispose();
-
                                 var ex = t.Exception.ExtractSingleInnerException();
                                 if (ex is DatabaseConcurrentLoadTimeoutException e)
                                 {
-                                        // database failed to load
-                                        var delayInMs = RescheduleDatabaseWakeup();
+                                    // database failed to load
+                                    var delayInMs = RescheduleDatabaseWakeup();
                                     if (_logger.IsInfoEnabled)
-                                            _logger.Info($"Failed to start database '{databaseName}' for running a backup, will retry the wakeup in {delayInMs:#,#;;0}ms", e);
-                                    }
-                                });
-                            }
+                                        _logger.Info($"Failed to start database '{databaseName}' for running a backup, will retry the wakeup in {delayInMs:#,#;;0}ms", e);
+                                }
+                            });
                             break;
 
                             int RescheduleDatabaseWakeup()
