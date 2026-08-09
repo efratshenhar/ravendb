@@ -575,9 +575,7 @@ public class BackupHistoryStorage
         /// </summary>
         public static string GenerateKey(string databaseName, PeriodicBackupStatus status)
         {
-            var createdAt = status.IsFull
-                ? status.LastFullBackup ?? status.Error.At
-                : status.LastIncrementalBackup ?? status.Error.At;
+            var createdAt = BackupHistoryEntry.GetCreatedAt(status);
 
             return GenerateKey(databaseName, status.TaskId, createdAt.Ticks);
         }

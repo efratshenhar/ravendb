@@ -10,9 +10,7 @@ public class BackupHistoryEntry : IDynamicJson
 
     public BackupHistoryEntry(PeriodicBackupStatus status)
     {
-        CreatedAt =
-            (status.IsFull ? status.LastFullBackup : status.LastIncrementalBackup)
-            ?? status.Error.At;
+        CreatedAt = GetCreatedAt(status);
 
         DurationInMs = status.DurationInMs;
         Error = status.Error?.Exception;
@@ -21,6 +19,10 @@ public class BackupHistoryEntry : IDynamicJson
         NodeTag = status.NodeTag;
         LastFullBackup = status.LastFullBackup;
     }
+
+    public static DateTime GetCreatedAt(PeriodicBackupStatus status) =>
+        (status.IsFull ? status.LastFullBackupInternal : status.LastIncrementalBackupInternal)
+        ?? status.Error.At;
 
     public DateTime CreatedAt { get; set; }
     public long? DurationInMs { get; set; }

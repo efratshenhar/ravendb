@@ -23,7 +23,9 @@ public sealed class UpdateBackupHistoryCommand : MergedTransactionCommand<Cluste
     protected override long ExecuteCmd(ClusterOperationContext context)
     {
         BackupHistoryStorage.StoreBackupStatus(context, _databaseName, _status, _cutoffTime);
-        BackupHistoryStorage.StoreBackupResultDetails(context, _databaseName, _status, _result);
+
+        if (_result != null)
+            BackupHistoryStorage.StoreBackupResultDetails(context, _databaseName, _status, _result);
 
         return 1;
     }

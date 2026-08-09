@@ -194,6 +194,187 @@ public class BackupHistoryTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
+    public async Task BackupHistory_FaultedBackupShouldNotOverwriteThePreviousSuccessfulEntry()
+    {
+        const string taskName = "RavenDB-19358 Faulted backup should not overwrite the previous successful entry";
+        var backupPath = NewDataPath(suffix: "BackupFolder");
+        using var store = GetDocumentStore(new Options { RunInMemory = true });
+
+        using (var session = store.OpenAsyncSession())
+        {
+            await session.StoreAsync(new User { Name = "RavenDB-19358" }, "user/1");
+            await session.SaveChangesAsync();
+        }
+
+        var config = Backup.CreateBackupConfiguration(backupPath, fullBackupFrequency: "0 0 1 1 1", name: taskName);
+        var result = await store.Maintenance.SendAsync(new UpdatePeriodicBackupOperation(config));
+        var taskId = result.TaskId;
+        await Cluster.WaitForRaftIndexToBeAppliedOnClusterNodesAsync(taskId, nodes: [Server]);
+
+        // A successful full backup
+        var successfulStatus = await Backup.RunBackupAndReturnStatusAsync(Server, taskId, store, isFullBackup: true);
+        Assert.True(successfulStatus.LastFullBackup.HasValue);
+        var successfulBackupCreatedAt = successfulStatus.LastFullBackup.Value;
+
+        var parameters = new BackupHistoryRequestParameters { DatabaseName = store.Database };
+
+        // Sanity: the successful backup, and its result, are in the history
+        using (Server.ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+        using (context.OpenReadTransaction())
+        {
+            BackupHistory backupHistory = null;
+            WaitForValue(() =>
+                {
+                    backupHistory = GetBackupHistoryFromEndpoint(context, store, parameters);
+                    return backupHistory?.Groups.Count ?? 0;
+                },
+                expectedVal: 1,
+                timeout: (int)TimeSpan.FromSeconds(15).TotalMilliseconds,
+                interval: (int)TimeSpan.FromSeconds(1).TotalMilliseconds);
+
+            Assert.NotNull(backupHistory);
+            var successfulEntry = backupHistory.Groups.Single().FullBackup;
+            Assert.Equal(successfulBackupCreatedAt, successfulEntry.CreatedAt);
+            Assert.Null(successfulEntry.Error);
+
+            var successfulResult = GetBackupResultFromEndpoint(context, store, store.Database, taskId, successfulBackupCreatedAt);
+            Assert.NotNull(successfulResult);
+            Assert.Equal(1, successfulResult.Documents.ReadCount);
+        }
+
+        // The next full backup of the same task fails
+        var documentDatabase = await Server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+        documentDatabase.ServerStore.BackupRunner.ForTestingPurposesOnly().DatabaseTestingStuffInternals[documentDatabase.Name] =
+            new ServerBackupRunner.TestingStuffInternal { SimulateFailedBackup = true };
+
+        await Backup.RunBackupAsync(Server, taskId, store, isFullBackup: true, OperationStatus.Faulted);
+
+        // The successful entry has to survive the failure: the faulted run is a separate backup attempt,
+        // it must not be written over the entry of the run that actually succeeded.
+        using (Server.ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+        using (context.OpenReadTransaction())
+        {
+            BackupHistory backupHistory = null;
+
+            // wait until the faulted run has been reflected in the history, in whatever shape
+            WaitForValue(() =>
+                {
+                    backupHistory = GetBackupHistoryFromEndpoint(context, store, parameters);
+                    if (backupHistory == null)
+                        return false;
+
+                    return backupHistory.Groups.Count > 1 ||
+                           backupHistory.Groups.Any(group => group.FullBackup?.Error != null);
+                },
+                expectedVal: true,
+                timeout: (int)TimeSpan.FromSeconds(30).TotalMilliseconds,
+                interval: (int)TimeSpan.FromSeconds(1).TotalMilliseconds);
+
+            Assert.NotNull(backupHistory);
+
+            var survivingGroup = backupHistory.Groups.SingleOrDefault(group => group.FullBackup?.CreatedAt == successfulBackupCreatedAt);
+            Assert.True(survivingGroup != null,
+                userMessage: $"Expected the successful full backup created at `{successfulBackupCreatedAt:O}` to still be in the history, " +
+                             $"but no group has this `CreatedAt`{Environment.NewLine}{backupHistory.ToString(Server.ServerStore.ContextPool)}");
+
+            Assert.True(survivingGroup.FullBackup.Error == null,
+                userMessage: $"The entry of the successful full backup created at `{successfulBackupCreatedAt:O}` was overwritten by the faulted run, " +
+                             $"it now carries an error{Environment.NewLine}{backupHistory.ToString(Server.ServerStore.ContextPool)}");
+
+            var preservedResult = GetBackupResultFromEndpoint(context, store, store.Database, taskId, successfulBackupCreatedAt);
+            Assert.True(preservedResult != null,
+                userMessage: $"Expected the `BackupResult` of the successful full backup created at `{successfulBackupCreatedAt:O}` to still be stored, but it is gone");
+
+            Assert.True(preservedResult.Documents.ReadCount == 1,
+                userMessage: $"Expected the stored `BackupResult` of the successful full backup created at `{successfulBackupCreatedAt:O}` to still report " +
+                             $"`1` read document, but got `{preservedResult.Documents.ReadCount}` - it was overwritten by the result of the faulted run");
+        }
+    }
+
+    [RavenFact(RavenTestCategory.BackupExportImport)]
+    public async Task BackupHistory_ShouldStoreBackupsThatFailedToStart()
+    {
+        const string taskName = "RavenDB-19358 Backup history should store backups that failed to start";
+        var backupPath = NewDataPath(suffix: "BackupFolder");
+        using var store = GetDocumentStore(new Options { RunInMemory = true });
+
+        using (var session = store.OpenAsyncSession())
+        {
+            await session.StoreAsync(new User { Name = "RavenDB-19358" }, "user/1");
+            await session.SaveChangesAsync();
+        }
+
+        var config = Backup.CreateBackupConfiguration(backupPath, fullBackupFrequency: "0 0 1 1 1", name: taskName);
+        var result = await store.Maintenance.SendAsync(new UpdatePeriodicBackupOperation(config));
+        var taskId = result.TaskId;
+        await Cluster.WaitForRaftIndexToBeAppliedOnClusterNodesAsync(taskId, nodes: [Server]);
+
+        var documentDatabase = await Server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+        documentDatabase.ServerStore.BackupRunner.ForTestingPurposesOnly().DatabaseTestingStuffInternals[documentDatabase.Name] =
+            new ServerBackupRunner.TestingStuffInternal { SimulateFailedBackupStart = true };
+
+        // The backup fails before `BackupTask` is ever created, so there is no operation to wait for.
+        // We drive the runner directly and wait for what it persists from its failure handling.
+        Server.ServerStore.BackupRunner.StartBackupTask(documentDatabase.Name, taskId, isFullBackup: true, documentDatabase.Operations.GetNextOperationId());
+
+        // The start failure is expected to reach the periodic backup status...
+        PeriodicBackupStatus status = null;
+        var statusWasSaved = WaitForValue(() =>
+            {
+                status = store.Maintenance.Send(new GetPeriodicBackupStatusOperation(taskId)).Status;
+                return status?.Error != null;
+            },
+            expectedVal: true,
+            timeout: (int)TimeSpan.FromSeconds(30).TotalMilliseconds,
+            interval: (int)TimeSpan.FromMilliseconds(500).TotalMilliseconds);
+
+        Assert.True(statusWasSaved, userMessage: "The backup status of the failed start was not saved");
+        Assert.Contains(nameof(ServerBackupRunner.TestingStuffInternal.SimulateFailedBackupStart), status.Error.Exception);
+
+        // ...and the backup history, which is the only place where a user can see that this attempt happened at all
+        using (Server.ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+        using (context.OpenReadTransaction())
+        {
+            BackupHistory backupHistory = null;
+            var parameters = new BackupHistoryRequestParameters { DatabaseName = store.Database };
+
+            WaitForValue(() =>
+                {
+                    backupHistory = GetBackupHistoryFromEndpoint(context, store, parameters);
+                    return backupHistory?.Groups.Count ?? 0;
+                },
+                expectedVal: 1,
+                timeout: (int)TimeSpan.FromSeconds(30).TotalMilliseconds,
+                interval: (int)TimeSpan.FromSeconds(1).TotalMilliseconds);
+
+            Assert.NotNull(backupHistory);
+
+            var singleGroup = backupHistory.Groups.SingleOrDefault();
+            Assert.True(singleGroup != null,
+                userMessage: $"Expected a single backup history group for the backup that failed to start, but got `{backupHistory.Groups.Count}`" +
+                             $"{Environment.NewLine}{backupHistory.ToString(Server.ServerStore.ContextPool)}");
+
+            var entry = singleGroup.FullBackup;
+            Assert.True(entry != null,
+                userMessage: $"Expected the failed start to be recorded as a full backup entry{Environment.NewLine}{backupHistory.ToString(Server.ServerStore.ContextPool)}");
+
+            // A full backup that failed to start must be recorded as a full backup of its own, not as an
+            // incremental one hanging under a synthesized `BackupGroup.FullBackup` placeholder
+            Assert.True(singleGroup.IncrementalBackups.Count == 0,
+                userMessage: $"Expected the failed start of a full backup to be recorded as a full backup, but it was recorded as " +
+                             $"`{singleGroup.IncrementalBackups.Count}` incremental backup(s){Environment.NewLine}{backupHistory.ToString(Server.ServerStore.ContextPool)}");
+
+            Assert.True(entry.CreatedAt != DateTime.MinValue,
+                userMessage: $"Expected the full backup entry to carry the time of the failed attempt, but got `{entry.CreatedAt:O}`, which means the " +
+                             $"entry is a placeholder synthesized by `BackupGroup` and not the stored one{Environment.NewLine}{backupHistory.ToString(Server.ServerStore.ContextPool)}");
+
+            Assert.Equal(BackupKind.Full, entry.BackupKind);
+            Assert.Equal(Server.ServerStore.NodeTag, entry.NodeTag);
+            Assert.Contains(nameof(ServerBackupRunner.TestingStuffInternal.SimulateFailedBackupStart), entry.Error);
+        }
+    }
+
+    [RavenFact(RavenTestCategory.BackupExportImport)]
     public async Task BackupHistory_ShouldRespectRetentionPolicy()
     {
         var retentionPeriod = TimeSpan.FromSeconds(20);

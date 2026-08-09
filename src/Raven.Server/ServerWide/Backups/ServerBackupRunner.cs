@@ -241,6 +241,13 @@ public class ServerBackupRunner : IDisposable
                         $"Backup task is disabled via marker file for database '{database.Name}'.");
                 }
 
+                if (_forTestingPurposes != null &&
+                    _forTestingPurposes.DatabaseTestingStuffInternals.TryGetValue(backupState.DatabaseName, out var startFailureTestingStuff) &&
+                    startFailureTestingStuff.SimulateFailedBackupStart)
+                {
+                    throw new InvalidOperationException(nameof(TestingStuffInternal.SimulateFailedBackupStart));
+                }
+
                 var localBackupStatus = backupState.BackupStatus = backupState.GetMostUpdatedLocalBackupStatus(backupState.Configuration.TaskId, inMemoryBackupStatus: backupState.BackupStatus, database.Name);
                 var backupToLocalFolder = BackupConfiguration.CanBackupUsing(backupState.Configuration.LocalSettings);
                 // check if we need to do a new full backup
@@ -1056,6 +1063,7 @@ public class ServerBackupRunner : IDisposable
         internal bool SimulateActiveByCurrentNode_UpdateConfigurations;
         internal bool SimulateDisableNodeStatus_UpdateConfigurations;
         internal bool SimulateFailedBackup;
+        internal bool SimulateFailedBackupStart;
         internal bool BackupStatusFromMemoryOnly;
 
         internal TaskCompletionSource<object> OnBackupTaskRunHoldBackupExecution;
