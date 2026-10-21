@@ -111,6 +111,11 @@ namespace Raven.Server.Documents.PeriodicBackup
 
         internal void TimerCallback(object backupTaskDetails)
         {
+            _ = TimerCallbackAsync(backupTaskDetails).IgnoreUnobservedExceptions();
+        }
+
+        private async Task TimerCallbackAsync(object backupTaskDetails)
+        {
             try
             {
                 var backupDetails = (NextBackup)backupTaskDetails;
@@ -129,7 +134,7 @@ namespace Raven.Server.Documents.PeriodicBackup
                 if (ShouldRunBackupAfterTimerCallbackAndRescheduleIfNeeded(backupDetails, out PeriodicBackup periodicBackup) == false)
                     return;
 
-                StartBackupTaskAndRescheduleIfNeeded(periodicBackup, backupDetails);
+                await StartBackupTaskAndRescheduleIfNeededAsync(periodicBackup, backupDetails);
             }
             catch (Exception e)
             {
@@ -138,6 +143,11 @@ namespace Raven.Server.Documents.PeriodicBackup
         }
 
         internal void LongPeriodTimerCallback(object backupTaskDetails)
+        {
+            _ = LongPeriodTimerCallbackAsync(backupTaskDetails).IgnoreUnobservedExceptions();
+        }
+
+        private async Task LongPeriodTimerCallbackAsync(object backupTaskDetails)
         {
             try
             {
@@ -159,7 +169,7 @@ namespace Raven.Server.Documents.PeriodicBackup
                 var remainingInterval = backupDetails.TimeSpan - MaxTimerTimeout;
                 if (remainingInterval.TotalMilliseconds <= 0)
                 {
-                    StartBackupTaskAndRescheduleIfNeeded(periodicBackup, backupDetails);
+                    await StartBackupTaskAndRescheduleIfNeededAsync(periodicBackup, backupDetails);
                     return;
                 }
 
@@ -171,11 +181,11 @@ namespace Raven.Server.Documents.PeriodicBackup
             }
         }
 
-        private void StartBackupTaskAndRescheduleIfNeeded(PeriodicBackup periodicBackup, NextBackup currentBackup)
+        private async Task StartBackupTaskAndRescheduleIfNeededAsync(PeriodicBackup periodicBackup, NextBackup currentBackup)
         {
             try
             {
-                CreateBackupTask(periodicBackup, currentBackup.IsFull, currentBackup.DateTime);
+                await CreateBackupTaskAsync(periodicBackup, currentBackup.IsFull, currentBackup.DateTime);
             }
             catch (BackupDelayException e)
             {
@@ -217,14 +227,14 @@ namespace Raven.Server.Documents.PeriodicBackup
             return BackupUtils.GetResponsibleNodeTag(_serverStore, _database.Name, periodicBackup.Configuration.TaskId);
         }
 
-        public long StartBackupTask(long taskId, bool isFullBackup, long? operationId = null, DateTime? startTimeUtc = null)
+        public Task<long> StartBackupTaskAsync(long taskId, bool isFullBackup, long? operationId = null, DateTime? startTimeUtc = null)
         {
             if (_periodicBackups.TryGetValue(taskId, out var periodicBackup) == false)
             {
                 throw new InvalidOperationException($"Backup task id: {taskId} doesn't exist");
             }
 
-            return CreateBackupTask(periodicBackup, isFullBackup, startTimeUtc ?? SystemTime.UtcNow, operationId);
+            return CreateBackupTaskAsync(periodicBackup, isFullBackup, startTimeUtc ?? SystemTime.UtcNow, operationId);
         }
 
         public async Task DelayAsync(long taskId, DateTime delayUntil, X509Certificate2 clientCert, CancellationToken token)
@@ -315,9 +325,9 @@ namespace Raven.Server.Documents.PeriodicBackup
             });
         }
 
-        private long CreateBackupTask(PeriodicBackup periodicBackup, bool isFullBackup, DateTime startTimeInUtc, long? operationId = null)
+        private async Task<long> CreateBackupTaskAsync(PeriodicBackup periodicBackup, bool isFullBackup, DateTime startTimeInUtc, long? operationId = null)
         {
-            using (periodicBackup.UpdateBackupTask())
+            using (await periodicBackup.UpdateBackupTaskAsync())
             {
                 if (periodicBackup.Disposed)
                     throw new InvalidOperationException("Backup task was already disposed");
@@ -411,7 +421,8 @@ namespace Raven.Server.Documents.PeriodicBackup
                     else
                         periodicBackup.BackupStatus.LastIncrementalBackupInternal = startTimeInUtc;
 
-                    BackupUtils.SaveBackupStatus(periodicBackup.BackupStatus, _database.Name, _database.ServerStore, _logger, operationCancelToken: periodicBackup.CancelToken);
+                    using (var saveStatusToken = new OperationCancelToken(_database.DatabaseShutdown))
+                        await BackupUtils.SaveBackupStatusAsync(periodicBackup.BackupStatus, _database.Name, _database.ServerStore, _logger, operationCancelToken: saveStatusToken);
 
                     var message = $"Failed to start the backup task: '{periodicBackup.Configuration.Name}'";
                     if (_logger.IsOperationsEnabled)

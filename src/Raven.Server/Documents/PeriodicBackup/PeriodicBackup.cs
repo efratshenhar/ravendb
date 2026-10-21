@@ -64,6 +64,13 @@ namespace Raven.Server.Documents.PeriodicBackup
             return new DisposableAction(() => _updateBackupTaskSemaphore.Release());
         }
 
+        public async Task<IDisposable> UpdateBackupTaskAsync()
+        {
+            await _updateBackupTaskSemaphore.WaitAsync();
+
+            return new DisposableAction(() => _updateBackupTaskSemaphore.Release());
+        }
+
         public void DisableFutureBackups()
         {
             using (UpdateBackupTask())

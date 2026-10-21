@@ -65,7 +65,7 @@ namespace FastTests
                 long opId;
                 try
                 {
-                    opId = periodicBackupRunner.StartBackupTask(taskId, isFullBackup);
+                    opId = await periodicBackupRunner.StartBackupTaskAsync(taskId, isFullBackup);
                 }
                 catch (BackupAlreadyRunningException alreadyRunningException)
                 {

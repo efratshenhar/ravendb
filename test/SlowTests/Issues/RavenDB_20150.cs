@@ -69,7 +69,7 @@ public class RavenDB_20150 : ClusterTestBase
             {
                 var server2Database = await dbServer.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
                 var periodicBackupRunner = server2Database.PeriodicBackupRunner;
-                var op = periodicBackupRunner.StartBackupTask(result.TaskId, isFullBackup: false);
+                var op = await periodicBackupRunner.StartBackupTaskAsync(result.TaskId, isFullBackup: false);
                 var value = await WaitForValueAsync(() =>
                 {
                     var status = server2Database.Operations.GetOperation(op)?.State.Status;

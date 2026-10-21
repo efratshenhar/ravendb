@@ -26,7 +26,7 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
 
             if (nodeTag == ServerStore.NodeTag)
             {
-                operationId = RequestHandler.Database.PeriodicBackupRunner.StartBackupTask(taskId, isFullBackup, operationId, startTime);
+                operationId = await RequestHandler.Database.PeriodicBackupRunner.StartBackupTaskAsync(taskId, isFullBackup, operationId, startTime);
                 return (operationId, IsResponsibleNode: true);
             }
 
