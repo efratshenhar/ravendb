@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Raven.Client.Documents.Operations.Backups;
 using Raven.Client.Json.Serialization;
+using Raven.Client.ServerWide;
 using Raven.Server.Documents.TransactionMerger.Commands;
 using Raven.Server.Rachis;
 using Raven.Server.ServerWide;
@@ -135,12 +137,38 @@ namespace Raven.Server.Documents.PeriodicBackup
             return result;
         }
 
-        public void Insert(PeriodicBackupStatus backupStatus, string databaseName)
+        public async Task<bool> InsertAsync(PeriodicBackupStatus backupStatus, string databaseName)
         {
-            _serverStore.Engine.TxMerger.EnqueueSync(new UpdateLocalBackupStatusCommand(backupStatus, databaseName, backupStatus.TaskId));
+            var command = new UpdateLocalBackupStatusCommand(_serverStore.Cluster, backupStatus, databaseName, backupStatus.TaskId);
+            await _serverStore.Engine.TxMerger.Enqueue(command);
 
             if (_logger.IsInfoEnabled)
-                _logger.Info($"Inserted backup status for database '{databaseName}' with task ID {backupStatus.TaskId}.");
+            {
+                _logger.Info(command.Inserted
+                    ? $"Inserted backup status for database '{databaseName}' with task ID {backupStatus.TaskId}."
+                    : $"Skipped inserting backup status for database '{databaseName}' with task ID {backupStatus.TaskId}, because the database or the task no longer exists on this node.");
+            }
+
+            return command.Inserted;
+        }
+
+        internal static bool CanStoreLocalStatus(ClusterOperationContext context, RawDatabaseRecord record, string databaseName, long taskId)
+        {
+            if (record == null)
+                return false;
+
+            var nodeTag = RachisConsensus.ReadNodeTag(context);
+            if (record.Topology?.RelevantFor(nodeTag) != true)
+                return false;
+
+            var deletionKey = ShardHelper.TryGetShardNumberFromDatabaseName(databaseName, out var shardNumber)
+                ? DatabaseRecord.GetKeyForDeletionInProgress(nodeTag, shardNumber)
+                : nodeTag;
+
+            if (record.DeletionInProgress?.TryGetValue(deletionKey, out var deletionStatus) == true && deletionStatus != DeletionInProgressStatus.No)
+                return false;
+
+            return taskId <= 0 || record.GetPeriodicBackupConfiguration(taskId) != null;
         }
 
         public static unsafe void Insert<T>(TransactionOperationContext<T> context, BlittableJsonReaderObject backupStatus, string databaseName, long taskId)

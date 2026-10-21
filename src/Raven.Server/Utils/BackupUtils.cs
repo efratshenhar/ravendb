@@ -669,8 +669,10 @@ public static class BackupUtils
             try
             {
                 // if cluster command failed then we save the status locally on our own
-                serverStore.DatabaseInfoCache.BackupStatusStorage.Insert(status, databaseName);
-                message += $"{Environment.NewLine}Saving the local backup status directly succeeded";
+                if (await serverStore.DatabaseInfoCache.BackupStatusStorage.InsertAsync(status, databaseName))
+                    message += $"{Environment.NewLine}Saving the local backup status directly succeeded";
+                else
+                    message += $"{Environment.NewLine}The local backup status was not saved, because the database or the backup task no longer exists on this node";
             }
             catch (Exception innerException)
             {
