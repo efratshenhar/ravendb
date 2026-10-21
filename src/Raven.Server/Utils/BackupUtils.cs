@@ -37,6 +37,8 @@ public static class BackupUtils
 {
     internal static bool IgnoreHealthChecksBeforeBackup = false;
 
+    private static readonly TimeSpan MaxIdleBackupStatusUpdateDelay = TimeSpan.FromMinutes(1);
+
     internal static BackupTask GetBackupTask(DocumentDatabase database, BackupParameters backupParameters, BackupConfiguration configuration, OperationCancelToken token, Logger logger, PeriodicBackupRunner.TestingStuff forTestingPurposes = null)
     {
         return configuration.BackupUploadMode == BackupUploadMode.DirectUpload
@@ -600,7 +602,28 @@ public static class BackupUtils
         if (parameters.Logger.IsOperationsEnabled)
             parameters.Logger.Operations($"Backup Task '{parameters.Configuration.TaskId}' of database '{parameters.DatabaseName}' doesn't have changes since last backup. Wakeup timer set to next full backup at {nextFullBackup}, and will skip the incremental backups.");
 
-        return new IdleDatabaseActivity(IdleDatabaseActivityType.UpdateBackupStatusOnly, nextBackup.DateTime, parameters.Configuration.TaskId, parameters.LastEtag);
+        var delay = GetIdleBackupStatusUpdateDelay(parameters.Configuration, nextBackup.DateTime);
+        return new IdleDatabaseActivity(IdleDatabaseActivityType.UpdateBackupStatusOnly, nextBackup.DateTime, parameters.Configuration.TaskId, parameters.LastEtag, delay);
+    }
+
+    private static TimeSpan GetIdleBackupStatusUpdateDelay(PeriodicBackupConfiguration configuration, DateTime nextBackupUtc)
+    {
+        var followingBackup = GetNextBackupOccurrence(new NextBackupOccurrenceParameters
+        {
+            BackupFrequency = configuration.IncrementalBackupFrequency,
+            LastBackupUtc = nextBackupUtc,
+            Configuration = configuration
+        });
+
+        if (followingBackup == null)
+            return TimeSpan.Zero;
+
+        var halfInterval = (followingBackup.Value.ToUniversalTime() - nextBackupUtc) / 2;
+        var maxDelay = halfInterval < MaxIdleBackupStatusUpdateDelay ? halfInterval : MaxIdleBackupStatusUpdateDelay;
+        if (maxDelay <= TimeSpan.Zero)
+            return TimeSpan.Zero;
+
+        return TimeSpan.FromMilliseconds(Random.Shared.Next(0, (int)maxDelay.TotalMilliseconds));
     }
 
     public static void SaveBackupStatus(PeriodicBackupStatus status, string databaseName, ServerStore serverStore, Logger logger,

@@ -1775,8 +1775,9 @@ namespace Raven.Server.Documents
         public IdleDatabaseActivityType Type { get; }
         public DateTime? DateTime { get; internal set; }
         public long TaskId { get; }
+        public TimeSpan Delay { get; }
         public int DueTime => DateTime.HasValue
-            ? (int)Math.Min(int.MaxValue, Math.Max(0, (DateTime.Value - System.DateTime.UtcNow).TotalMilliseconds))
+            ? (int)Math.Min(int.MaxValue, Math.Max(0, (DateTime.Value + Delay - System.DateTime.UtcNow).TotalMilliseconds))
             : 0;
 
         public IdleDatabaseActivity(IdleDatabaseActivityType type)
@@ -1789,11 +1790,12 @@ namespace Raven.Server.Documents
             DateTime = null;
         }
 
-        public IdleDatabaseActivity(IdleDatabaseActivityType type, DateTime timeOfActivity, long taskId = 0, long lastEtag = 0)
+        public IdleDatabaseActivity(IdleDatabaseActivityType type, DateTime timeOfActivity, long taskId = 0, long lastEtag = 0, TimeSpan delay = default)
         {
             LastEtag = lastEtag;
             Type = type;
             TaskId = taskId;
+            Delay = delay;
 
             Debug.Assert(timeOfActivity.Kind != DateTimeKind.Unspecified);
             DateTime = timeOfActivity.ToUniversalTime();
