@@ -1388,7 +1388,7 @@ namespace Raven.Server.Documents
 
         private void NextScheduledActivityCallback(string databaseName, IdleDatabaseActivity nextIdleDatabaseActivity)
         {
-            _ = NextScheduledActivityCallbackAsync(databaseName, nextIdleDatabaseActivity);
+            _ = NextScheduledActivityCallbackAsync(databaseName, nextIdleDatabaseActivity).IgnoreUnobservedExceptions();
         }
 
         private async Task NextScheduledActivityCallbackAsync(string databaseName, IdleDatabaseActivity nextIdleDatabaseActivity)
