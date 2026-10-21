@@ -652,7 +652,7 @@ public static class BackupUtils
 
             await BackupHelper.RunWithRetriesAsync(maxRetries: 10, async () =>
                 {
-                    await serverStore.WaitForCommitIndexChange(RachisConsensus.CommitIndexModification.GreaterOrEqual, index);
+                    await serverStore.WaitForCommitIndexChange(RachisConsensus.CommitIndexModification.GreaterOrEqual, index, operationCancelToken?.Token ?? CancellationToken.None);
                     return default;
                 },
                 infoMessage: "Verifying that the backup status was successfully saved in the cluster",

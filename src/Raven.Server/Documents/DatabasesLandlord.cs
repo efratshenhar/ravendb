@@ -555,6 +555,8 @@ namespace Raven.Server.Documents
 
         public void Dispose()
         {
+            // must stay before the wakeup timers are disposed below: an idle database backup status save keeps running after its timer callback returned,
+            // and only this call waits for it to finish (the timers' dispose wait covers just the synchronous part of the callback)
             _disposing.CloseAndLock();
             var exceptionAggregator = new ExceptionAggregator(_logger, "Failure to dispose landlord");
             try
@@ -1415,7 +1417,11 @@ namespace Raven.Server.Documents
                             var backupResult = new BackupResult();
                             backupResult.AddMessage($"Skipping incremental backup because no changes were made from last full backup on {backupStatus.LastFullBackup}.");
                             
-                            await BackupUtils.SaveBackupStatusAsync(backupStatus, databaseName, _serverStore, _logger, backupResult);
+                            using (var cancelToken = new OperationCancelToken(_serverStore.ServerShutdown))
+                                await BackupUtils.SaveBackupStatusAsync(backupStatus, databaseName, _serverStore, _logger, backupResult, operationCancelToken: cancelToken);
+
+                            if (_serverStore.ServerShutdown.IsCancellationRequested)
+                                return;
 
                             // choose the next backup that will arrive the earliest
                             nextIdleDatabaseActivity = BackupUtils.GetEarliestIdleDatabaseActivity(new BackupUtils.EarliestIdleDatabaseActivityParameters
