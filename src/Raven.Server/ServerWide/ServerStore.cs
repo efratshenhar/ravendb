@@ -1011,9 +1011,12 @@ namespace Raven.Server.ServerWide
 
         public void TriggerDatabases()
         {
+            _engine.StateMachine.Changes.DatabaseChanged += ServerBackupRunner.OnClusterDatabaseChanged;
             _engine.StateMachine.Changes.DatabaseChanged += DatabasesLandlord.ClusterOnDatabaseChanged;
             _engine.StateMachine.Changes.DatabaseChanged += OnDatabaseChanged;
             _engine.StateMachine.Changes.ValueChanged += OnValueChanged;
+
+            ServerBackupRunner.RegisterAllDatabases();
 
             _engine.TopologyChanged += (_, __) => NotifyAboutClusterTopologyAndConnectivityChanges();
             _engine.StateChanged += OnStateChanged;
