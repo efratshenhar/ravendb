@@ -61,6 +61,8 @@ public class ServerBackupRunner : IDisposable
     private readonly RavenAuditLogger _auditLog;
     private readonly List<BackupDecision> _decisionLog = new();
 
+    private readonly ConcurrentDictionary<string, object> _databaseUpdateLocks = new(StringComparer.OrdinalIgnoreCase);
+
     public ServerBackupRunner(ServerStore serverStore)
     {
         _serverStore = serverStore;
@@ -90,20 +92,133 @@ public class ServerBackupRunner : IDisposable
             DatabaseLoadedPolicy.Instance
         ];
 
-        using (_serverStore.Server.ServerStore.Engine.ContextPool.AllocateOperationContext(out ClusterOperationContext context))
+        _thread = PoolOfThreads.GlobalRavenThreadPool.LongRunning(Run, null, ThreadNames.ForServerBackupRunner());
+    }
+
+    public void RegisterAllDatabases()
+    {
+        List<string> databaseNames;
+        using (_serverStore.Engine.ContextPool.AllocateOperationContext(out ClusterOperationContext context))
         using (context.OpenReadTransaction())
         {
-            foreach (var databaseRecord in _serverStore.Cluster.GetAllRawDatabases(context))
-            {
-                foreach (var periodicBackup in databaseRecord.PeriodicBackups)
-                {
-                    var backupState = new DatabaseBackupState(databaseRecord.DatabaseName, periodicBackup, databaseRecord.IsSharded, _serverStore);
+            databaseNames = _serverStore.Cluster.GetDatabaseNames(context);
+        }
 
-                    RegisterNewBackup(backupState);
+        foreach (var databaseName in databaseNames)
+        {
+            try
+            {
+                UpdateDatabase(databaseName);
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsWarnEnabled)
+                    _logger.Warn($"Failed to register the backup tasks of database '{databaseName}'.", e);
+            }
+        }
+    }
+
+    public Task OnClusterDatabaseChanged(string databaseName, long index, string type, DatabasesLandlord.ClusterDatabaseChangeType changeType, object changeState)
+    {
+        try
+        {
+            switch (changeType)
+            {
+                case DatabasesLandlord.ClusterDatabaseChangeType.RecordChanged:
+                case DatabasesLandlord.ClusterDatabaseChangeType.RecordRestored:
+                    UpdateDatabase(databaseName);
+                    break;
+
+                case DatabasesLandlord.ClusterDatabaseChangeType.ValueChanged:
+                    switch (type)
+                    {
+                        case nameof(UpdateResponsibleNodeForTasksCommand):
+                            UpdateDatabase(databaseName);
+                            break;
+
+                        case nameof(DelayBackupCommand):
+                            ApplyDelay(databaseName, (DelayBackupCommand.DelayBackupCommandState)changeState);
+                            break;
+                    }
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsWarnEnabled)
+                _logger.Warn($"Failed to update the backup tasks of database '{databaseName}' after '{type}' (index {index}).", e);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void UpdateDatabase(string databaseName)
+    {
+        var name = ShardHelper.ToDatabaseName(databaseName);
+
+        lock (GetDatabaseUpdateLock(name))
+        {
+            using (_serverStore.Engine.ContextPool.AllocateOperationContext(out ClusterOperationContext context))
+            using (context.OpenReadTransaction())
+            using (var rawRecord = _serverStore.Cluster.ReadRawDatabaseRecord(context, name))
+            {
+                if (rawRecord == null)
+                {
+                    foreach (var trackedName in GetTrackedNamesOf(name))
+                        RemoveDatabase(trackedName);
+
+                    return;
+                }
+
+                var hostedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                if (rawRecord.IsSharded)
+                {
+                    foreach (var shardRecord in rawRecord.GetShardedDatabaseRecords())
+                    {
+                        if (IsHostedOnThisNode(shardRecord) == false)
+                            continue;
+
+                        hostedNames.Add(shardRecord.DatabaseName);
+                        ApplyDatabaseRecord(shardRecord.DatabaseName, shardRecord);
+                    }
+                }
+                else if (IsHostedOnThisNode(rawRecord))
+                {
+                    hostedNames.Add(rawRecord.DatabaseName);
+                    ApplyDatabaseRecord(rawRecord.DatabaseName, rawRecord);
+                }
+
+                foreach (var trackedName in GetTrackedNamesOf(name))
+                {
+                    if (hostedNames.Contains(trackedName) == false)
+                        RemoveBackupStates(trackedName);
                 }
             }
         }
-        _thread = PoolOfThreads.GlobalRavenThreadPool.LongRunning(Run, null, ThreadNames.ForServerBackupRunner());
+    }
+
+    private bool IsHostedOnThisNode(RawDatabaseRecord record)
+    {
+        return record.Topology != null && record.Topology.RelevantFor(_serverStore.NodeTag);
+    }
+
+    private List<string> GetTrackedNamesOf(string databaseName)
+    {
+        var names = new List<string>();
+
+        foreach (var trackedName in BackupsPerDatabasePerTaskId.Keys)
+        {
+            if (string.Equals(ShardHelper.ToDatabaseName(trackedName), databaseName, StringComparison.OrdinalIgnoreCase))
+                names.Add(trackedName);
+        }
+
+        return names;
+    }
+
+    private object GetDatabaseUpdateLock(string databaseName)
+    {
+        return _databaseUpdateLocks.GetOrAdd(databaseName, static _ => new object());
     }
 
     public List<BackupDecision> GetDecisionLog(int take, out int total)
@@ -243,18 +358,12 @@ public class ServerBackupRunner : IDisposable
         }
     }
 
-    public void EnsureDatabaseRegistered(string databaseName)
-    {
-        BackupsPerDatabasePerTaskId.GetOrAdd(databaseName, static _ => new ConcurrentDictionary<long, DatabaseBackupState>());
-    }
-
     private void RegisterNewBackup(DatabaseBackupState backupState)
     {
         var backupsPerDatabasePerTaskId = BackupsPerDatabasePerTaskId.GetOrAdd(backupState.DatabaseName, static _ => new ConcurrentDictionary<long, DatabaseBackupState>());
 
-        backupsPerDatabasePerTaskId.TryAdd(backupState.Configuration.TaskId, backupState);
-
-        _backupQueue.Enqueue(backupState);
+        if (backupsPerDatabasePerTaskId.TryAdd(backupState.Configuration.TaskId, backupState))
+            _backupQueue.Enqueue(backupState);
     }
 
     private void Run(object state)
@@ -346,11 +455,6 @@ public class ServerBackupRunner : IDisposable
                     case DatabasesLandlord.DatabaseSearchResult.Status.Database:
                         database = await result.DatabaseTask;
                         backupState.DatabaseWakeUpTimeUtc = DateTime.UtcNow;
-                        break;
-                    case DatabasesLandlord.DatabaseSearchResult.Status.Sharded:
-                        var result2 = _serverStore.DatabasesLandlord.TryGetOrCreateShardedResourceStore(backupState.DatabaseName);
-                        database = await result2;
-
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -688,40 +792,30 @@ public class ServerBackupRunner : IDisposable
         }
     }
 
-    public void HandleDatabaseValueChanged(string type, object changeState, string databaseName)
+    private void ApplyDelay(string databaseName, DelayBackupCommand.DelayBackupCommandState state)
     {
-        switch (type)
-        {
-            case nameof(UpdateResponsibleNodeForTasksCommand):
-                using (_serverStore.Engine.ContextPool.AllocateOperationContext(out ClusterOperationContext context))
-                using (context.OpenReadTransaction())
-                using (var rawRecord = _serverStore.Cluster.ReadRawDatabaseRecord(context, databaseName))
-                {
-                    if (rawRecord != null)
-                        HandleDatabaseRecordChange(rawRecord);
-                }
-                break;
+        var databaseBackupState = GetDatabaseStateByTaskId(databaseName, state.TaskId);
+        if (databaseBackupState == null)
+            throw new InvalidOperationException($"Backup task id: {state.TaskId} doesn't exist");
 
-            case nameof(DelayBackupCommand):
-                var state = (DelayBackupCommand.DelayBackupCommandState)changeState;
-
-                var databaseBackupState = GetDatabaseStateByTaskId(databaseName, state.TaskId);
-                if (databaseBackupState == null)
-                    throw new InvalidOperationException($"Backup task id: {state.TaskId} doesn't exist");
-
-                databaseBackupState.BackupStatus ??= new PeriodicBackupStatus { TaskId = state.TaskId };
-                databaseBackupState.BackupStatus.DelayUntil = state.DelayUntil;
-                databaseBackupState.BackupStatus.OriginalBackupTime = state.OriginalBackupTime;
-                break;
-        }
+        databaseBackupState.BackupStatus ??= new PeriodicBackupStatus { TaskId = state.TaskId };
+        databaseBackupState.BackupStatus.DelayUntil = state.DelayUntil;
+        databaseBackupState.BackupStatus.OriginalBackupTime = state.OriginalBackupTime;
     }
 
     public void HandleDatabaseRecordChange(RawDatabaseRecord databaseRecord)
     {
         var databaseName = databaseRecord.DatabaseName;
 
-        if (BackupsPerDatabasePerTaskId.TryGetValue(databaseName, out ConcurrentDictionary<long, DatabaseBackupState> backupStates) == false)
-            return;
+        lock (GetDatabaseUpdateLock(ShardHelper.ToDatabaseName(databaseName)))
+        {
+            ApplyDatabaseRecord(databaseName, databaseRecord);
+        }
+    }
+
+    private void ApplyDatabaseRecord(string databaseName, RawDatabaseRecord databaseRecord)
+    {
+        var backupStates = BackupsPerDatabasePerTaskId.GetOrAdd(databaseName, static _ => new ConcurrentDictionary<long, DatabaseBackupState>());
 
         var configurations = databaseRecord.PeriodicBackups;
 
@@ -1080,7 +1174,14 @@ public class ServerBackupRunner : IDisposable
 
     }
 
-    public void RemoveDatabase(string databaseName)
+    private void RemoveDatabase(string databaseName)
+    {
+        RemoveBackupStates(databaseName);
+
+        _forTestingPurposes?.DatabaseTestingStuffInternals?.TryRemove(databaseName, out _);
+    }
+
+    private void RemoveBackupStates(string databaseName)
     {
         if (BackupsPerDatabasePerTaskId.TryRemove(databaseName, out var backupsPerTaskId))
         {
@@ -1091,8 +1192,6 @@ public class ServerBackupRunner : IDisposable
 
             backupsPerTaskId.Clear();
         }
-
-        _forTestingPurposes?.DatabaseTestingStuffInternals?.TryRemove(databaseName, out _);
     }
 
     public RunningBackup OnGoingBackup(string databaseName, long taskId)
