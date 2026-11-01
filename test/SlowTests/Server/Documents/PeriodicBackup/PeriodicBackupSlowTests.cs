@@ -3061,6 +3061,48 @@ namespace SlowTests.Server.Documents.PeriodicBackup
         }
 
         [RavenFact(RavenTestCategory.BackupExportImport)]
+        public async Task CanDelayBackupTaskThatWasDisabledWhileRunning()
+        {
+            var backupPath = NewDataPath(suffix: "BackupFolder");
+            using (var server = GetNewServer())
+            using (var store = GetDocumentStore(new Options { Server = server }))
+            {
+                using (var session = store.OpenAsyncSession())
+                    await Backup.FillDatabaseWithRandomDataAsync(databaseSizeInMb: 10, session);
+
+                var database = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
+                Assert.NotNull(database);
+
+                await Backup.HoldBackupExecutionIfNeededAndInvoke(database.Name, database.ServerStore.ServerBackupRunner.ForTestingPurposesOnly(), async () =>
+                {
+                    var config = Backup.CreateBackupConfiguration(backupPath);
+                    var taskId = await Backup.UpdateConfigAndRunBackupAsync(server, config, store, opStatus: OperationStatus.InProgress);
+
+                    var taskBackupInfo = await Backup.WaitForOnGoingBackupNotNullAsync(store, taskId);
+
+                    await store.Maintenance.SendAsync(new ToggleOngoingTaskStateOperation(taskId, OngoingTaskType.Backup, disable: true));
+
+                    var backupState = server.ServerStore.ServerBackupRunner.GetDatabaseStateByTaskId(database.Name, taskId);
+                    Assert.NotNull(backupState);
+                    Assert.True(await WaitForValueAsync(() => backupState.Configuration.Disabled, true),
+                        "The disabled configuration was not applied to the in-memory backup state.");
+                    Assert.NotNull(backupState.RunningTask);
+
+                    await store.Maintenance.SendAsync(new DelayBackupOperation(taskBackupInfo.OnGoingBackup.RunningBackupTaskId, TimeSpan.FromDays(1)));
+
+                    OngoingTaskBackup afterDelayTaskBackupInfo = null;
+                    Assert.True(await WaitForValueAsync(async () =>
+                    {
+                        afterDelayTaskBackupInfo =
+                            await store.Maintenance.SendAsync(new GetOngoingTaskInfoOperation(taskId, OngoingTaskType.Backup)) as OngoingTaskBackup;
+
+                        return afterDelayTaskBackupInfo != null && afterDelayTaskBackupInfo.OnGoingBackup == null;
+                    }, true), "The running backup was not killed by the delay operation.");
+                }, tcs: new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously));
+            }
+        }
+
+        [RavenFact(RavenTestCategory.BackupExportImport)]
         public async Task ShouldDelayBackupOnNotResponsibleNode()
         {
             DoNotReuseServer();

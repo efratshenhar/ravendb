@@ -604,9 +604,11 @@ public class ServerBackupRunner : IDisposable
             if (runningTask == null || runningTask.Id != operationId)
                 continue;
 
-            var nextBackup = databaseBackupState.Value.GetNextBackupDetails(databaseBackupState.Value.BackupStatus, out string _);
+            var nextBackup = databaseBackupState.Value.GetNextBackupDetails(databaseBackupState.Value.BackupStatus, skipErrorLog: true);
 
-            var originalBackupTime = delayUntil > nextBackup.DateTime ? nextBackup.DateTime : databaseBackupState.Value.StartTimeInUtc;
+            var originalBackupTime = nextBackup != null && delayUntil > nextBackup.DateTime
+                ? nextBackup.DateTime
+                : databaseBackupState.Value.StartTimeInUtc;
 
             var command = new DelayBackupCommand(databaseName, RaftIdGenerator.NewId())
             {

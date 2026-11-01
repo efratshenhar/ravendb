@@ -113,7 +113,7 @@ namespace Raven.Server.ServerWide.Backups
                 details: new ExceptionDetails(parameters.Exception)));
         }
 
-        private NextBackup GetNextBackupDetails(PeriodicBackupStatus backupStatus, bool skipErrorLog = false)
+        internal NextBackup GetNextBackupDetails(PeriodicBackupStatus backupStatus, bool skipErrorLog = false)
         {
             return BackupUtils.GetNextBackupDetails(new BackupUtils.NextBackupDetailsParameters
             {
