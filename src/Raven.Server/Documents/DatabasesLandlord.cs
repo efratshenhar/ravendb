@@ -493,6 +493,7 @@ namespace Raven.Server.Documents
                     }
                 }
 
+                _serverStore.IdleDatabases.TryRemove(dbName, out _);
                 RemoveWakeupTimer(dbName);
                 DeleteDatabaseNotifications(dbName, throwOnError: true);
                 DeleteDatabaseCachedInfo(dbName, throwOnError: true);
@@ -1579,7 +1580,7 @@ namespace Raven.Server.Documents
             // Unloading and then loading a database can use a lot of resources.
             // Therefore, we don't want to unload the database unless we're sure it will be loaded again soon.
             // The wakeup timer is armed before the database is added to IdleDatabases, and the idle check in NextScheduledActivityCallback
-            // drops a timer of a database that isn't idle, so this due time must stay long enough for the timer not to fire in between.
+            // skips the activity of a database that isn't idle without rescheduling it, so this due time must stay long enough for the timer not to fire in between.
             return idleDatabaseActivity.DueTime > TimeSpan.FromMinutes(5).TotalMilliseconds;
         }
 
