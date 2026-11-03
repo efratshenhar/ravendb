@@ -62,13 +62,10 @@ namespace FastTests
                 var documentDatabase = await server.ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(store.Database);
                 var serverBackupRunner = documentDatabase.ServerStore.ServerBackupRunner;
 
-                if (documentDatabase.DisableOngoingTasks)
-                    throw new InvalidOperationException($"Backup task is disabled via marker file for database '{documentDatabase.Name}'.");
-
                 long opId;
                 try
                 {
-                    opId = server.ServerStore.ServerBackupRunner.StartBackupTask(documentDatabase.Name, taskId, isFullBackup, documentDatabase.Operations.GetNextOperationId());
+                    opId = server.ServerStore.ServerBackupRunner.StartBackupTask(documentDatabase, taskId, isFullBackup, documentDatabase.Operations.GetNextOperationId());
                 }
                 catch (BackupAlreadyRunningException alreadyRunningException)
                 {

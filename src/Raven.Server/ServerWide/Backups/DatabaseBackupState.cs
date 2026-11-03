@@ -50,6 +50,10 @@ namespace Raven.Server.ServerWide.Backups
 
         public OperationCancelToken RunningCancel { get; internal set; }
 
+        private string _cancelReason;
+
+        internal string CancelReason => Volatile.Read(ref _cancelReason);
+
         internal ServerStore _serverStore;
 
         public DatabaseBackupState([NotNull] string databaseName, [NotNull] PeriodicBackupConfiguration configuration, bool isSharded, ServerStore serverStore)
@@ -163,7 +167,7 @@ namespace Raven.Server.ServerWide.Backups
             if (runningCancel == null)
                 return;
 
-            AddToDecisionLog(BackupDecisionKind.Cancelled, reason, $"Backup task {Configuration.TaskId}", DateTime.UtcNow);
+            SetCancelReason(reason);
 
             try
             {
@@ -174,6 +178,50 @@ namespace Raven.Server.ServerWide.Backups
                 // The backup already finished and its token was disposed by the operation continuation
                 // before we got here. Cancellation is moot — nothing to stop.
             }
+        }
+
+        internal void SetCancelReason(string reason)
+        {
+            Interlocked.CompareExchange(ref _cancelReason, reason, null);
+        }
+
+        internal void ResetCancelReason()
+        {
+            Volatile.Write(ref _cancelReason, null);
+        }
+
+        internal NextBackup GetNextOccurrenceAfter(DateTime nowUtc)
+        {
+            var nextFullBackup = BackupUtils.GetNextBackupOccurrence(new BackupUtils.NextBackupOccurrenceParameters
+            {
+                BackupFrequency = Configuration.FullBackupFrequency,
+                Configuration = Configuration,
+                LastBackupUtc = nowUtc
+            });
+
+            var nextIncrementalBackup = BackupUtils.GetNextBackupOccurrence(new BackupUtils.NextBackupOccurrenceParameters
+            {
+                BackupFrequency = Configuration.IncrementalBackupFrequency,
+                Configuration = Configuration,
+                LastBackupUtc = nowUtc
+            });
+
+            var nextOccurrence = nextFullBackup == null || nextIncrementalBackup != null && nextIncrementalBackup < nextFullBackup
+                ? nextIncrementalBackup
+                : nextFullBackup;
+
+            if (nextOccurrence == null)
+                return null;
+
+            var nextOccurrenceUtc = nextOccurrence.Value.ToUniversalTime();
+
+            return new NextBackup
+            {
+                TaskId = Configuration.TaskId,
+                IsFull = nextOccurrence == nextFullBackup,
+                DateTime = nextOccurrenceUtc,
+                TimeSpan = nextOccurrenceUtc - nowUtc
+            };
         }
 
         public List<BackupDecision> GetDecisionLog(int take, out int total)
