@@ -129,7 +129,7 @@ namespace Raven.Server.ServerWide.Backups
                 BackupStatus = backupStatus,
                 DatabaseWakeUpTimeUtc = DatabaseWakeUpTimeUtc,
                 NodeTag = _serverStore.NodeTag,
-                OnMissingNextBackupInfo = OnMissingNextBackupInfo
+                OnMissingNextBackupInfo = skipErrorLog ? null : OnMissingNextBackupInfo
             });
         }
 

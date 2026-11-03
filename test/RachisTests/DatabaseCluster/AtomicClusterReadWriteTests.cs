@@ -318,7 +318,7 @@ namespace RachisTests.DatabaseCluster
 
                 // call StartBackupOperation - this will not start a new backup task for that id since we already have one running
                 var error = await Assert.ThrowsAnyAsync<BackupAlreadyRunningException>(() => store.Maintenance.SendAsync(new StartBackupOperation(isFullBackup: true, taskId)));
-                Assert.Equal(error.OperationId, backup.RunningTask.Id);
+                Assert.Equal(error.OperationId, backup.OperationId);
 
                 mre.Set();
             }
@@ -370,12 +370,12 @@ namespace RachisTests.DatabaseCluster
                         continue;
 
                     // wait for completed
-                    WaitForValue(() => s.Operations.Completed.ContainsKey(backupShard0.RunningTask.Id), true);
+                    WaitForValue(() => s.Operations.Completed.ContainsKey(backupShard0.OperationId), true);
                 }
 
                 // call StartBackupOperation - this should throw since we the backup is still running on shard 0
                 var error = await Assert.ThrowsAnyAsync<BackupAlreadyRunningException>(() => store.Maintenance.SendAsync(new StartBackupOperation(isFullBackup: true, taskId)));
-                Assert.Equal(error.OperationId, backupShard0.RunningTask.Id);
+                Assert.Equal(error.OperationId, backupShard0.OperationId);
 
                 mreShard0.Set();
             }
