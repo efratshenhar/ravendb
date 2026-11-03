@@ -1393,7 +1393,7 @@ public class ServerBackupRunner : IDisposable
         foreach (var configuration in configurations)
         {
             allBackupTaskIds.Add(configuration.TaskId);
-            ApplyBackupConfiguration(databaseName, configuration);
+            ApplyBackupConfiguration(context, databaseName, configuration);
         }
 
         foreach (var deletedBackupTaskId in backupStates.Keys.Except(allBackupTaskIds))
@@ -1406,9 +1406,11 @@ public class ServerBackupRunner : IDisposable
         }
     }
 
-    private void ApplyBackupConfiguration(string databaseName, PeriodicBackupConfiguration configuration)
+    private void ApplyBackupConfiguration(ClusterOperationContext context, string databaseName, PeriodicBackupConfiguration configuration)
     {
-        var taskState = GetTaskStatus(configuration, databaseName, out _);
+        var existingBackupState = GetDatabaseStateByTaskId(databaseName, configuration.TaskId);
+        var alreadyKnownWithoutDestinations = existingBackupState != null && existingBackupState.Configuration.HasBackup() == false;
+        var taskState = GetTaskStatus(configuration, databaseName, out _, disableLog: alreadyKnownWithoutDestinations, context: context);
         if (_forTestingPurposes != null &&
             _forTestingPurposes.DatabaseTestingStuffInternals != null &&
             _forTestingPurposes.DatabaseTestingStuffInternals.TryGetValue(databaseName, out TestingStuffInternal testingStuffInternal))
@@ -1462,6 +1464,7 @@ public class ServerBackupRunner : IDisposable
         {
             case TaskStatus.Disabled:
                 existingBackupState.Stale.Raise();
+                existingBackupState.NextBackup = null;
                 existingBackupState.CancelRunningBackup(CancelReasonDisabled);
                 if (_logger.IsDebugEnabled)
                     _logger.Debug($"Backup task '{taskId}' state is '{taskState}', will cancel the backup for it.");
@@ -1469,6 +1472,7 @@ public class ServerBackupRunner : IDisposable
                 return;
             case TaskStatus.ActiveByOtherNode:
                 existingBackupState.Stale.Raise();
+                existingBackupState.NextBackup = null;
                 if (_logger.IsDebugEnabled)
                     _logger.Debug($"Backup task '{taskId}' state is '{taskState}', will skip polling for it.");
 
@@ -1491,7 +1495,7 @@ public class ServerBackupRunner : IDisposable
                     return;
                 }
 
-                if (previousConfiguration.HasBackupFrequencyChanged(newConfiguration) == false)
+                if (previousConfiguration.HasBackupFrequencyChanged(newConfiguration) == false && existingBackupState.NextBackup != null)
                 {
                     if (_logger.IsDebugEnabled)
                         _logger.Debug($"Backup task '{taskId}' state is '{taskState}', the task doesn't have frequency changes and has scheduled backup, will continue to execute by the current node '{_serverStore.NodeTag}'.");
@@ -1513,7 +1517,7 @@ public class ServerBackupRunner : IDisposable
         }
     }
 
-    public TaskStatus GetTaskStatus(PeriodicBackupConfiguration configuration, string databaseName, out string responsibleNodeTag, bool disableLog = false)
+    public TaskStatus GetTaskStatus(PeriodicBackupConfiguration configuration, string databaseName, out string responsibleNodeTag, bool disableLog = false, ClusterOperationContext context = null)
     {
         if (configuration.Disabled)
         {
@@ -1538,7 +1542,9 @@ public class ServerBackupRunner : IDisposable
             return TaskStatus.Disabled;
         }
 
-        responsibleNodeTag = BackupUtils.GetResponsibleNodeTag(_serverStore, databaseName, configuration.TaskId);
+        responsibleNodeTag = context == null
+            ? BackupUtils.GetResponsibleNodeTag(_serverStore, databaseName, configuration.TaskId)
+            : BackupUtils.GetResponsibleNodeTag(context, databaseName, configuration.TaskId);
         if (responsibleNodeTag == null)
         {
             if (_forTestingPurposes != null &&

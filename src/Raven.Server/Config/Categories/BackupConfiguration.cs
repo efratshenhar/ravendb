@@ -97,12 +97,14 @@ namespace Raven.Server.Config.Categories
 
         [Description("Interval at which the server backup runner evaluates all scheduled backup tasks.")]
         [DefaultValue(60)]
+        [MinValue(1)]
         [TimeUnit(TimeUnit.Seconds)]
         [ConfigurationEntry("Backup.BackupRunnerFrequencyInSec", ConfigurationEntryScope.ServerWideOnly)]
         public TimeSetting BackupRunnerFrequency { get; set; }
 
         [Description("Grace period after a database is loaded during which scheduled backups are skipped, to allow the database to fully initialize.")]
         [DefaultValue(60)]
+        [MinValue(0)]
         [TimeUnit(TimeUnit.Seconds)]
         [ConfigurationEntry("Backup.DatabaseLoadedGracePeriodInSec", ConfigurationEntryScope.ServerWideOnly)]
         public TimeSetting DatabaseLoadedGracePeriod { get; set; }

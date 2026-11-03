@@ -34,6 +34,8 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
 
         protected abstract AbstractNotificationCenter GetNotificationCenter();
 
+        protected string ConcurrentBackupsCounterDatabaseName => ShardHelper.ToDatabaseName(RequestHandler.DatabaseName);
+
         protected virtual void AssertBackup(BackupConfiguration configuration)
         {
             var authConnection = HttpContext.Features.Get<IHttpAuthenticationFeature>() as RavenServer.AuthenticateConnection;
@@ -56,7 +58,7 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
                 AssertBackup(backupConfiguration);
 
                 var sw = Stopwatch.StartNew();
-                ServerStore.ConcurrentBackupsCounter.StartBackup(RequestHandler.DatabaseName, backupName, Logger, enforceLimit: true);
+                ServerStore.ConcurrentBackupsCounter.StartBackup(ConcurrentBackupsCounterDatabaseName, backupName, Logger, enforceLimit: true);
                 try
                 {
                     var cancelToken = RequestHandler.CreateBackgroundOperationToken();
@@ -80,7 +82,7 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
                 }
                 catch (Exception e)
                 {
-                    ServerStore.ConcurrentBackupsCounter.FinishBackup(RequestHandler.DatabaseName, backupName, backupStatus: null, sw.Elapsed, Logger);
+                    ServerStore.ConcurrentBackupsCounter.FinishBackup(ConcurrentBackupsCounterDatabaseName, backupName, backupStatus: null, sw.Elapsed, Logger);
 
                     var message = $"Failed to run backup: '{backupName}'";
 
