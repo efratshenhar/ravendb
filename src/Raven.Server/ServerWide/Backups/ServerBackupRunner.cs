@@ -1170,8 +1170,18 @@ public class ServerBackupRunner : IDisposable
     private Task<IOperationResult> StartBackupThread(DocumentDatabase database, DatabaseBackupState backupState, BackupTask backupTask, TaskCompletionSource<IOperationResult> tcs, Action<IOperationProgress> onProgress)
     {
         var threadName = $"Backup task {backupState.Configuration.Name} for database '{database.Name}'";
-        PoolOfThreads.GlobalRavenThreadPool.LongRunning(_ => RunBackupThread(database, backupState, backupTask, threadName, tcs, onProgress), null, ThreadNames.ForBackupTask(threadName,
-            database.Name, backupState.Configuration.Name));
+
+        try
+        {
+            PoolOfThreads.GlobalRavenThreadPool.LongRunning(_ => RunBackupThread(database, backupState, backupTask, threadName, tcs, onProgress), null, ThreadNames.ForBackupTask(threadName,
+                database.Name, backupState.Configuration.Name));
+        }
+        catch (Exception e)
+        {
+            OnBackupFinished(backupState, BackupDecisionCategory.Failed, detail: null, e.AllInnerMessages());
+            tcs.TrySetException(e);
+        }
+
         return tcs.Task;
     }
 
