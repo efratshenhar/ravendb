@@ -1655,7 +1655,7 @@ namespace SlowTests.Smuggler
         [InlineData(false)]
         public async Task CanDisableTasksAfterRestore(bool disableOngoingTasks)
         {
-           var backupPath = NewDataPath(suffix: "BackupFolder");
+            var backupPath = NewDataPath(suffix: "BackupFolder");
 
             using (var store = GetDocumentStore())
             {

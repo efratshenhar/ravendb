@@ -594,7 +594,8 @@ namespace FastTests
                 // Check if backup didn't complete within the timeout period
                 if (expected == OperationStatus.Completed && actual == OperationStatus.InProgress)
                 {
-                    serverBackupRunner.BackupsPerDatabasePerTaskId.TryGetValue(store.Database, out ConcurrentDictionary<long, DatabaseBackupState> backupPerDatabase);
+                    ConcurrentDictionary<long, DatabaseBackupState> backupPerDatabase = null;
+                    serverBackupRunner?.BackupsPerDatabasePerTaskId.TryGetValue(store.Database, out backupPerDatabase);
                     var pb = backupPerDatabase?.Values.FirstOrDefault(x => x.RunningBackupStatus != null && x.BackupStatus.TaskId == taskId);
                     if (pb == null)
                     {
@@ -620,7 +621,8 @@ namespace FastTests
                 var actualString = actual?.ToString() ?? "null";
 
                 // failed to save backup status, lets fetch it from memory
-                serverBackupRunner.BackupsPerDatabasePerTaskId.TryGetValue(databaseName, out ConcurrentDictionary<long, DatabaseBackupState> backupPerDatabase);
+                ConcurrentDictionary<long, DatabaseBackupState> backupPerDatabase = null;
+                serverBackupRunner?.BackupsPerDatabasePerTaskId.TryGetValue(databaseName, out backupPerDatabase);
 
                 var pb = backupPerDatabase?.FirstOrDefault(x => x.Value.OperationId == opId).Value;
                 if (pb == null)

@@ -3967,7 +3967,7 @@ namespace SlowTests.Server.Documents.PeriodicBackup
         }
 
         [RavenTheory(RavenTestCategory.BackupExportImport | RavenTestCategory.Subscriptions)]
-        //[InlineData(BackupType.Snapshot)]
+        [InlineData(BackupType.Snapshot)]
         [InlineData(BackupType.Backup)]
         public async Task can_backup_and_restore_with_subscription(BackupType backupType)
         {
