@@ -4,8 +4,6 @@ namespace Raven.Server.ServerWide.Backups.Policies.Server;
 
 public class ServerCpuCreditsPolicy : IServerBackupPolicy
 {
-    public static bool Disabled;
-
     private const string Reason = "The server CPU credits are near exhaustion.";
 
     private DateTime _heldUntil;
@@ -16,7 +14,7 @@ public class ServerCpuCreditsPolicy : IServerBackupPolicy
     {
         category = BackupDecisionCategory.HeldBack;
 
-        if (Disabled)
+        if (serverStore.ForTestingPurposes?.IgnoreHealthChecksBeforeBackup == true)
         {
             reason = null;
             return true;

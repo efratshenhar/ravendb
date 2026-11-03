@@ -151,16 +151,16 @@ public sealed class BackupDecisionLogFilter
 
     public int Take { get; set; }
 
+    internal bool MatchesTask(string database, long taskId)
+    {
+        return (Databases is not { Count: > 0 } || Databases.Contains(database)) &&
+               (TaskIds is not { Count: > 0 } || TaskIds.Contains(taskId));
+    }
+
     public bool Matches(BackupDecisionLogEntry entry)
     {
-        if (entry.Source == BackupDecisionSource.Task)
-        {
-            if (Databases is { Count: > 0 } && Databases.Contains(entry.Database) == false)
-                return false;
-
-            if (TaskIds is { Count: > 0 } && TaskIds.Contains(entry.TaskId.Value) == false)
-                return false;
-        }
+        if (entry.Source == BackupDecisionSource.Task && MatchesTask(entry.Database, entry.TaskId.Value) == false)
+            return false;
 
         if (Categories is { Count: > 0 } && Categories.Contains(entry.Category) == false)
             return false;

@@ -19,7 +19,7 @@ public class DatabaseLoadedPolicy : IDatabaseBackupPolicy
 
         if (serverStore.DatabasesLandlord.TryGetDatabaseIfLoaded(backupState.DatabaseName, out var database) == false)
         {
-            reason = null; // we want to wake-up the database
+            reason = null;
             return true;
         }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using Raven.Server.ServerWide.Context;
-using Raven.Server.Utils;
 
 namespace Raven.Server.ServerWide.Backups.Policies.Database;
 
@@ -21,13 +20,8 @@ public class BackupTimePolicy : IDatabaseBackupPolicy
 
         if (backupState.NextBackup == null)
         {
-            var backupStatus = BackupUtils.GetBackupStatusFromCluster(context, backupState.DatabaseName, backupState.Configuration.TaskId);
-            backupState.NextBackup = BackupUtils.GetNextBackupDetails(new BackupUtils.NextBackupDetailsParameters
-            {
-                BackupStatus = backupStatus,
-                Configuration = backupState.Configuration,
-                NodeTag = serverStore.NodeTag
-            });
+            var backupStatus = backupState.GetMostUpdatedLocalBackupStatus(backupState.Configuration.TaskId, backupState.BackupStatus, backupState.DatabaseName);
+            backupState.NextBackup = backupState.GetNextBackupDetails(backupStatus, skipErrorLog: true);
         }
 
         if (backupState.NextBackup == null)

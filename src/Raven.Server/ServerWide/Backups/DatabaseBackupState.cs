@@ -86,7 +86,6 @@ namespace Raven.Server.ServerWide.Backups
             return taskStatus == ServerBackupRunner.TaskStatus.Disabled ? null : GetNextBackupDetails(backupStatus, skipErrorLog: true);
         }
 
-        /// <summary>Posts a warning notification when the backup schedule cannot be computed from the configuration.</summary>
         private void OnMissingNextBackupInfo(PeriodicBackupConfiguration configuration)
         {
             var message = "Couldn't schedule next backup " +
@@ -156,10 +155,6 @@ namespace Raven.Server.ServerWide.Backups
 
         internal void CancelRunningBackup(string reason)
         {
-            // Snapshot once: FinishBackup nulls RunningCancel after lowering Running and clearing
-            // RunningTask, mirroring the OnGoingBackup snapshot guard in ServerBackupRunner. Reading it
-            // into a local means a concurrent FinishBackup that nulls the field cannot turn our null-check
-            // into an NRE.
             var runningCancel = RunningCancel;
             if (runningCancel == null)
                 return;
@@ -172,8 +167,6 @@ namespace Raven.Server.ServerWide.Backups
             }
             catch (ObjectDisposedException)
             {
-                // The backup already finished and its token was disposed by the operation continuation
-                // before we got here. Cancellation is moot — nothing to stop.
             }
         }
 

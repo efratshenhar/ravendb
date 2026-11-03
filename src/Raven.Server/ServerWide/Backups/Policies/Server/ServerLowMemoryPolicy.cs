@@ -5,8 +5,6 @@ namespace Raven.Server.ServerWide.Backups.Policies.Server;
 
 public class ServerLowMemoryPolicy : IServerBackupPolicy
 {
-    public static bool Disabled;
-
     private const string Reason = "The server is low on memory.";
 
     private DateTime _heldUntil;
@@ -17,7 +15,7 @@ public class ServerLowMemoryPolicy : IServerBackupPolicy
     {
         category = BackupDecisionCategory.HeldBack;
 
-        if (Disabled)
+        if (serverStore.ForTestingPurposes?.IgnoreHealthChecksBeforeBackup == true)
         {
             reason = null;
             return true;

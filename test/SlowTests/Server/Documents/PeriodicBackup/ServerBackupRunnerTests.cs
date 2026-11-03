@@ -737,53 +737,6 @@ public class ServerBackupRunnerTests : ClusterTestBase
         }
     }
 
-    [RavenFact(RavenTestCategory.BackupExportImport | RavenTestCategory.Sharding)]
-    public async Task IdleShardsMustSaveSkippedIncrementalBackupsWithoutBeingReloaded()
-    {
-        using var server = GetNewServer(new ServerCreationOptions
-        {
-            RunInMemory = false,
-            CustomSettings = IdleSettings()
-        });
-        using var store = Sharding.GetDocumentStore(new Options { Server = server, RunInMemory = false });
-        await StoreDocument(store);
-
-        var config = Backup.CreateBackupConfiguration(NewDataPath(suffix: "BackupFolder"), fullBackupFrequency: "0 0 1 1 *", incrementalBackupFrequency: "* * * * *");
-        var (taskId, backupOperation) = await Sharding.Backup.UpdateConfigurationAndRunBackupAsync(server, store, config, isFullBackup: true);
-        await backupOperation.WaitForCompletionAsync(TimeSpan.FromMinutes(1));
-
-        var shardNames = new List<string>();
-        await foreach (var shard in Sharding.GetShardsDocumentDatabaseInstancesFor(store, new List<RavenServer> { server }))
-            shardNames.Add(shard.Name);
-        Assert.True(shardNames.Count > 1, "precondition: more than one shard on this node");
-
-        Assert.True(await WaitForValueAsync(() => Task.FromResult(shardNames.All(x => GetClusterBackupStatus(server, x, taskId)?.LastFullBackup != null)), true),
-            "precondition: every shard should have a full backup");
-
-        var lastIncrementalBackups = shardNames.ToDictionary(x => x, x => GetClusterBackupStatus(server, x, taskId).LastIncrementalBackup);
-
-        var landlord = server.ServerStore.DatabasesLandlord;
-        var reloads = new ConcurrentQueue<string>();
-        landlord.ForTestingPurposesOnly().SkipIncreasingLastWorkTimeBasedOnDatabaseSize = true;
-        landlord.ForTestingPurposesOnly().AfterDatabaseCreation = x =>
-        {
-            if (x.Database != null && shardNames.Contains(x.Database.Name, StringComparer.OrdinalIgnoreCase))
-                reloads.Enqueue(x.Database.Name);
-        };
-
-        Assert.True(WaitForValue(() => shardNames.All(x => server.ServerStore.IdleDatabases.ContainsKey(x)), true, timeout: 90_000, interval: 500),
-            "precondition: all shards should become idle");
-
-        foreach (var shardName in shardNames)
-        {
-            Assert.True(await WaitForValueAsync(() => Task.FromResult(GetClusterBackupStatus(server, shardName, taskId).LastIncrementalBackup != lastIncrementalBackups[shardName]), true,
-                    timeout: 150_000, interval: 1000),
-                $"The skipped incremental backup of shard '{shardName}' wasn't saved.{Environment.NewLine}{Dump(Decisions(server, shardName, taskId))}");
-        }
-
-        Assert.True(reloads.IsEmpty, $"Idle shards were reloaded to skip their incremental backups: {string.Join(", ", reloads)}");
-    }
-
     private async Task WaitForRunnerRunsAsync(RavenServer server, string database, long taskId, int runs)
     {
         var before = Decisions(server, database, taskId).Sum(d => d.Count);

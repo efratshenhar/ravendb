@@ -313,13 +313,12 @@ namespace RachisTests.DatabaseCluster
                 var config = Backup.CreateBackupConfiguration(backupPath, fullBackupFrequency: "0 0 1 1 *");
                 long taskId = await Backup.UpdateConfigAndRunBackupAsync(server, config, store, opStatus: OperationStatus.InProgress);
 
-                database.ServerStore.ServerBackupRunner.BackupsPerDatabasePerTaskId.TryGetValue(database.Name, out ConcurrentDictionary<long, DatabaseBackupState> value);
-                var res = value.FirstOrDefault(x => x.Key == taskId);
-                Assert.NotNull(res);
+                var backup = database.ServerStore.ServerBackupRunner.GetDatabaseStateByTaskId(database.Name, taskId);
+                Assert.NotNull(backup);
 
                 // call StartBackupOperation - this will not start a new backup task for that id since we already have one running
                 var error = await Assert.ThrowsAnyAsync<BackupAlreadyRunningException>(() => store.Maintenance.SendAsync(new StartBackupOperation(isFullBackup: true, taskId)));
-                Assert.Equal(error.OperationId, res.Value.OperationId);
+                Assert.Equal(error.OperationId, backup.RunningTask.Id);
 
                 mre.Set();
             }

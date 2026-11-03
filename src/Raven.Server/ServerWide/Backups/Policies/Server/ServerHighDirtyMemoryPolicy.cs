@@ -5,8 +5,6 @@ namespace Raven.Server.ServerWide.Backups.Policies.Server;
 
 public class ServerHighDirtyMemoryPolicy : IServerBackupPolicy
 {
-    public static bool Disabled;
-
     private const string Reason = "The server has high dirty memory.";
 
     private DateTime _heldUntil;
@@ -17,7 +15,7 @@ public class ServerHighDirtyMemoryPolicy : IServerBackupPolicy
     {
         category = BackupDecisionCategory.HeldBack;
 
-        if (Disabled)
+        if (serverStore.ForTestingPurposes?.IgnoreHealthChecksBeforeBackup == true)
         {
             reason = null;
             return true;

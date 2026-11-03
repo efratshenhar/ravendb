@@ -661,11 +661,10 @@ namespace FastTests
                 var mre = new ManualResetEventSlim();
                 waitHandles.Add(mre.WaitHandle);
 
-                database.ServerStore.ServerBackupRunner._forTestingPurposes ??= new ServerBackupRunner.TestingStuff();
+                var testingStuffInternal = database.ServerStore.ServerBackupRunner.ForTestingPurposesOnly().DatabaseTestingStuffInternals
+                    .GetOrAdd(database.Name, _ => new ServerBackupRunner.TestingStuffInternal());
 
-                var testingStuffInternal = new ServerBackupRunner.TestingStuffInternal { AfterBackupBatchCompleted = () => mre.Set() };
-
-                database.ServerStore.ServerBackupRunner._forTestingPurposes.DatabaseTestingStuffInternals[database.Name] = testingStuffInternal;
+                testingStuffInternal.AfterBackupBatchCompleted = () => mre.Set();
             }
 
             public async Task FillDatabaseWithRandomDataAsync(int databaseSizeInMb, IAsyncDocumentSession session, int? timeout = default)

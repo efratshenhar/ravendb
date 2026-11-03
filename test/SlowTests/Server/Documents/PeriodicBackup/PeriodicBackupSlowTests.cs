@@ -3618,6 +3618,8 @@ namespace SlowTests.Server.Documents.PeriodicBackup
                     var backupTaskId = await Backup.UpdateConfigAsync(server, config, store);
                     var pb = responsibleDatabase.ServerStore.ServerBackupRunner.GetDatabaseBackups(responsibleDatabase.Name).FirstOrDefault();
                     Assert.NotNull(pb);
+                    var backupScheduled = await WaitForValueAsync(() => pb.NextBackup != null, true, timeout: 8000);
+                    Assert.True(backupScheduled, "Backup is not scheduled");
 
                     await Backup.RunBackupAsync(server, backupTaskId, store, opStatus: OperationStatus.InProgress);
 

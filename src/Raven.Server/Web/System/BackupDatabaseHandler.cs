@@ -1,11 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
-using Raven.Server.Documents;
+﻿using System.Threading.Tasks;
 using Raven.Server.Documents.Commands.OngoingTasks;
 using Raven.Server.Routing;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Web.System.Processors.Backups;
-using Sparrow;
 using Sparrow.Json;
 
 namespace Raven.Server.Web.System
@@ -35,16 +32,8 @@ namespace Raven.Server.Web.System
             {
                 var result = new GetPeriodicBackupTimersCommand.PeriodicBackupTimersResponse();
 
-                foreach ((StringSegment _, Task<DocumentDatabase> task) in ServerStore.DatabasesLandlord.DatabasesCache)
-                {
-                    if (task.Status != TaskStatus.RanToCompletion)
-                        continue;
-
-                    var database = await task;
-
-                    var backups = database.ServerStore.ServerBackupRunner.GetPeriodicBackupsInformationFor(database.Name);
-                    result.Timers.AddRange(backups);
-                }
+                foreach (var databaseName in ServerStore.ServerBackupRunner.BackupsPerDatabasePerTaskId.Keys)
+                    result.Timers.AddRange(ServerStore.ServerBackupRunner.GetPeriodicBackupsInformationFor(databaseName));
 
                 result.Count = result.Timers.Count;
 

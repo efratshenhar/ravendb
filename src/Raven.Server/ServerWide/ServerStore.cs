@@ -2880,18 +2880,24 @@ namespace Raven.Server.ServerWide
                                 continue;
 
                             var lastAccessTime = database.LastAccessTime;
-                            var noWritesInProgress = database.Time.GetUtcNow() - lastAccessTime > database.Configuration.Databases.MaxIdleTime.AsTimeSpan;
-                            var (lastEtag, lastChangeVector) = database.ReadLastEtagAndChangeVector();
+                            var hasBackupTasks = ServerBackupRunner.HasBackupTasks(database.Name);
+                            long lastEtag = 0;
+                            string lastChangeVector = null;
 
-                            if (ServerBackupRunner.ShouldKeepLoadedForBackup(database.Name, lastEtag, lastChangeVector))
+                            if (hasBackupTasks)
                             {
-                                if (statistics != null)
-                                {
-                                    statistics.CanUnload = false;
-                                    statistics.Explanations.Add($"Cannot unload database because a backup of it is due within '{Configuration.Backup.KeepIdleDatabaseLoadedBeforeBackup}'.");
-                                }
+                                (lastEtag, lastChangeVector) = database.ReadLastEtagAndChangeVector();
 
-                                continue;
+                                if (ServerBackupRunner.ShouldKeepLoadedForBackup(database.Name, lastEtag, lastChangeVector))
+                                {
+                                    if (statistics != null)
+                                    {
+                                        statistics.CanUnload = false;
+                                        statistics.Explanations.Add($"Cannot unload database because a backup of it is due within '{Configuration.Backup.KeepIdleDatabaseLoadedBeforeBackup}'.");
+                                    }
+
+                                    continue;
+                                }
                             }
 
                             var dbIdEtagDictionary = new Dictionary<string, long>();
@@ -2904,7 +2910,7 @@ namespace Raven.Server.ServerWide
 
                             if (DatabasesLandlord.UnloadDirectly(databaseKvp.Key))
                             {
-                                if (noWritesInProgress && database.LastAccessTime == lastAccessTime)
+                                if (hasBackupTasks && database.LastAccessTime == lastAccessTime)
                                     ServerBackupRunner.OnIdleDatabaseUnloaded(database.Name, lastEtag, lastChangeVector);
                                 else
                                     ServerBackupRunner.OnIdleDatabaseChangedWhileUnloading(database.Name);

@@ -59,10 +59,12 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
 
                 var sw = Stopwatch.StartNew();
                 ServerStore.ConcurrentBackupsCounter.StartBackup(ConcurrentBackupsCounterDatabaseName, backupName, Logger, enforceLimit: true);
+                var scheduled = false;
                 try
                 {
                     var cancelToken = RequestHandler.CreateBackgroundOperationToken();
                     ScheduleBackup(backupConfiguration, operationId, backupName, sw, startTime, cancelToken);
+                    scheduled = true;
 
                     await using (var writer = new AsyncBlittableJsonTextWriter(context, RequestHandler.ResponseBodyStream()))
                     {
@@ -82,7 +84,8 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
                 }
                 catch (Exception e)
                 {
-                    ServerStore.ConcurrentBackupsCounter.FinishBackup(ConcurrentBackupsCounterDatabaseName, backupName, backupStatus: null, sw.Elapsed, Logger);
+                    if (scheduled == false)
+                        ServerStore.ConcurrentBackupsCounter.FinishBackup(ConcurrentBackupsCounterDatabaseName, backupName, backupStatus: null, sw.Elapsed, Logger);
 
                     var message = $"Failed to run backup: '{backupName}'";
 
