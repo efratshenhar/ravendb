@@ -2,18 +2,13 @@
 
 namespace Raven.Server.ServerWide.Backups.Policies.Server;
 
-public class 
-    ServerCpuCreditsPolicy : IServerBackupPolicy
+public class ServerCpuCreditsPolicy : IServerBackupPolicy
 {
-    public static readonly ServerCpuCreditsPolicy Instance = new();
-
     public static bool Disabled;
 
-    private const string Reason = "Cannot start any backup(s) because server CPU Credits are near exhaustion.";
+    private const string Reason = "Cannot start any backup(s) because the server CPU credits were near exhaustion.";
 
-    private ServerCpuCreditsPolicy()
-    {
-    }
+    private DateTime _heldUntil;
 
     public string Name => "CpuCredits";
 
@@ -25,13 +20,16 @@ public class
             return true;
         }
 
-        reason = null;
         if (serverStore.Server.CpuCreditsBalance.BackgroundTasksAlertRaised.IsRaised())
+            _heldUntil = now + serverStore.Configuration.Server.CpuCreditsExhaustionBackupDelay.AsTimeSpan;
+
+        if (now < _heldUntil)
         {
-            reason = Reason;
+            reason = $"{Reason} Held back until '{_heldUntil}'.";
             return false;
         }
 
+        reason = null;
         return true;
     }
 }

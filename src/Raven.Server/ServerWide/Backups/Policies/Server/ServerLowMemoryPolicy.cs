@@ -5,15 +5,11 @@ namespace Raven.Server.ServerWide.Backups.Policies.Server;
 
 public class ServerLowMemoryPolicy : IServerBackupPolicy
 {
-    public static readonly ServerLowMemoryPolicy Instance = new();
-
     public static bool Disabled;
 
-    private const string Reason = "Cannot start any backup(s) because server is in low memory state.";
+    private const string Reason = "Cannot start any backup(s) because the server entered the low memory state.";
 
-    private ServerLowMemoryPolicy()
-    {
-    }
+    private DateTime _heldUntil;
 
     public string Name => "LowMemory";
 
@@ -25,13 +21,16 @@ public class ServerLowMemoryPolicy : IServerBackupPolicy
             return true;
         }
 
-        reason = null;
         if (LowMemoryNotification.Instance.LowMemoryState)
+            _heldUntil = now + serverStore.Configuration.Backup.LowMemoryBackupDelay.AsTimeSpan;
+
+        if (now < _heldUntil)
         {
-            reason = Reason;
+            reason = $"{Reason} Held back until '{_heldUntil}'.";
             return false;
         }
 
+        reason = null;
         return true;
     }
 }

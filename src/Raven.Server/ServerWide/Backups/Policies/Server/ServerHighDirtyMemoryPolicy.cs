@@ -5,15 +5,11 @@ namespace Raven.Server.ServerWide.Backups.Policies.Server;
 
 public class ServerHighDirtyMemoryPolicy : IServerBackupPolicy
 {
-    public static readonly ServerHighDirtyMemoryPolicy Instance = new();
-
     public static bool Disabled;
 
-    private const string Reason = "Cannot start any backup(s) because server is in high dirty memory state.";
+    private const string Reason = "Cannot start any backup(s) because the server entered the high dirty memory state.";
 
-    private ServerHighDirtyMemoryPolicy()
-    {
-    }
+    private DateTime _heldUntil;
 
     public string Name => "HighDirtyMemory";
 
@@ -25,13 +21,16 @@ public class ServerHighDirtyMemoryPolicy : IServerBackupPolicy
             return true;
         }
 
-        reason = null;
         if (LowMemoryNotification.Instance.DirtyMemoryState.IsHighDirty)
+            _heldUntil = now + serverStore.Configuration.Backup.LowMemoryBackupDelay.AsTimeSpan;
+
+        if (now < _heldUntil)
         {
-            reason = Reason;
+            reason = $"{Reason} Held back until '{_heldUntil}'.";
             return false;
         }
 
+        reason = null;
         return true;
     }
 }

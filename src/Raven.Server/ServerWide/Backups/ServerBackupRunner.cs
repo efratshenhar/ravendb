@@ -82,11 +82,10 @@ public class ServerBackupRunner : IDisposable
         _serverBackupPolicies =
         [
             ServerStartupPolicy.Instance,
-            ServerCpuCreditsPolicy.Instance,
-            ServerLowMemoryPolicy.Instance,
-            ServerHighDirtyMemoryPolicy.Instance,
-            ClusterHealthPolicy.Instance,
-            new ServerConcurrentBackupPolicy(_serverStore.ConcurrentBackupsCounter)
+            new ServerCpuCreditsPolicy(),
+            new ServerLowMemoryPolicy(),
+            new ServerHighDirtyMemoryPolicy(),
+            ClusterHealthPolicy.Instance
         ];
 
         _databaseBackupPolicies =
@@ -94,8 +93,10 @@ public class ServerBackupRunner : IDisposable
             BackupRunningPolicy.Instance,
             BackupDisabledPolicy.Instance,
             DatabaseExistsPolicy.Instance,
+            DatabaseStatePolicy.Instance,
             BackupShouldRunOnThisNodePolicy.Instance,
             BackupTimePolicy.Instance,
+            new ConcurrentBackupPolicy(_serverStore.ConcurrentBackupsCounter),
             DatabaseLoadedPolicy.Instance
         ];
 
@@ -378,6 +379,12 @@ public class ServerBackupRunner : IDisposable
         var backupsPerDatabasePerTaskId = BackupsPerDatabasePerTaskId.GetOrAdd(backupState.DatabaseName, static _ => new ConcurrentDictionary<long, DatabaseBackupState>());
 
         if (backupsPerDatabasePerTaskId.TryAdd(backupState.Configuration.TaskId, backupState))
+            Enqueue(backupState);
+    }
+
+    private void Enqueue(DatabaseBackupState backupState)
+    {
+        if (backupState.InQueue.Raise())
             _backupQueue.Enqueue(backupState);
     }
 
@@ -396,6 +403,8 @@ public class ServerBackupRunner : IDisposable
                        AreAllServerPoliciesCompliant(now, backupState.DatabaseName) &&
                        _backupQueue.TryDequeue(out backupState))
                 {
+                    backupState.InQueue.Lower();
+
                     if (backupState.Stale) // cleanup
                         continue;
 
@@ -418,7 +427,7 @@ public class ServerBackupRunner : IDisposable
                     if (areAllDatabasePoliciesCompliant)
                         RunScheduledBackup(backupState);
 
-                    _backupQueue.Enqueue(backupState); // so it will go to the end of the queue which is useful when max number of concurrent backups is set
+                    Enqueue(backupState); // so it will go to the end of the queue which is useful when max number of concurrent backups is set
                 }
 
                 _serverStore.ServerShutdown.WaitHandle.WaitOne(
@@ -601,7 +610,7 @@ public class ServerBackupRunner : IDisposable
     private void OnRunningRaised(DatabaseBackupState backupState)
     {
         backupState.ResetCancelReason();
-        _serverStore.ConcurrentBackupsCounter.StartBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, _logger);
+        _serverStore.ConcurrentBackupsCounter.StartBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, _logger, enforceLimit: false);
     }
 
     private void InvokeBeforeBackupStarted(DatabaseBackupState backupState)
@@ -1084,7 +1093,7 @@ public class ServerBackupRunner : IDisposable
                 if (existingBackupState.Stale)
                 {
                     existingBackupState.Stale.Lower();
-                    _backupQueue.Enqueue(existingBackupState);
+                    Enqueue(existingBackupState);
                 }
 
                 if (existingBackupState.RunningTask != null)

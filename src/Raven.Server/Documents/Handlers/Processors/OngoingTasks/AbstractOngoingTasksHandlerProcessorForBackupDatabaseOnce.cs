@@ -56,7 +56,7 @@ namespace Raven.Server.Documents.Handlers.Processors.OngoingTasks
                 AssertBackup(backupConfiguration);
 
                 var sw = Stopwatch.StartNew();
-                ServerStore.ConcurrentBackupsCounter.StartBackup(RequestHandler.DatabaseName, backupName, Logger);
+                ServerStore.ConcurrentBackupsCounter.StartBackup(RequestHandler.DatabaseName, backupName, Logger, enforceLimit: true);
                 try
                 {
                     var cancelToken = RequestHandler.CreateBackgroundOperationToken();
