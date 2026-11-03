@@ -15,15 +15,17 @@ public class NoChangesPolicy : IDatabaseBackupPolicy
 
     public string Name => "NoChanges";
 
-    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason)
+    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason, out BackupDecisionCategory category)
     {
+        category = BackupDecisionCategory.Waiting;
+
         if (_serverBackupRunner.CanSkipIncrementalBackup(context, backupState) == false)
         {
             reason = null;
             return true;
         }
 
-        reason = $"Skipping the incremental backup {backupState} because the database is idle and nothing changed since the last backup.";
+        reason = "The database is idle and nothing changed since the last backup, so the incremental backup is skipped without loading the database.";
         return false;
     }
 }

@@ -12,10 +12,6 @@ namespace Raven.Server.Web.System
 {
     public sealed class BackupDatabaseHandler : ServerRequestHandler
     {
-        private const int DefaultDecisionLogPageSize = 512;
-
-        private const int MaxDecisionLogPageSize = 4096;
-
         [RavenAction("/periodic-backup", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
         public async Task GetPeriodicBackup()
         {
@@ -61,16 +57,15 @@ namespace Raven.Server.Web.System
         [RavenAction("/admin/debug/periodic-backup/decision-log", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
         public async Task GetBackupDecisionLog()
         {
-            var databaseName = GetStringQueryString("database", required: false);
-            var take = Math.Clamp(GetIntValueQueryString("take", required: false) ?? DefaultDecisionLogPageSize, 0, MaxDecisionLogPageSize);
+            using (var processor = new BackupDatabaseHandlerProcessorForGetDecisionLog(this))
+                await processor.ExecuteAsync();
+        }
 
-            using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
-            await using (var writer = new AsyncBlittableJsonTextWriter(context, ResponseBodyStream()))
-            {
-                var details = ServerStore.ServerBackupRunner.GetDecisionLogDetails(databaseName, take);
-
-                context.Write(writer, details.ToJson());
-            }
+        [RavenAction("/admin/debug/periodic-backup/decision-log/watch", "GET", AuthorizationStatus.Operator)]
+        public async Task WatchBackupDecisionLog()
+        {
+            using (var processor = new BackupDatabaseHandlerProcessorForWatchDecisionLog(this))
+                await processor.ExecuteAsync();
         }
     }
 }

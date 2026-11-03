@@ -42,7 +42,7 @@ namespace Raven.Server.ServerWide.Backups
 
         public MultipleUseFlag Stale { get; } = new();
 
-        private readonly List<BackupDecision> _decisionLog = new();
+        private readonly BackupDecisionLog _decisionLog = new(MaxDecisionLogSize);
 
         public MultipleUseFlag Running { get; } = new();
 
@@ -145,20 +145,13 @@ namespace Raven.Server.ServerWide.Backups
             return $"'{Configuration.Name} ({Configuration.TaskId})' for database '{DatabaseName}'";
         }
 
-        public void AddToDecisionLog(string message, DateTime now)
+        public void AddToDecisionLog(BackupDecisionCategory category, string detail, string reason, DateTime now)
         {
-            AddToDecisionLog(BackupDecisionKind.Info, detail: null, message, now);
-        }
+            var serverBackupRunner = _serverStore.ServerBackupRunner;
+            var decision = serverBackupRunner.AddDecision(_decisionLog, category, detail, reason, now);
 
-        public void AddToDecisionLog(BackupDecisionKind kind, string detail, string message, DateTime now)
-        {
-            lock (_decisionLog)
-            {
-                _decisionLog.Insert(0, new BackupDecision(now, kind, detail, message));
-
-                if (_decisionLog.Count > MaxDecisionLogSize)
-                    _decisionLog.RemoveAt(_decisionLog.Count - 1);
-            }
+            if (category is BackupDecisionCategory.Completed or BackupDecisionCategory.Failed)
+                serverBackupRunner.OnBackupOutcome(this, decision);
         }
 
         internal void CancelRunningBackup(string reason)
@@ -228,29 +221,14 @@ namespace Raven.Server.ServerWide.Backups
             };
         }
 
-        public List<BackupDecision> GetDecisionLog(int take, out int total)
+        public List<BackupDecision> GetDecisionLog(long? afterEtag = null)
         {
-            lock (_decisionLog)
-            {
-                total = _decisionLog.Count;
-
-                return _decisionLog.GetRange(0, Math.Min(take, total));
-            }
+            return _decisionLog.GetDecisions(afterEtag);
         }
 
         public bool TryGetLatestDecision(out BackupDecision decision)
         {
-            lock (_decisionLog)
-            {
-                if (_decisionLog.Count == 0)
-                {
-                    decision = default;
-                    return false;
-                }
-
-                decision = _decisionLog[0];
-                return true;
-            }
+            return _decisionLog.TryGetLatest(out decision);
         }
     }
 }

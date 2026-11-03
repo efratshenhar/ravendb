@@ -14,13 +14,15 @@ public class ConcurrentBackupPolicy : IDatabaseBackupPolicy
         _concurrentBackupsCounter = concurrentBackupsCounter ?? throw new ArgumentNullException(nameof(concurrentBackupsCounter));
     }
 
-    public string Name => "ConcurrentBackup";
+    public string Name => ServerBackupRunner.ConcurrentBackupDetail;
 
-    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason)
+    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason, out BackupDecisionCategory category)
     {
+        category = BackupDecisionCategory.Waiting;
+
         if (_concurrentBackupsCounter.CanRunBackup(backupState.OriginalDatabaseName) == false)
         {
-            reason = $"Cannot start backup {backupState} because the maximum number of concurrent backups ({_concurrentBackupsCounter.MaxNumberOfConcurrentBackups}) is reached.";
+            reason = $"The maximum number of concurrent backups ({_concurrentBackupsCounter.MaxNumberOfConcurrentBackups}) is reached.";
             return false;
         }
 

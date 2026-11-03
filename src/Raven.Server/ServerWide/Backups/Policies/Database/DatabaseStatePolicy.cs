@@ -14,8 +14,10 @@ public class DatabaseStatePolicy : IDatabaseBackupPolicy
 
     public string Name => "DatabaseState";
 
-    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason)
+    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason, out BackupDecisionCategory category)
     {
+        category = BackupDecisionCategory.Waiting;
+
         using (var rawRecord = serverStore.Cluster.ReadRawDatabaseRecord(context, backupState.OriginalDatabaseName))
         {
             if (rawRecord == null)
@@ -26,13 +28,13 @@ public class DatabaseStatePolicy : IDatabaseBackupPolicy
 
             if (rawRecord.IsDisabled)
             {
-                reason = $"Cannot start backup {backupState} because the database is disabled.";
+                reason = "The database is disabled.";
                 return false;
             }
 
             if (rawRecord.DatabaseState == DatabaseStateStatus.RestoreInProgress)
             {
-                reason = $"Cannot start backup {backupState} because the database is being restored.";
+                reason = "The database is being restored.";
                 return false;
             }
         }

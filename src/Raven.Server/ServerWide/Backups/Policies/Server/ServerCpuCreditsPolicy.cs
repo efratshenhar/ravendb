@@ -6,26 +6,28 @@ public class ServerCpuCreditsPolicy : IServerBackupPolicy
 {
     public static bool Disabled;
 
-    private const string Reason = "Cannot start any backup(s) because the server CPU credits were near exhaustion.";
+    private const string Reason = "The server CPU credits are near exhaustion.";
 
     private DateTime _heldUntil;
 
     public string Name => "CpuCredits";
 
-    public bool CanDoBackup(ServerStore serverStore, DateTime now, string databaseName, out string reason)
+    public bool CanDoBackup(ServerStore serverStore, DateTime now, out string reason, out BackupDecisionCategory category)
     {
+        category = BackupDecisionCategory.HeldBack;
+
         if (Disabled)
         {
             reason = null;
             return true;
         }
 
-        if (serverStore.Server.CpuCreditsBalance.BackgroundTasksAlertRaised.IsRaised())
+        if (serverStore.Server.CpuCreditsBalance.BackgroundTasksAlertRaised.IsRaised() && now >= _heldUntil)
             _heldUntil = now + serverStore.Configuration.Server.CpuCreditsExhaustionBackupDelay.AsTimeSpan;
 
         if (now < _heldUntil)
         {
-            reason = $"{Reason} Held back until '{_heldUntil}'.";
+            reason = $"{Reason} Backups are held for {serverStore.Configuration.Server.CpuCreditsExhaustionBackupDelay.AsTimeSpan} and then checked again.";
             return false;
         }
 

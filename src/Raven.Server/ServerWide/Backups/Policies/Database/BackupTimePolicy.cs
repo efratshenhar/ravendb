@@ -15,8 +15,10 @@ public class BackupTimePolicy : IDatabaseBackupPolicy
 
     public string Name => "BackupTime";
 
-    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason)
+    public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason, out BackupDecisionCategory category)
     {
+        category = BackupDecisionCategory.Waiting;
+
         if (backupState.NextBackup == null)
         {
             var backupStatus = BackupUtils.GetBackupStatusFromCluster(context, backupState.DatabaseName, backupState.Configuration.TaskId);
@@ -30,13 +32,14 @@ public class BackupTimePolicy : IDatabaseBackupPolicy
 
         if (backupState.NextBackup == null)
         {
-            reason = $"Cannot start backup {backupState} because next backup time could not be calculated.";
+            reason = "The next backup time can't be calculated.";
+            category = BackupDecisionCategory.HeldBack;
             return false;
         }
 
         if (backupState.NextBackup.DateTime > now)
         {
-            reason = $"Cannot start backup {backupState} because it is not yet time to do so. Next backup will occur at '{backupState.NextBackup.DateTime}'.";
+            reason = $"The backup isn't due yet. Next backup at '{backupState.NextBackup.DateTime}'.";
             return false;
         }
 
