@@ -3889,6 +3889,7 @@ namespace Raven.Server.ServerWide
             internal Action<string, List<ClusterTransactionCommand.SingleClusterDatabaseCommand>> BeforeExecuteClusterTransactionBatch;
             internal Action<ClusterObserver.CompareExchangeTombstonesCleanupState> AfterCompareExchangeTombstonesResult;
             internal bool IgnoreClusterTransactionIndexInCompareExchangeCleaner;
+            internal bool IgnoreHealthChecksBeforeBackup;
         }
 
 #if DEBUG

@@ -36,8 +36,6 @@ namespace Raven.Server.Utils;
 
 public static class BackupUtils
 {
-    internal static bool IgnoreHealthChecksBeforeBackup = false;
-
     internal static BackupTask GetBackupTask(DocumentDatabase database, BackupParameters backupParameters, BackupConfiguration configuration, OperationCancelToken token, RavenLogger logger, ServerBackupRunner.TestingStuff forTestingPurposes = null)
     {
         return configuration.BackupUploadMode == BackupUploadMode.DirectUpload
@@ -437,7 +435,7 @@ public static class BackupUtils
 
     internal static void CheckServerHealthBeforeBackup(ServerStore serverStore, string name)
     {
-        if (IgnoreHealthChecksBeforeBackup)
+        if (serverStore.ForTestingPurposes?.IgnoreHealthChecksBeforeBackup == true)
             return;
 
         if (serverStore.Server.CpuCreditsBalance.BackgroundTasksAlertRaised.IsRaised())

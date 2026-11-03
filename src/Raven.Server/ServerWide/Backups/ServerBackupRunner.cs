@@ -1806,18 +1806,27 @@ public class ServerBackupRunner : IDisposable
         if (_forTestingPurposes != null)
             return _forTestingPurposes;
 
-        return _forTestingPurposes = new TestingStuff();
+        return _forTestingPurposes = new TestingStuff(this);
     }
 
 
     public class TestingStuff
     {
+        private readonly ServerBackupRunner _runner;
+
         public TestingStuff()
         {
             DatabaseTestingStuffInternals = new ConcurrentDictionary<string, TestingStuffInternal>();
         }
 
+        internal TestingStuff(ServerBackupRunner runner) : this()
+        {
+            _runner = runner;
+        }
+
         internal ConcurrentDictionary<string, TestingStuffInternal> DatabaseTestingStuffInternals { get; set; }
+
+        internal int CountInQueue(DatabaseBackupState backupState) => _runner._backupQueue.Count(x => ReferenceEquals(x, backupState));
     }
 
     internal class TestingStuffInternal
