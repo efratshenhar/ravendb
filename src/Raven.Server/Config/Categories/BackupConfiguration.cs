@@ -107,6 +107,19 @@ namespace Raven.Server.Config.Categories
         [ConfigurationEntry("Backup.DatabaseLoadedGracePeriodInSec", ConfigurationEntryScope.ServerWideOnly)]
         public TimeSetting DatabaseLoadedGracePeriod { get; set; }
 
+        [Description("Maximum number of backup statuses of idle databases that are sent to the cluster in a single command when their incremental backups are skipped because nothing changed.")]
+        [DefaultValue(100)]
+        [MinValue(1)]
+        [ConfigurationEntry("Backup.MaxStatusUpdatesPerBatch", ConfigurationEntryScope.ServerWideOnly)]
+        public int MaxStatusUpdatesPerBatch { get; set; }
+
+        [Description("Keep an idle database loaded when its next backup is due within this number of minutes and it has changes since its last backup or its next backup is a full backup.")]
+        [DefaultValue(5)]
+        [MinValue(0)]
+        [TimeUnit(TimeUnit.Minutes)]
+        [ConfigurationEntry("Backup.KeepIdleDatabaseLoadedBeforeBackupInMin", ConfigurationEntryScope.ServerWideOnly)]
+        public TimeSetting KeepIdleDatabaseLoadedBeforeBackup { get; set; }
+
         public override void Initialize(IConfigurationRoot settings, HashSet<string> settingsNames, IConfigurationRoot serverWideSettings, HashSet<string> serverWideSettingsNames, ResourceType type, string resourceName)
         {
             base.Initialize(settings, settingsNames, serverWideSettings, serverWideSettingsNames, type, resourceName);

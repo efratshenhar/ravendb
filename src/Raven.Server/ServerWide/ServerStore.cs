@@ -2879,6 +2879,21 @@ namespace Raven.Server.ServerWide
                             if (CanUnloadDatabase(databaseKvp.Key, databaseKvp.Value, statistics: statistics, out DocumentDatabase database) == false)
                                 continue;
 
+                            var lastAccessTime = database.LastAccessTime;
+                            var noWritesInProgress = database.Time.GetUtcNow() - lastAccessTime > database.Configuration.Databases.MaxIdleTime.AsTimeSpan;
+                            var (lastEtag, lastChangeVector) = database.ReadLastEtagAndChangeVector();
+
+                            if (ServerBackupRunner.ShouldKeepLoadedForBackup(database.Name, lastEtag, lastChangeVector))
+                            {
+                                if (statistics != null)
+                                {
+                                    statistics.CanUnload = false;
+                                    statistics.Explanations.Add($"Cannot unload database because a backup of it is due within '{Configuration.Backup.KeepIdleDatabaseLoadedBeforeBackup}'.");
+                                }
+
+                                continue;
+                            }
+
                             var dbIdEtagDictionary = new Dictionary<string, long>();
                             using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext documentsContext))
                             using (documentsContext.OpenReadTransaction())
@@ -2888,7 +2903,17 @@ namespace Raven.Server.ServerWide
                             }
 
                             if (DatabasesLandlord.UnloadDirectly(databaseKvp.Key))
+                            {
+                                if (noWritesInProgress && database.LastAccessTime == lastAccessTime)
+                                    ServerBackupRunner.OnIdleDatabaseUnloaded(database.Name, lastEtag, lastChangeVector);
+                                else
+                                    ServerBackupRunner.OnIdleDatabaseChangedWhileUnloading(database.Name);
+
                                 IdleDatabases[database.Name] = dbIdEtagDictionary;
+
+                                if (DatabasesLandlord.DatabasesCache.TryGetValue(database.Name, out _))
+                                    ServerBackupRunner.OnIdleDatabaseChangedWhileUnloading(database.Name);
+                            }
                         }
                         catch (OperationCanceledException)
                         {

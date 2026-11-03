@@ -410,6 +410,31 @@ public static class BackupUtils
                (nextIncrementalBackup == null || nextFullBackup <= nextIncrementalBackup);
     }
 
+    internal static bool IsFullBackupRequired(PeriodicBackupStatus backupStatus, PeriodicBackupConfiguration configuration)
+    {
+        return backupStatus.LastFullBackup == null ||
+               backupStatus.BackupType != configuration.BackupType ||
+               backupStatus.LastEtag == null ||
+               BackupConfiguration.CanBackupUsing(configuration.LocalSettings) &&
+               BackupTask.DirectoryContainsBackupFiles(backupStatus.LocalBackup?.BackupDirectory, IsFullBackupOrSnapshot) == false;
+    }
+
+    internal static bool HasChangesSinceLastBackup(PeriodicBackupStatus backupStatus, long lastEtag, string lastChangeVector, long etagForBackup)
+    {
+        return lastEtag != backupStatus.LastEtag ||
+               lastChangeVector != backupStatus.LastDatabaseChangeVector ||
+               etagForBackup != backupStatus.LastRaftIndex?.LastEtag;
+    }
+
+    private static bool IsFullBackupOrSnapshot(string filePath)
+    {
+        var extension = Path.GetExtension(filePath);
+        return Raven.Client.Constants.Documents.PeriodicBackup.FullBackupExtension.Equals(extension, StringComparison.OrdinalIgnoreCase) ||
+               Raven.Client.Constants.Documents.PeriodicBackup.SnapshotExtension.Equals(extension, StringComparison.OrdinalIgnoreCase) ||
+               Raven.Client.Constants.Documents.PeriodicBackup.EncryptedFullBackupExtension.Equals(extension, StringComparison.OrdinalIgnoreCase) ||
+               Raven.Client.Constants.Documents.PeriodicBackup.EncryptedSnapshotExtension.Equals(extension, StringComparison.OrdinalIgnoreCase);
+    }
+
     internal static void CheckServerHealthBeforeBackup(ServerStore serverStore, string name)
     {
         if (IgnoreHealthChecksBeforeBackup)

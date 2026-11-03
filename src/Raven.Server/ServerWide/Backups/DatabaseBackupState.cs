@@ -48,6 +48,8 @@ namespace Raven.Server.ServerWide.Backups
 
         internal MultipleUseFlag InQueue { get; } = new();
 
+        internal MultipleUseFlag StatusUpdateInProgress { get; } = new();
+
         public RunningBackupTask RunningTask { get; set; }
 
         public OperationCancelToken RunningCancel { get; internal set; }
