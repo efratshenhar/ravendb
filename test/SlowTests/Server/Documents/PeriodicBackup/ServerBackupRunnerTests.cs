@@ -34,6 +34,8 @@ using Xunit.Abstractions;
 
 namespace SlowTests.Server.Documents.PeriodicBackup;
 
+// Repros for the review findings on RavenDB-24994 (centralized backup runner).
+// Every test asserts the expected behavior, so it fails while the defect exists.
 public class ServerBackupRunnerTests : ClusterTestBase
 {
     public ServerBackupRunnerTests(ITestOutputHelper output) : base(output)
@@ -41,13 +43,14 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task ScheduledFullBackupMustBeFullAndNotRepeatEveryTick()
+    public async Task Finding01_ScheduledFullBackupMustBeFullAndNotRepeatEveryTick()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer();
         using var store = GetDocumentStore(new Options { Server = server });
         await StoreDocument(store);
 
+        // full backup every minute, incremental effectively never
         var config = Backup.CreateBackupConfiguration(backupPath, fullBackupFrequency: "* * * * *", incrementalBackupFrequency: "0 0 1 1 *");
 
         await WaitForSecondOfMinuteBelow(40);
@@ -73,7 +76,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task ServerWideBackupAddedWhileDatabaseIsIdleMustRun()
+    public async Task Finding02_ServerWideBackupAddedWhileDatabaseIsIdleMustRun()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer(new ServerCreationOptions
@@ -110,7 +113,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task BackupNowMustReportStartFailure()
+    public async Task Finding03_BackupNowMustReportStartFailure()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer(new ServerCreationOptions { RunInMemory = false });
@@ -138,7 +141,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task DisabledDatabaseMustNotGetFailedBackups()
+    public async Task Finding04_DisabledDatabaseMustNotGetFailedBackups()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer(new ServerCreationOptions
@@ -171,7 +174,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task BackupNowWhileScheduledBackupIsStartingMustNotBeSilentlyDropped()
+    public async Task Finding05_BackupNowWhileScheduledBackupIsStartingMustNotBeSilentlyDropped()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer(new ServerCreationOptions
@@ -192,6 +195,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
         Assert.False(WaitForValue(() => state.Running.IsRaised(), false, timeout: 60_000, interval: 100), "precondition: no backup is running");
         Assert.True(landlord.UnloadDirectly(store.Database), "precondition: unload database");
 
+        // block database loading, so the first backup stays between Running.Raise() and the RunningTask assignment
         var drained = 0;
         while (landlord._databaseSemaphore.Wait(0))
             drained++;
@@ -233,7 +237,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport | RavenTestCategory.Sharding)]
-    public async Task ShardsOfTheSameDatabaseMustNotBlockEachOtherOnTheConcurrencyLimit()
+    public async Task Finding06_ShardsOfTheSameDatabaseMustNotBlockEachOtherOnTheConcurrencyLimit()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer(new ServerCreationOptions
@@ -268,7 +272,8 @@ public class ServerBackupRunnerTests : ClusterTestBase
             Assert.True(await WaitForValueAsync(() => Task.FromResult(StartedShards() > 0), true, timeout: 90_000, interval: 250),
                 "precondition: at least one shard backup should start at the minute boundary");
 
-            await WaitForValueAsync(() => Task.FromResult(StartedShards() == shardNames.Count), true, timeout: 30_000, interval: 250);
+            // the remaining shards of the same database are allowed to run concurrently, give them 10 runner ticks
+            await WaitForValueAsync(() => Task.FromResult(StartedShards() == shardNames.Count), true, timeout: 10_000, interval: 250);
 
             var started = StartedShards();
             var capRejections = shardNames.Sum(name => Decisions(server, name, result.TaskId).Where(d => d.Detail == "ConcurrentBackup" && d.LastTime >= startUtc).Sum(d => d.Count));
@@ -287,7 +292,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task BackupDisabledWhileDatabaseIsIdleMustNotRunAfterWakeUp()
+    public async Task Finding07_BackupDisabledWhileDatabaseIsIdleMustNotRunAfterWakeUp()
     {
         var backupPath = NewDataPath(suffix: "BackupFolder");
         using var server = GetNewServer(new ServerCreationOptions
@@ -312,6 +317,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
 
         server.ServerStore.DatabasesLandlord.ForTestingPurposesOnly().SkipIncreasingLastWorkTimeBasedOnDatabaseSize = true;
 
+        // the database goes idle between the per-minute backups, disable the task while it's idle and far enough from the next minute
         for (var attempt = 0; ; attempt++)
         {
             Assert.True(WaitForValue(() => server.ServerStore.IdleDatabases.ContainsKey(store.Database), true, timeout: 90_000, interval: 250),
@@ -345,12 +351,13 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task DisableAndEnableWithinOneTickMustNotDuplicateQueueEntry()
+    public async Task Finding08_DisableAndEnableWithinOneTickMustNotDuplicateQueueEntry()
     {
         using var server = GetNewServer(new ServerCreationOptions
         {
             CustomSettings = new Dictionary<string, string>
             {
+                // no runner tick during the test
                 [RavenConfiguration.GetKey(x => x.Backup.BackupRunnerFrequency)] = "3600"
             }
         });
@@ -379,7 +386,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task OneTimeBackupMustRespectConcurrentBackupsLimit()
+    public async Task Finding09_OneTimeBackupMustRespectConcurrentBackupsLimit()
     {
         using var server = GetNewServer(new ServerCreationOptions
         {
@@ -428,13 +435,14 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task BackupNowMustRespectServerHealthChecks()
+    public async Task Finding09_BackupNowMustRespectServerHealthChecks()
     {
         using var server = GetNewServer(new ServerCreationOptions { IgnoreHealthChecksBeforeBackup = false });
         using var store = GetDocumentStore(new Options { Server = server });
         await StoreDocument(store);
         var taskId = await Backup.UpdateConfigAsync(server, Backup.CreateBackupConfiguration(NewDataPath(suffix: "BackupFolder")), store);
 
+        // same server-health gate as low memory / high dirty memory in BackupUtils.CheckServerHealthBeforeBackup
         server.CpuCreditsBalance.BackgroundTasksAlertRaised.Raise();
         try
         {
@@ -452,12 +460,13 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task DecisionLogMustNotRecordEveryTickForTasksThatAreNotDue()
+    public async Task Finding10_DecisionLogMustNotRecordEveryTickForTasksThatAreNotDue()
     {
         using var server = GetNewServer();
         using var store = GetDocumentStore(new Options { Server = server });
         await StoreDocument(store);
 
+        // full backup once a year, so the task is never due during the test
         var taskId = await Backup.UpdateConfigAndRunBackupAsync(server, Backup.CreateBackupConfiguration(NewDataPath(suffix: "BackupFolder")), store);
         var startUtc = DateTime.UtcNow;
 
@@ -478,7 +487,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport | RavenTestCategory.Cluster)]
-    public async Task RunnerMustNotTrackBackupTasksOfDatabasesNotHostedOnThisNode()
+    public async Task Finding10_RunnerMustNotTrackBackupTasksOfDatabasesNotHostedOnThisNode()
     {
         var (nodes, _) = await CreateRaftCluster(2, shouldRunInMemory: false);
         var hostingNode = nodes[0];
@@ -502,18 +511,18 @@ public class ServerBackupRunnerTests : ClusterTestBase
             RegisterForDisposal = true
         });
 
-        await revived.ServerStore.Cluster.WaitForIndexNotification(result.RaftCommandIndex);
+        await Task.Delay(TimeSpan.FromSeconds(10));
 
         var tracked = revived.ServerStore.ServerBackupRunner.GetDatabaseStateByTaskId(databaseName, result.TaskId);
         var log = tracked == null ? new List<BackupDecision>() : Decisions(revived, databaseName, result.TaskId);
 
         Assert.True(tracked == null,
             $"Node '{revived.ServerStore.NodeTag}' does not host '{databaseName}' but after restart its backup runner tracks task {result.TaskId} " +
-            $"and logged {log.Count} decision(s):{Environment.NewLine}{Dump(log, 5)}");
+            $"and logged {log.Count} decision(s) in ~10s:{Environment.NewLine}{Dump(log, 5)}");
     }
 
     [RavenFact(RavenTestCategory.BackupExportImport)]
-    public async Task IdleDatabaseMustNotBeReloadedForIncrementalBackupsWithoutChanges()
+    public async Task Finding11_IdleDatabaseMustNotBeReloadedForIncrementalBackupsWithoutChanges()
     {
         using var server = GetNewServer(new ServerCreationOptions
         {
@@ -526,6 +535,7 @@ public class ServerBackupRunnerTests : ClusterTestBase
         var config = Backup.CreateBackupConfiguration(NewDataPath(suffix: "BackupFolder"), fullBackupFrequency: "0 0 1 1 *", incrementalBackupFrequency: "* * * * *");
         var taskId = await Backup.UpdateConfigAndRunBackupAsync(server, config, store);
 
+        // no writes from now on
         var landlord = server.ServerStore.DatabasesLandlord;
         var reloads = new ConcurrentQueue<(DateTime Time, string Caller)>();
         landlord.ForTestingPurposesOnly().SkipIncreasingLastWorkTimeBasedOnDatabaseSize = true;
