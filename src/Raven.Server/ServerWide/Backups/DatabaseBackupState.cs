@@ -42,13 +42,21 @@ namespace Raven.Server.ServerWide.Backups
 
         public MultipleUseFlag Stale { get; } = new();
 
-        private readonly List<BackupDecision> _decisionLog = new();
+        private readonly BackupDecisionLog _decisionLog = new(BackupDecisionTracker.MaxDecisionLogSize);
 
         public MultipleUseFlag Running { get; } = new();
+
+        internal MultipleUseFlag InQueue { get; } = new();
+
+        internal MultipleUseFlag StatusUpdateInProgress { get; } = new();
 
         public RunningBackupTask RunningTask { get; set; }
 
         public OperationCancelToken RunningCancel { get; internal set; }
+
+        private string _cancelReason;
+
+        internal string CancelReason => Volatile.Read(ref _cancelReason);
 
         internal ServerStore _serverStore;
 
@@ -113,7 +121,9 @@ namespace Raven.Server.ServerWide.Backups
                 details: new ExceptionDetails(parameters.Exception)));
         }
 
-        private NextBackup GetNextBackupDetails(PeriodicBackupStatus backupStatus, bool skipErrorLog = false)
+        // skipErrorLog: the runner recalculates the next backup on every pass (BackupTimePolicy) and after each backup,
+        // so the alerts are raised only when the configuration changes, otherwise the same alert is stored again every pass.
+        internal NextBackup GetNextBackupDetails(PeriodicBackupStatus backupStatus, bool skipErrorLog = false)
         {
             return BackupUtils.GetNextBackupDetails(new BackupUtils.NextBackupDetailsParameters
             {
@@ -122,7 +132,7 @@ namespace Raven.Server.ServerWide.Backups
                 BackupStatus = backupStatus,
                 DatabaseWakeUpTimeUtc = DatabaseWakeUpTimeUtc,
                 NodeTag = _serverStore.NodeTag,
-                OnMissingNextBackupInfo = OnMissingNextBackupInfo
+                OnMissingNextBackupInfo = skipErrorLog ? null : OnMissingNextBackupInfo
             });
         }
 
@@ -137,20 +147,13 @@ namespace Raven.Server.ServerWide.Backups
             return $"'{Configuration.Name} ({Configuration.TaskId})' for database '{DatabaseName}'";
         }
 
-        public void AddToDecisionLog(string message, DateTime now)
+        public void AddToDecisionLog(BackupDecisionCategory category, string detail, string reason, DateTime now)
         {
-            AddToDecisionLog(BackupDecisionKind.Info, detail: null, message, now);
-        }
+            var decisions = _serverStore.ServerBackupRunner.Decisions;
+            var decision = decisions.AddDecision(_decisionLog, category, detail, reason, now);
 
-        public void AddToDecisionLog(BackupDecisionKind kind, string detail, string message, DateTime now)
-        {
-            lock (_decisionLog)
-            {
-                _decisionLog.Insert(0, new BackupDecision(now, kind, detail, message));
-
-                if (_decisionLog.Count > MaxDecisionLogSize)
-                    _decisionLog.RemoveAt(_decisionLog.Count - 1);
-            }
+            if (category is BackupDecisionCategory.Completed or BackupDecisionCategory.Failed)
+                decisions.OnBackupOutcome(this, decision);
         }
 
         internal void CancelRunningBackup(string reason)
@@ -163,7 +166,7 @@ namespace Raven.Server.ServerWide.Backups
             if (runningCancel == null)
                 return;
 
-            AddToDecisionLog(BackupDecisionKind.Cancelled, reason, $"Backup task {Configuration.TaskId}", DateTime.UtcNow);
+            SetCancelReason(reason);
 
             try
             {
@@ -176,29 +179,58 @@ namespace Raven.Server.ServerWide.Backups
             }
         }
 
-        public List<BackupDecision> GetDecisionLog(int take, out int total)
+        internal void SetCancelReason(string reason)
         {
-            lock (_decisionLog)
-            {
-                total = _decisionLog.Count;
+            Interlocked.CompareExchange(ref _cancelReason, reason, null);
+        }
 
-                return _decisionLog.GetRange(0, Math.Min(take, total));
-            }
+        internal void ResetCancelReason()
+        {
+            Volatile.Write(ref _cancelReason, null);
+        }
+
+        internal NextBackup GetNextOccurrenceAfter(DateTime nowUtc)
+        {
+            var nextFullBackup = BackupUtils.GetNextBackupOccurrence(new BackupUtils.NextBackupOccurrenceParameters
+            {
+                BackupFrequency = Configuration.FullBackupFrequency,
+                Configuration = Configuration,
+                LastBackupUtc = nowUtc
+            });
+
+            var nextIncrementalBackup = BackupUtils.GetNextBackupOccurrence(new BackupUtils.NextBackupOccurrenceParameters
+            {
+                BackupFrequency = Configuration.IncrementalBackupFrequency,
+                Configuration = Configuration,
+                LastBackupUtc = nowUtc
+            });
+
+            var nextOccurrence = nextFullBackup == null || nextIncrementalBackup != null && nextIncrementalBackup < nextFullBackup
+                ? nextIncrementalBackup
+                : nextFullBackup;
+
+            if (nextOccurrence == null)
+                return null;
+
+            var nextOccurrenceUtc = nextOccurrence.Value.ToUniversalTime();
+
+            return new NextBackup
+            {
+                TaskId = Configuration.TaskId,
+                IsFull = nextOccurrence == nextFullBackup,
+                DateTime = nextOccurrenceUtc,
+                TimeSpan = nextOccurrenceUtc - nowUtc
+            };
+        }
+
+        public List<BackupDecision> GetDecisionLog(long? afterEtag = null)
+        {
+            return _decisionLog.GetDecisions(afterEtag);
         }
 
         public bool TryGetLatestDecision(out BackupDecision decision)
         {
-            lock (_decisionLog)
-            {
-                if (_decisionLog.Count == 0)
-                {
-                    decision = default;
-                    return false;
-                }
-
-                decision = _decisionLog[0];
-                return true;
-            }
+            return _decisionLog.TryGetLatest(out decision);
         }
     }
 }
