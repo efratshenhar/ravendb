@@ -55,6 +55,8 @@ public class ServerBackupRunner : IDisposable
 
     private List<IServerBackupPolicy> _serverBackupPolicies;
 
+    private List<ServerHealthBackupPolicy> _serverHealthPolicies;
+
     private List<IDatabaseBackupPolicy> _databaseBackupPolicies;
 
     private List<IDatabaseBackupPolicy> _afterDatabaseLoadPolicies;
@@ -83,12 +85,17 @@ public class ServerBackupRunner : IDisposable
         Decisions.Start();
         ConcurrentBackups.RunningBackupsChanged += OnRunningBackupsChanged;
 
-        _serverBackupPolicies =
+        _serverHealthPolicies =
         [
-            ServerStartupPolicy.Instance,
             new ServerCpuCreditsPolicy(),
             new ServerLowMemoryPolicy(),
             new ServerHighDirtyMemoryPolicy()
+        ];
+
+        _serverBackupPolicies =
+        [
+            ServerStartupPolicy.Instance,
+            .. _serverHealthPolicies
         ];
 
         _databaseBackupPolicies =
@@ -107,7 +114,8 @@ public class ServerBackupRunner : IDisposable
         [
             BackupDisabledPolicy.Instance,
             DatabaseExistsPolicy.Instance,
-            BackupShouldRunOnThisNodePolicy.Instance
+            BackupShouldRunOnThisNodePolicy.Instance,
+            DisableOngoingTasksPolicy.Instance
         ];
 
         _thread = PoolOfThreads.GlobalRavenThreadPool.LongRunning(Run, null, ThreadNames.ForServerBackupRunner());
@@ -265,7 +273,7 @@ public class ServerBackupRunner : IDisposable
 
             try
             {
-                if (CanStartAfterDatabaseLoad(database, backupState, out var category, out var detail, out var reason) == false)
+                if (CanStartAfterDatabaseLoad(backupState, out var category, out var detail, out var reason) == false)
                 {
                     FinishRunning(backupState, category, detail, reason);
                     return;
@@ -316,7 +324,7 @@ public class ServerBackupRunner : IDisposable
             {
                 backupTask.TaskCancelToken.Dispose();
 
-                var cancelReason = backupState.Configuration.Disabled || backupState.Configuration.HasBackup() == false ? CancelReasonDisabled : CancelReasonTaskDeleted;
+                var cancelReason = BackupDisabledPolicy.IsDisabled(backupState.Configuration, out _, out _) ? CancelReasonDisabled : CancelReasonTaskDeleted;
                 FinishRunning(backupState, BackupDecisionCategory.Cancelled, cancelReason, GetCancelReasonText(cancelReason));
                 return false;
             }
@@ -431,18 +439,27 @@ public class ServerBackupRunner : IDisposable
         if (TryGetBackupStates(database.Name, out var backupStates) == false || backupStates.TryGetValue(taskId, out var backupState) == false)
             throw new InvalidOperationException($"Backup task id: {taskId} doesn't exist");
 
-        if (database.DisableOngoingTasks)
+        var now = DateTime.UtcNow;
+
+        if (DisableOngoingTasksPolicy.Instance.CanDoBackup(context: null, _serverStore, backupState, now, out var reason, out var category) == false)
+        {
+            backupState.AddToDecisionLog(category, DisableOngoingTasksPolicy.Instance.Name, reason, now);
             throw new InvalidOperationException($"Backup task is disabled via marker file for database '{database.Name}'.");
+        }
 
         lock (backupStates)
         {
-            if (backupState.StatusUpdateInProgress || backupState.Running.Raise() == false)
-                throw CreateBackupAlreadyRunningException(backupState);
+            if (BackupRunningPolicy.Instance.CanDoBackup(context: null, _serverStore, backupState, now, out reason, out category) == false || backupState.Running.Raise() == false)
+            {
+                var exception = CreateBackupAlreadyRunningException(backupState);
+                backupState.AddToDecisionLog(category, BackupRunningPolicy.Instance.Name, reason ?? exception.Message, now);
+                throw exception;
+            }
         }
 
         try
         {
-            BackupUtils.CheckServerHealthBeforeBackup(_serverStore, backupState.Configuration.Name);
+            CheckServerHealthBeforeBackup(backupState.Configuration.Name, backupState);
         }
         catch
         {
@@ -456,6 +473,19 @@ public class ServerBackupRunner : IDisposable
             throw new InvalidOperationException($"Backup task id: {taskId} was disabled or removed while its backup was starting");
 
         return operationId;
+    }
+
+    internal void CheckServerHealthBeforeBackup(string backupName, DatabaseBackupState backupState = null)
+    {
+        foreach (var policy in _serverHealthPolicies)
+        {
+            if (policy.IsServerUnhealthy(_serverStore) == false)
+                continue;
+
+            var message = $"Failed to start Backup Task: '{backupName}'. The task cannot run because {policy.StartFailureReason}.";
+            backupState?.AddToDecisionLog(BackupDecisionCategory.HeldBack, policy.Name, message, DateTime.UtcNow);
+            throw new BackupDelayException(message);
+        }
     }
 
     private Task<IOperationResult> StartBackupThread(DocumentDatabase database, DatabaseBackupState backupState, BackupTask backupTask, TaskCompletionSource<IOperationResult> tcs, Action<IOperationProgress> onProgress)
@@ -719,7 +749,16 @@ public class ServerBackupRunner : IDisposable
     {
         var existingBackupState = GetDatabaseStateByTaskId(databaseName, configuration.TaskId);
         var alreadyKnownWithoutDestinations = existingBackupState != null && existingBackupState.Configuration.HasBackup() == false;
-        var taskState = GetTaskStatus(configuration, databaseName, out _, disableLog: alreadyKnownWithoutDestinations, context: context);
+        var taskState = GetTaskStatus(configuration, databaseName, out var responsibleNodeTag, context);
+        if (alreadyKnownWithoutDestinations == false)
+        {
+            if (configuration.Disabled == false && configuration.HasBackup() == false)
+                RaiseAllDestinationsDisabledAlert(databaseName, configuration.TaskId);
+            else if (taskState == TaskStatus.ActiveByOtherNode && _logger.IsDebugEnabled)
+                _logger.Debug($"Backup job is skipped at {SystemTime.UtcNow}, because it is managed " +
+                              $"by '{responsibleNodeTag}' node and not the current node ({_serverStore.NodeTag})");
+        }
+
         if (TryGetTestingStuff(databaseName, out var testingStuffInternal))
         {
             if (testingStuffInternal.SimulateActiveByOtherNodeStatus_UpdateConfigurations)
@@ -831,28 +870,10 @@ public class ServerBackupRunner : IDisposable
         }
     }
 
-    public TaskStatus GetTaskStatus(PeriodicBackupConfiguration configuration, string databaseName, out string responsibleNodeTag, bool disableLog = false, ClusterOperationContext context = null)
+    public TaskStatus GetTaskStatus(PeriodicBackupConfiguration configuration, string databaseName, out string responsibleNodeTag, ClusterOperationContext context = null)
     {
-        if (configuration.Disabled)
+        if (BackupDisabledPolicy.IsDisabled(configuration, out _, out _))
         {
-            responsibleNodeTag = null;
-            return TaskStatus.Disabled;
-        }
-
-        if (configuration.HasBackup() == false)
-        {
-            if (disableLog == false)
-            {
-                var message = $"All backup destinations are disabled for backup task id: {configuration.TaskId}";
-                AddDatabaseAlert(databaseName, AlertRaised.Create(
-                    databaseName,
-                    "Periodic Backup",
-                    message,
-                    AlertReason.PeriodicBackup,
-                    NotificationSeverity.Info,
-                    key: databaseName));
-            }
-
             responsibleNodeTag = null;
             return TaskStatus.Disabled;
         }
@@ -870,14 +891,19 @@ public class ServerBackupRunner : IDisposable
             return TaskStatus.MissingResponsibleNode;
         }
 
-        if (responsibleNodeTag == _serverStore.NodeTag)
-            return TaskStatus.ActiveByCurrentNode;
+        return responsibleNodeTag == _serverStore.NodeTag ? TaskStatus.ActiveByCurrentNode : TaskStatus.ActiveByOtherNode;
+    }
 
-        if (disableLog == false && _logger.IsDebugEnabled)
-            _logger.Debug($"Backup job is skipped at {SystemTime.UtcNow}, because it is managed " +
-                          $"by '{responsibleNodeTag}' node and not the current node ({_serverStore.NodeTag})");
-
-        return TaskStatus.ActiveByOtherNode;
+    internal void RaiseAllDestinationsDisabledAlert(string databaseName, long taskId)
+    {
+        var message = $"All backup destinations are disabled for backup task id: {taskId}";
+        AddDatabaseAlert(databaseName, AlertRaised.Create(
+            databaseName,
+            "Periodic Backup",
+            message,
+            AlertReason.PeriodicBackup,
+            NotificationSeverity.Info,
+            key: databaseName));
     }
 
     private static string GetBackupTypeText(bool isFullBackup, BackupType backupType)
@@ -898,17 +924,14 @@ public class ServerBackupRunner : IDisposable
             throw new InvalidOperationException($"Backup task id: {taskId} doesn't exist");
         }
 
-        if (databaseBackupState.Configuration.Disabled)
+        if (GetTaskStatus(databaseBackupState.Configuration, databaseBackupState.DatabaseName, out var responsibleNodeTag) == TaskStatus.Disabled)
         {
-            throw new InvalidOperationException($"Backup task id: {taskId} is disabled");
+            throw new InvalidOperationException(databaseBackupState.Configuration.Disabled
+                ? $"Backup task id: {taskId} is disabled"
+                : $"All backup destinations are disabled for backup task id: {taskId}");
         }
 
-        if (databaseBackupState.Configuration.HasBackup() == false)
-        {
-            throw new InvalidOperationException($"All backup destinations are disabled for backup task id: {taskId}");
-        }
-
-        return BackupUtils.GetResponsibleNodeTag(_serverStore, databaseBackupState.DatabaseName, databaseBackupState.Configuration.TaskId);
+        return responsibleNodeTag;
     }
 
     public DatabaseBackupState GetDatabaseStateByTaskId(string databaseName, long taskId)
@@ -981,7 +1004,7 @@ public class ServerBackupRunner : IDisposable
                 if (_logger.IsDebugEnabled)
                     _logger.Debug(reason);
 
-                Decisions.AddServerDecision(category, backupPolicy.Name, reason, now, GetHeldUntil(backupPolicy));
+                Decisions.AddServerDecision(category, backupPolicy.Name, reason, now, backupPolicy.HeldUntil);
 
                 failedPolicy = backupPolicy;
                 return false;
@@ -1600,7 +1623,7 @@ public class ServerBackupRunner : IDisposable
         backupState.NextBackup = backupState.Stale ? null : backupState.GetNextBackupDetails(backupStatus, out _);
     }
 
-    private bool CanStartAfterDatabaseLoad(DocumentDatabase database, DatabaseBackupState backupState, out BackupDecisionCategory category, out string detail, out string reason)
+    private bool CanStartAfterDatabaseLoad(DatabaseBackupState backupState, out BackupDecisionCategory category, out string detail, out string reason)
     {
         var now = DateTime.UtcNow;
 
@@ -1613,19 +1636,17 @@ public class ServerBackupRunner : IDisposable
                     continue;
 
                 detail = backupPolicy.Name;
+
+                if (backupPolicy == DisableOngoingTasksPolicy.Instance)
+                {
+                    backupState.NextBackup = backupState.GetNextOccurrenceAfter(now);
+
+                    var heldUntil = backupState.NextBackup == null ? string.Empty : $" until '{backupState.NextBackup.DateTime}' UTC";
+                    reason = $"{reason} Held back{heldUntil}.";
+                }
+
                 return false;
             }
-        }
-
-        if (database.DisableOngoingTasks)
-        {
-            backupState.NextBackup = backupState.GetNextOccurrenceAfter(now);
-
-            var heldUntil = backupState.NextBackup == null ? string.Empty : $" until '{backupState.NextBackup.DateTime}' UTC";
-            category = BackupDecisionCategory.HeldBack;
-            detail = DisableOngoingTasksDetail;
-            reason = $"The ongoing tasks of the database are disabled by the 'disable.tasks.marker' file. Held back{heldUntil}.";
-            return false;
         }
 
         category = default;
@@ -1670,7 +1691,7 @@ public class ServerBackupRunner : IDisposable
         {
             var canStart = isBackupNow
                 ? backupStates.TryGetValue(backupState.Configuration.TaskId, out var current) && ReferenceEquals(current, backupState) &&
-                  backupState.Configuration.Disabled == false && backupState.Configuration.HasBackup()
+                  BackupDisabledPolicy.IsDisabled(backupState.Configuration, out _, out _) == false
                 : backupState.Stale == false;
 
             if (canStart == false)
@@ -1690,24 +1711,13 @@ public class ServerBackupRunner : IDisposable
 
     internal bool IsActiveOnThisNode(ClusterOperationContext context, DatabaseBackupState backupState)
     {
-        return GetTaskStatus(backupState.Configuration, backupState.DatabaseName, out _, disableLog: true, context: context) == TaskStatus.ActiveByCurrentNode;
+        return GetTaskStatus(backupState.Configuration, backupState.DatabaseName, out _, context) == TaskStatus.ActiveByCurrentNode;
     }
 
     private bool TryGetTestingStuff(string databaseName, out TestingStuffInternal testingStuff)
     {
         testingStuff = null;
         return _forTestingPurposes?.DatabaseTestingStuffInternals?.TryGetValue(databaseName, out testingStuff) == true;
-    }
-
-    private static DateTime? GetHeldUntil(IServerBackupPolicy policy)
-    {
-        return policy switch
-        {
-            ServerCpuCreditsPolicy cpuCreditsPolicy => cpuCreditsPolicy.HeldUntil,
-            ServerLowMemoryPolicy lowMemoryPolicy => lowMemoryPolicy.HeldUntil,
-            ServerHighDirtyMemoryPolicy highDirtyMemoryPolicy => highDirtyMemoryPolicy.HeldUntil,
-            _ => null
-        };
     }
 
     private DateTime? GetServerHeldUntil()
@@ -1719,7 +1729,7 @@ public class ServerBackupRunner : IDisposable
         DateTime? serverHeldUntil = null;
         foreach (var policy in serverBackupPolicies)
         {
-            var heldUntil = GetHeldUntil(policy);
+            var heldUntil = policy.HeldUntil;
             if (heldUntil != null && (serverHeldUntil == null || heldUntil > serverHeldUntil))
                 serverHeldUntil = heldUntil;
         }
@@ -1733,7 +1743,7 @@ public class ServerBackupRunner : IDisposable
         // or ConcurrentBackupsDelayInSec instead of the regular BackupRunnerFrequencyInSec
         var runnerFrequency = _serverStore.Configuration.Backup.BackupRunnerFrequency.AsTimeSpan;
 
-        var heldUntil = GetHeldUntil(failedServerPolicy);
+        var heldUntil = failedServerPolicy?.HeldUntil;
         if (heldUntil != null)
         {
             var hold = heldUntil.Value - _serverStore.Server.Time.GetUtcNow();
