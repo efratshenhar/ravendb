@@ -1,4 +1,5 @@
 ﻿using System;
+using Raven.Client.Documents.Operations.Backups;
 using Raven.Server.ServerWide.Context;
 
 namespace Raven.Server.ServerWide.Backups.Policies.Database;
@@ -15,14 +16,18 @@ public class BackupShouldRunOnThisNodePolicy : IDatabaseBackupPolicy
 
     public bool CanDoBackup(ClusterOperationContext context, ServerStore serverStore, DatabaseBackupState backupState, DateTime now, out string reason, out BackupDecisionCategory category)
     {
-        category = BackupDecisionCategory.Waiting;
-
         var taskStatus = serverStore.ServerBackupRunner.GetTaskStatus(backupState.Configuration, backupState.DatabaseName, out var nodeTag, context);
+        return CanRunOnThisNode(taskStatus, nodeTag, backupState.Configuration, out reason, out category);
+    }
+
+    internal static bool CanRunOnThisNode(ServerBackupRunner.TaskStatus taskStatus, string responsibleNodeTag, PeriodicBackupConfiguration configuration, out string reason, out BackupDecisionCategory category)
+    {
+        category = BackupDecisionCategory.Waiting;
 
         switch (taskStatus)
         {
             case ServerBackupRunner.TaskStatus.Disabled:
-                BackupDisabledPolicy.IsDisabled(backupState.Configuration, out reason, out category);
+                BackupDisabledPolicy.IsDisabled(configuration, out reason, out category);
                 return false;
 
             case ServerBackupRunner.TaskStatus.MissingResponsibleNode:
@@ -31,7 +36,7 @@ public class BackupShouldRunOnThisNodePolicy : IDatabaseBackupPolicy
                 return false;
 
             case ServerBackupRunner.TaskStatus.ActiveByOtherNode:
-                reason = $"Node '{nodeTag}' is responsible for the task.";
+                reason = $"Node '{responsibleNodeTag}' is responsible for the task.";
                 return false;
 
             case ServerBackupRunner.TaskStatus.ActiveByCurrentNode:
@@ -39,7 +44,7 @@ public class BackupShouldRunOnThisNodePolicy : IDatabaseBackupPolicy
                 return true;
 
             default:
-                throw new ArgumentOutOfRangeException(nameof(taskStatus), taskStatus, $"Unknown backup task status '{taskStatus}' of {backupState}");
+                throw new ArgumentOutOfRangeException(nameof(taskStatus), taskStatus, $"Unknown backup task status '{taskStatus}' of backup task '{configuration.TaskId}'");
         }
     }
 }
