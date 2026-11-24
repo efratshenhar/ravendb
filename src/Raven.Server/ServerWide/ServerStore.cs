@@ -2858,6 +2858,8 @@ namespace Raven.Server.ServerWide
                             if (CanUnloadDatabase(databaseKvp.Key, databaseKvp.Value, statistics, out DocumentDatabase database, out var idleSnapshot) == false)
                                 continue;
 
+                            ForTestingPurposes?.BeforeUnloadingIdleDatabase?.Invoke(database);
+
                             var dbIdEtagDictionary = new Dictionary<string, long>();
                             using (database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext documentsContext))
                             using (documentsContext.OpenReadTransaction())
@@ -3882,6 +3884,9 @@ namespace Raven.Server.ServerWide
             internal bool SkipWriteUsageActualSend;                      // suppress the real POST to api.ravendb.net
             internal bool ForceWriteUsageReportingEnabled;               // bypass the Quill-license gate in tests
             internal bool IgnoreHealthChecksBeforeBackup;
+            internal bool SimulateLowMemory;
+            internal bool SimulateHighDirtyMemory;
+            internal Action<DocumentDatabase> BeforeUnloadingIdleDatabase;
         }
 
 #if DEBUG
