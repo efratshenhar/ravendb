@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Raven.Client.Util;
-using Raven.Server.ServerWide.Backups.Policies.Server;
 using Raven.Server.ServerWide.Context;
 using Sparrow.Logging;
 using Sparrow.Server.Logging;
@@ -68,7 +67,7 @@ public sealed class BackupDecisionTracker
     internal void Start()
     {
         _runnerStartTime = DateTime.UtcNow;
-        _serverStore.ConcurrentBackupsCounter.RunningBackupsChanged += _ => OnRunningBackupsChanged();
+        _runner.ConcurrentBackups.RunningBackupsChanged += _ => OnRunningBackupsChanged();
     }
 
     internal static string GetCancelReasonText(string cancelReason)
@@ -275,7 +274,7 @@ public sealed class BackupDecisionTracker
     {
         var cachedScheduleSummary = _scheduleSummary;
         var scheduleSummary = Volatile.Read(ref _watchers) > 0 && cachedScheduleSummary != null ? cachedScheduleSummary : GetScheduleSummary(now);
-        var counter = _serverStore.ConcurrentBackupsCounter;
+        var counter = _runner.ConcurrentBackups;
 
         var summary = new BackupDecisionLogSummary
         {
@@ -284,7 +283,7 @@ public sealed class BackupDecisionTracker
             ServerBlock = scheduleSummary.ServerBlock
         };
 
-        summary.Running.Current = counter.CurrentNumberOfRunningBackups;
+        summary.Running.DatabasesBackingUp = counter.CurrentNumberOfRunningBackups;
         summary.Running.Max = counter.MaxNumberOfConcurrentBackups;
         summary.Running.WaitingForSlot = scheduleSummary.Running.WaitingForSlot;
 
@@ -359,7 +358,7 @@ public sealed class BackupDecisionTracker
                         continue;
                     }
 
-                    if (latest.Category == BackupDecisionCategory.Waiting && latest.Detail == ServerConcurrentBackupPolicy.PolicyName)
+                    if (latest.Category == BackupDecisionCategory.Waiting && latest.Detail == ServerBackupRunner.ConcurrentBackupDetail)
                     {
                         summary.Running.WaitingForSlot++;
                         continue;

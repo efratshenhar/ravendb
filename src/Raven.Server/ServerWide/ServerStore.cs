@@ -163,7 +163,7 @@ namespace Raven.Server.ServerWide
 
         public long LastClientConfigurationIndex { get; private set; } = -2;
 
-        public ConcurrentBackupsCounter ConcurrentBackupsCounter { get; private set; }
+        public ConcurrentBackupsCounter ConcurrentBackupsCounter => ServerBackupRunner.ConcurrentBackups;
 
         public ServerOperations Operations { get; }
 
@@ -950,8 +950,6 @@ namespace Raven.Server.ServerWide
 
             LicenseManager.Initialize(_env, ContextPool);
             LatestVersionCheck.Instance.Check(this);
-
-            ConcurrentBackupsCounter = new ConcurrentBackupsCounter(Configuration.Backup, LicenseManager);
 
             RavenLogManager.Instance.ConfigureAuditLog(Server, Logger);
 

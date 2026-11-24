@@ -51,9 +51,9 @@ public class ServerBackupRunner : IDisposable
 
     internal readonly ConcurrentDictionary<string, ConcurrentDictionary<long, DatabaseBackupState>> BackupsPerDatabasePerTaskId = new(StringComparer.OrdinalIgnoreCase);
 
-    private List<IServerBackupPolicy> _serverBackupPolicies;
+    internal const string ConcurrentBackupDetail = "ConcurrentBackup";
 
-    private ServerConcurrentBackupPolicy _concurrentBackupPolicy;
+    private List<IServerBackupPolicy> _serverBackupPolicies;
 
     private List<IDatabaseBackupPolicy> _databaseBackupPolicies;
 
@@ -62,6 +62,8 @@ public class ServerBackupRunner : IDisposable
     private readonly RavenLogger _logger;
 
     internal readonly BackupDecisionTracker Decisions;
+
+    public ConcurrentBackupsCounter ConcurrentBackups { get; private set; }
 
     private readonly ConcurrentDictionary<string, IdleDatabaseSnapshot> _idleDatabases = new(StringComparer.OrdinalIgnoreCase);
 
@@ -74,8 +76,10 @@ public class ServerBackupRunner : IDisposable
 
     public void Initialize()
     {
+        ConcurrentBackups = new ConcurrentBackupsCounter(_serverStore.Configuration.Backup, _serverStore.LicenseManager);
+
         Decisions.Start();
-        _serverStore.ConcurrentBackupsCounter.RunningBackupsChanged += OnRunningBackupsChanged;
+        ConcurrentBackups.RunningBackupsChanged += OnRunningBackupsChanged;
 
         _serverBackupPolicies =
         [
@@ -84,8 +88,6 @@ public class ServerBackupRunner : IDisposable
             new ServerLowMemoryPolicy(),
             new ServerHighDirtyMemoryPolicy()
         ];
-
-        _concurrentBackupPolicy = new ServerConcurrentBackupPolicy(_serverStore.ConcurrentBackupsCounter);
 
         _databaseBackupPolicies =
         [
@@ -150,7 +152,7 @@ public class ServerBackupRunner : IDisposable
                     {
                         if (AreAllDatabasePoliciesCompliant(backupState, now, out var failedPolicy))
                         {
-                            if (CanStartUnderConcurrentBackupsLimit(backupState, now, afterRefusal: firstRefusedState != null))
+                            if (TryTakeConcurrentBackupsPlace(backupState, now, afterRefusal: firstRefusedState != null))
                                 RunScheduledBackup(backupState);
                             else
                                 firstRefusedState ??= backupState;
@@ -197,8 +199,13 @@ public class ServerBackupRunner : IDisposable
     private void RunScheduledBackup(DatabaseBackupState backupState)
     {
         var nextBackup = backupState.NextBackup;
-        if (nextBackup == null || TryStartRunning(backupState) == false)
+        if (nextBackup == null || backupState.Running.Raise() == false)
+        {
+            ConcurrentBackups.GiveBackPlace(backupState.OriginalDatabaseName);
             return;
+        }
+
+        backupState.ResetCancelReason();
 
         _ = Task.Run(async () =>
         {
@@ -373,7 +380,7 @@ public class ServerBackupRunner : IDisposable
 
         try
         {
-            _serverStore.ConcurrentBackupsCounter.FinishBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, runningBackupStatus, elapsed, _logger);
+            ConcurrentBackups.FinishBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, runningBackupStatus, elapsed, _logger);
         }
         catch (Exception e)
         {
@@ -949,25 +956,22 @@ public class ServerBackupRunner : IDisposable
         return true;
     }
 
-    private bool CanStartUnderConcurrentBackupsLimit(DatabaseBackupState backupState, DateTime now, bool afterRefusal)
+    private bool TryTakeConcurrentBackupsPlace(DatabaseBackupState backupState, DateTime now, bool afterRefusal)
     {
-        if (afterRefusal)
-        {
-            if (_serverStore.ConcurrentBackupsCounter.HasRunningBackup(backupState.OriginalDatabaseName))
-                return true;
-        }
-        else
-        {
-            if (_concurrentBackupPolicy.CanDoBackup(_serverStore, now, backupState.OriginalDatabaseName, out var reason, out var category))
-                return true;
+        if (ConcurrentBackups.TryStartBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, _logger, enforceLimit: true, onlyIfDatabaseIsBackingUp: afterRefusal))
+            return true;
 
+        var reason = $"The maximum number of concurrent backups ({ConcurrentBackups.MaxNumberOfConcurrentBackups}) is reached.";
+
+        if (afterRefusal == false)
+        {
             if (_logger.IsDebugEnabled)
                 _logger.Debug(reason);
 
-            Decisions.AddServerDecision(category, _concurrentBackupPolicy.Name, reason, now, heldUntil: null);
+            Decisions.AddServerDecision(BackupDecisionCategory.Waiting, ConcurrentBackupDetail, reason, now, heldUntil: null);
         }
 
-        backupState.AddToDecisionLog(BackupDecisionCategory.Waiting, _concurrentBackupPolicy.Name, _concurrentBackupPolicy.Reason, now);
+        backupState.AddToDecisionLog(BackupDecisionCategory.Waiting, ConcurrentBackupDetail, reason, now);
 
         return false;
     }
@@ -1608,20 +1612,10 @@ public class ServerBackupRunner : IDisposable
         }
     }
 
-    private bool TryStartRunning(DatabaseBackupState backupState)
-    {
-        if (backupState.Running.Raise() == false)
-            return false;
-
-        OnRunningRaised(backupState);
-
-        return true;
-    }
-
     private void OnRunningRaised(DatabaseBackupState backupState)
     {
         backupState.ResetCancelReason();
-        _serverStore.ConcurrentBackupsCounter.StartBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, _logger, enforceLimit: false);
+        ConcurrentBackups.StartBackup(backupState.OriginalDatabaseName, backupState.Configuration.Name, _logger, enforceLimit: false);
     }
 
     internal bool IsActiveOnThisNode(ClusterOperationContext context, DatabaseBackupState backupState)
