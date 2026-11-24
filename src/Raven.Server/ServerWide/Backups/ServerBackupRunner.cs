@@ -404,26 +404,21 @@ public class ServerBackupRunner : IDisposable
             value.HoldBackupFromFinishing?.WaitOne();
         }
 
-        try
-        {
-            if (backupState.Stale)
-                backupState.NextBackup = null;
-            else if (reschedule)
-                backupState.NextBackup = backupState.GetNextBackupIfActive(backupState.BackupStatus, out _);
-        }
-        catch (Exception e)
-        {
-            backupState.NextBackup = null;
-
-            if (_logger.IsWarnEnabled)
-                _logger.Warn($"Failed to schedule the next backup for {backupState}.", e);
-        }
-
         var runningBackupStatus = backupState.RunningBackupStatus;
+        bool nextBackupScheduled;
 
-        backupState.RunningTask = null;
-        backupState.RunningBackupStatus = null;
-        backupState.RunningCancel = null;
+        if (TryGetBackupStates(backupState.DatabaseName, out var backupStates))
+        {
+            lock (backupStates)
+                nextBackupScheduled = ScheduleNextBackupAndClearRunningTask(backupState, reschedule);
+        }
+        else
+        {
+            nextBackupScheduled = ScheduleNextBackupAndClearRunningTask(backupState, reschedule);
+        }
+
+        if (nextBackupScheduled == false)
+            TrackAgainOnNextPass(backupState.DatabaseName);
 
         try
         {
@@ -438,6 +433,33 @@ public class ServerBackupRunner : IDisposable
         {
             backupState.Running.Lower();
         }
+    }
+
+    private bool ScheduleNextBackupAndClearRunningTask(DatabaseBackupState backupState, bool reschedule)
+    {
+        var scheduled = true;
+
+        try
+        {
+            if (backupState.Stale)
+                backupState.NextBackup = null;
+            else if (reschedule || backupState.NextBackup == null)
+                backupState.NextBackup = backupState.GetNextBackupIfActive(backupState.BackupStatus, out _);
+        }
+        catch (Exception e)
+        {
+            backupState.NextBackup = null;
+            scheduled = false;
+
+            if (_logger.IsWarnEnabled)
+                _logger.Warn($"Failed to schedule the next backup for {backupState}, it will be calculated again on the next pass.", e);
+        }
+
+        backupState.RunningTask = null;
+        backupState.RunningBackupStatus = null;
+        backupState.RunningCancel = null;
+
+        return scheduled;
     }
 
     public long StartBackupNowTask(DocumentDatabase database, long taskId, bool isFullBackup, long operationId, DateTime? startTimeUtc = null)
